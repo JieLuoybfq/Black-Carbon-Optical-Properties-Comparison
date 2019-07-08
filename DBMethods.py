@@ -1,3 +1,6 @@
+# Keyhan Babaee, https://github.com/KeyhanB
+# V1.0
+# July 2019
 import mysql.connector
 from ConfigParserM import logging
 from mysql.connector import errorcode

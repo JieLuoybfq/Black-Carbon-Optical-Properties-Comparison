@@ -1,3 +1,7 @@
+# Keyhan Babaee, https://github.com/KeyhanB
+# V1.0
+# July 2019
+
 from pathlib import Path
 import os
 from ConfigParserM import logging
