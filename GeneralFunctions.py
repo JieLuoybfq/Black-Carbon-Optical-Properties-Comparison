@@ -161,7 +161,7 @@ def isDate(string, fuzzy=False):
         raise
 
 
-def getDateandTimeUTC():
+def getDateandTimeUTCNow():
     try:
 
         return str(datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat("T", "seconds")).replace(":", "")
