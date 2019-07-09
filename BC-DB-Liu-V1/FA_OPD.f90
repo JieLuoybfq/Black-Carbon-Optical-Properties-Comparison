@@ -75,7 +75,7 @@
 
 
 !!!    READ INPUT FILE
-       OPEN(UNIT=1,FILE="D:\University\Thesis\BC-DB\Black-Carbon-Database-Optimization\BC-DB-Liu-V1\input.txt",STATUS='OLD')
+       OPEN(UNIT=1,FILE="D:\University\Thesis\BC-DB\Black-Carbon-Optical-Properties-Comparison\BC-DB-Liu-V1\input.txt",STATUS='OLD')
        READ(1,*) !SKIP FIRST LINE
        READ(1,*) DF
        READ(1,*) D_MON
@@ -155,9 +155,12 @@
           CANG(I) = DCOS(DBLE(I-1)*DANG)
        ENDDO
 
-       OPEN(UNIT=1,FILE="D:\University\Thesis\BC-DB\Black-Carbon-Database-Optimization\BC-DB-Liu-V1\FA_1p8.DAT",STATUS='OLD')
-       OPEN(UNIT=2,FILE="D:\University\Thesis\BC-DB\Black-Carbon-Database-Optimization\BC-DB-Liu-V1\FA_2p3.DAT",STATUS='OLD')
-       OPEN(UNIT=3,FILE="D:\University\Thesis\BC-DB\Black-Carbon-Database-Optimization\BC-DB-Liu-V1\FA_2p8.DAT",STATUS='OLD')
+       OPEN(UNIT=1,FILE="D:\University\Thesis\BC-DB\&
+       Black-Carbon-Optical-Properties-Comparison\BC-DB-Liu-V1\FA_1p8.DAT",STATUS='OLD')
+       OPEN(UNIT=2,FILE="D:\University\Thesis\BC-DB\&
+       Black-Carbon-Optical-Properties-Comparison\BC-DB-Liu-V1\FA_2p3.DAT",STATUS='OLD')
+       OPEN(UNIT=3,FILE="D:\University\Thesis\BC-DB\&
+       Black-Carbon-Optical-Properties-Comparison\BC-DB-Liu-V1\FA_2p8.DAT",STATUS='OLD')
 
        DO N_DF=1,I_DF
        DO N_RE=1,I_RE
@@ -183,7 +186,8 @@
 
 
 !!!    BEGINNING CALCULATIONS
-       OPEN(UNIT=1,FILE="D:\University\Thesis\BC-DB\Black-Carbon-Database-Optimization\BC-DB-Liu-V1\output.txt",STATUS='UNKNOWN')
+       OPEN(UNIT=1,FILE="D:\University\Thesis\BC-DB\&
+       Black-Carbon-Optical-Properties-Comparison\BC-DB-Liu-V1\output.txt",STATUS='UNKNOWN')
 
        DO N_N = 1,I_N
          DO N_DF = 1,I_DF

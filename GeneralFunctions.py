@@ -1,5 +1,5 @@
 # Keyhan Babaee, https://github.com/KeyhanB
-# V1.0
+# V1.1
 # July 2019
 
 from pathlib import Path
@@ -63,6 +63,24 @@ def CSV_To2DList(Address):
             for row in readCSV:
                 List2D.append(row)
         return List2D
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def DAT_To2DList(Address, getridofNone=True):
+    try:
+        List2D = []
+        with open(Address) as datFile:
+            readDAT = csv.reader(datFile, delimiter=' ')
+            for row in readDAT:
+                if getridofNone:
+                    List2D.append(filterListFromNONE(row))
+                else:
+                    List2D.append(row)
+        return List2D
+
     except Exception as e:
         logging.exception(e)
         raise
@@ -112,6 +130,33 @@ def reportDictionary(Dictionary):
         logging.exception(e)
         raise
 
+
+def changeColumnOf2D(List, ColumnNumber, ChangeTo):
+    try:
+
+        rows = len(List)
+        for i in range(rows):
+            List[i][ColumnNumber] = ChangeTo
+
+        return List
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def changeArrayType(List, ColumnNumber, ChangeTo):
+    try:
+
+        rows = len(List)
+        for i in range(rows):
+            List[i][ColumnNumber] = ChangeTo
+
+        return List
+
+    except Exception as e:
+        logging.exception(e)
+        raise
 
 def getFilesNameAddressinFolder(FolderAddress, Extension=None):
     try:

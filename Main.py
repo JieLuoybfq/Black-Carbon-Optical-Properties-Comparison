@@ -5,3 +5,11 @@
 
 
 if __name__ == "__main__":
+    CP.readLogConfig()
+    DB_Info = CP.readConfigToDict(SectionName="DatabaseInfo")
+    FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
+    AGG_Info = CP.readConfigToDict(SectionName="AggregateDetails", ConvertParseTo='float', hasComment=True)
+
+    DB.createDB(INFO=DB_Info)
+
+    logging.info("Application Started!")
