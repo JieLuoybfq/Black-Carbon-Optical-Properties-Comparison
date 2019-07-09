@@ -158,6 +158,61 @@ def changeArrayType(List, ColumnNumber, ChangeTo):
         logging.exception(e)
         raise
 
+
+def getDateandTimeUTC():
+    try:
+
+        return str(datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat("T", "seconds")).replace(":", "")
+
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def selectColumnsList(ColumnIndex, List):
+    try:
+        B = []
+        for i in range(len(List)):
+            A = []
+            for j in ColumnIndex:
+                A.append(List[i][j])
+            B.append(A)
+
+        return B
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def divideArray(NumberofDivisions, List):
+    try:
+        B = []
+        Counter = 0
+        rows = len(List)
+        Section = int(rows / NumberofDivisions)
+        for i in range(NumberofDivisions - 1):
+            C = []
+            for j in range(Section):
+                C.append(List[Counter])
+                Counter += 1
+            B.append(C)
+
+        D = []
+        for k in range(Counter, rows):
+            D.append(List[Counter])
+            Counter += 1
+        B.append(D)
+
+        return B
+
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
 def getFilesNameAddressinFolder(FolderAddress, Extension=None):
     try:
         if Extension:

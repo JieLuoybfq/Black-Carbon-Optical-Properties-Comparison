@@ -1,5 +1,5 @@
 # Keyhan Babaee, https://github.com/KeyhanB
-# V1.0
+# V1.1
 # July 2019
 import mysql.connector
 from ConfigParserM import logging
@@ -231,6 +231,31 @@ def insertRowIntoTable(INFO, TableName, ValuesDictionary, giveID=False, DBName=N
         logging.exception(e)
         raise
 
+
+def insertArrayIntoTable(INFO, TableName, NameArray, Array, DBName=None):
+    try:
+        mySQLDB = connectDB(INFO, DBName)
+        cursor = mySQLDB.cursor()
+        S1 = " ("
+        S2 = " ("
+        for key in NameArray:
+            S1 += str(key) + ", "
+            S2 += "%s, "
+        S1 = S1[:-2]
+        S2 = S2[:-2]
+        S1 += ") "
+        S2 += ")"
+        query = ("INSERT INTO " + str(TableName) + S1 + "VALUES" + S2)
+
+        cursor.executemany(query, Array)
+        mySQLDB.commit()
+        cursor.close()
+        mySQLDB.close()
+
+
+    except Exception as e:
+        logging.exception(e)
+        raise
 
 def readRowfromTablewithID(INFO, TableName, ID=1, DBName=None):
     try:
