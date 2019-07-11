@@ -27,15 +27,21 @@ if __name__ == "__main__":
 
     uniqueColumn = FN.uniqueEntry(inputData_Full)
     In = [2.3, 1.4, 0.6, 0.2, 52]
-    Tolerance = [2, 2, 2, 2, 7]
+    Tolerance = [1, 2, 2, 2, 2]
+
     X, ind = FN.getToleratedArray(inputData_Full, In, Tolerance, uniqueColumn)
     out = GF.selectColumnsList(ind, EXT_Coeff_Full, Dimension=1)
     A = griddata(X, out, In)
 
-    In = [2.3, 1.4, 0.6, 0.2, 2100]
+    In = [2.5, 1.3, 0.7, 0.2, 2100]
     # Tolerance = [2, 2, 2, 2, 7]
     X, ind = FN.getToleratedArray(inputData_Full, In, Tolerance, uniqueColumn)
     out = GF.selectColumnsList(ind, EXT_Coeff_Full, Dimension=1)
-    A1 = griddata(X, out, In)
+    A1 = griddata(X, out, In, rescale=True)
 
+    In = [2.5, 1.3, 0.7, 0.2, 2100]
+    # Tolerance = [2, 2, 2, 2, 7]
+    X, ind = FN.getToleratedArray(inputData_Full, In, Tolerance, uniqueColumn)
+    out = GF.selectColumnsList(ind, ABS_Coeff_Full, Dimension=1)
+    A2 = griddata(X, out, In, rescale=True)
     b = 3

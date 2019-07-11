@@ -109,11 +109,7 @@ def getToleratedArray(Array, Input, Tolerance, uniques):
                 index.append(i)
 
         return B, index
-        b = 3
-
         '''
-
-
         for i in range(rows):
             k = 0
             for j in range(col):
