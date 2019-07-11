@@ -5,6 +5,7 @@ from decimal import Decimal
 import numpy as np
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
+from math import pi
 
 ####### Plotting Parameters
 
@@ -112,7 +113,87 @@ def checkIndex(tolerance, MainIndex, max):
 def createRandomNormalArr(Center, Width, Number):
     try:
         A = np.random.normal(Center, Width, int(Number))
+        return np.around(A, 3)
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def calcMonomerParameter(dpArray, WaveLengthArray):
+    try:
+        rows = len(dpArray)
+        A = []
+        for i in range(rows):
+            A.append(pi * dpArray[i] / WaveLengthArray[i])
+
         return A
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def createRandomNormalArrINT(Center, Width, Number):
+    try:
+        A = np.random.normal(Center, Width, int(Number))
+        return np.around(A, 0)
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def findCommonIndex(*args):
+    try:
+        A = len(args)
+        C = args[0]
+        for i in range(1, A):
+            C = set(args[i]) & set(C)
+        return list(C)
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def checkRDGDBforIndexes(*args):
+    try:
+        A = len(args)
+        C = args[0]
+        for i in range(1, A):
+            C = set(args[i]) & set(C)
+        return list(C)
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def checkTMatrixDBforIndexes(INFO, TableName, **kwargs):
+    try:
+        rows = len(kwargs['Df'])
+        A = kwargs['Df'][1]
+        # for i in range(rows):
+        # dict1={
+        #    'Df':kwargs['Df'][i], 'kf':, 'R_RI':, 'I_RI':, 'WaveL':, 'dp':, 'Np':, 'Version':
+        # }
+        A = 3
+
+
+
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def getPossibleArray(Array, Indexes):
+    try:
+        B = []
+        for i in Indexes:
+            B.append(Decimal(Array[i]))
+        return B
 
     except Exception as e:
         logging.exception(e)
@@ -122,8 +203,24 @@ def createRandomNormalArr(Center, Width, Number):
 def getRandomFromArr(Array, Number):
     try:
         # uniform choice
-        A = np.random.choice(Array, size=Number, replace=False)
+        A = np.random.choice(Array, size=int(Number), replace=False)
         return A
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def getGoodIndexes(Array, Bound):
+    try:
+        min = Bound[0]
+        max = Bound[1]
+        Index = []
+        rows = len(Array)
+        for i in range(rows):
+            if (Array[i] >= min) and (Array[i] <= max):
+                Index.append(i)
+        return Index
 
     except Exception as e:
         logging.exception(e)

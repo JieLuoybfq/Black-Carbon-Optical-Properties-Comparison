@@ -1,6 +1,0 @@
-07/11/2019 02:10:37 AM, 'float' object cannot be interpreted as an integer
-Traceback (most recent call last):
-  File "D:\University\Thesis\BC-DB\Black-Carbon-Optical-Properties-Comparison\AppFunctions.py", line 125, in getRandomFromArr
-    A = np.random.choice(Array, size=Number, replace=False)
-  File "mtrand.pyx", line 1192, in mtrand.RandomState.choice
-TypeError: 'float' object cannot be interpreted as an integer
