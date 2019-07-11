@@ -170,14 +170,23 @@ def getDateandTimeUTC():
         raise
 
 
-def selectColumnsList(ColumnIndex, List):
+def selectColumnsList(ColumnIndex, List, Dimension=2):
     try:
         B = []
-        for i in range(len(List)):
-            A = []
-            for j in ColumnIndex:
-                A.append(List[i][j])
-            B.append(A)
+        if Dimension == 1:
+            for i in ColumnIndex:
+                B.append(List[i])
+
+        elif Dimension == 2:
+            for i in range(len(List)):
+                A = []
+                if len(ColumnIndex) == 1:
+                    for j in ColumnIndex:
+                        B.append(List[i][j])
+                else:
+                    for j in ColumnIndex:
+                        A.append(List[i][j])
+                    B.append(A)
 
         return B
 

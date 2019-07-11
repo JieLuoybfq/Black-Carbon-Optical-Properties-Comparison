@@ -49,6 +49,6 @@ if __name__ == "__main__":
     for i in range(numberDivisions):
         DB.insertArrayIntoTable(INFO=DB_Info, TableName=tableName, NameArray=Header, Array=List2D2p8_M[i])
 
-    CSV_Address = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_CSV'], FileName=GF.getDateandTimeUTC(), Extension="csv")
-    DB.dumpTableCSV(INFO=DB_Info, TableName=tableName, Address=CSV_Address)
-    DB.showAllTablesInDBSummary(DB_Info)
+    # CSV_Address = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_CSV'], FileName=GF.getDateandTimeUTC(), Extension="csv")
+    # DB.dumpTableCSV(INFO=DB_Info, TableName=tableName, Address=CSV_Address)
+    # DB.showAllTablesInDBSummary(DB_Info)

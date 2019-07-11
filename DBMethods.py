@@ -281,12 +281,12 @@ def readAllRowsfromTable(INFO, TableName, DBName=None):
         cursor = mySQLDB.cursor()
         cursor.execute("SELECT * FROM " + str(TableName))
         Row = cursor.fetchall()
-        tableDict = {}
+        columnName = []
         i = 0
         for cd in cursor.description:
-            tableDict[cd[0]] = Row[0][i]
-            i += 1
-        return tableDict
+            columnName.append(cd[0])
+
+        return columnName, Row
 
     except Exception as e:
         logging.exception(e)
