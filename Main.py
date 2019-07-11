@@ -14,8 +14,83 @@ if __name__ == "__main__":
     DB_Info = CP.readConfigToDict(SectionName="DatabaseInfo")
     FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
     AGG_Info = CP.readConfigToDict(SectionName="AggregateDetails", ConvertParseTo='float', hasComment=True)
+    #######################
+    DB.showAllTablesInDBSummary(DB_Info)
+    appDirectory = GF.getRootDirectory()
+    #######################
+    saveHistogram = True
+    #######################
 
+    ################################################################################################################
+    RDGTableName = "RDG_V1"
+    RDGInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'sigma', 'Version']
+    RDGOutputHeaders = ['RDG_ABS_CRS', 'RDG_SCA_CRS']
+    DB.createTable(INFO=DB_Info, TableName=RDGTableName, arrHeaderNamesInput=RDGInputHeaders, arrHeaderNamesOutput=RDGOutputHeaders)
+    ################################################################################################################
+    TMatrixTableName = "TMatrix_V1"
+    TMatrixInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
+    TMatrixOutputHeaders = ['RDG_ABS_CRS', 'RDG_SCA_CRS']
+    DB.createTable(INFO=DB_Info, TableName=TMatrixTableName, arrHeaderNamesInput=TMatrixInputHeaders, arrHeaderNamesOutput=TMatrixOutputHeaders)
+    ################################################################################################################
+    ErrorTableName = "Error_V1"
+    ErrorInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'sigma', 'Version']
+    ErrorOutputHeaders = ['RDG_ABS_CRS', 'RDG_SCA_CRS']
+    DB.createTable(INFO=DB_Info, TableName=ErrorTableName, arrHeaderNamesInput=ErrorInputHeaders, arrHeaderNamesOutput=ErrorOutputHeaders)
+    ################################################################################################################
     # DB.createDB(INFO=DB_Info)
+    DB.showAllTablesInDBSummary(DB_Info)
+    # DB.dropTableSet(DB_Info,RDGTableName)
+    # DB.dropTableSet(DB_Info, TMatrixTableName)
+    # DB.dropTableSet(DB_Info, ErrorTableName)
+    # DB.reinitializeDB(DB_Info)
+    ################################################################################################################
+    RDGInputTableHeader, RDGInputDataFull = DB.readAllRowsfromTable(INFO=DB_Info, TableName=RDGTableName)
+    TMatrixInputTableHeader, TMatrixInputDataFull = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixTableName)
+    ErrorInputTableHeader, ErrorInputDataFull = DB.readAllRowsfromTable(INFO=DB_Info, TableName=ErrorTableName)
+    ################################################################################################################
+    arrAgg_Fractal_Dimension = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_DIMENSION_CENTER'], Width=AGG_Info['AGG_FRACTAL_DIMENSION_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_Fractal_Prefactor = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_PREFACTOR_CENTER'], Width=AGG_Info['AGG_FRACTAL_PREFACTOR_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_RI_Real = FN.createRandomNormalArr(Center=AGG_Info['AGG_RI_REAL_CENTER'], Width=AGG_Info['AGG_RI_REAL_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_RI_Imag = FN.createRandomNormalArr(Center=AGG_Info['AGG_RI_IMAG_CENTER'], Width=AGG_Info['AGG_RI_IMAG_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_WLength = FN.createRandomNormalArr(Center=AGG_Info['AGG_WLENGTH_CENTER'], Width=AGG_Info['AGG_WLENGTH_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_Primary_Diameter = FN.createRandomNormalArr(Center=AGG_Info['AGG_PRIMARY_DIAMETER_CENTER'], Width=AGG_Info['AGG_PRIMARY_DIAMETER_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_Polydispersity_Sigma_Within = FN.createRandomNormalArr(Center=AGG_Info['AGG_POLYDISPERSITY_SIGMA_WITHIN_CENTER'], Width=AGG_Info['AGG_POLYDISPERSITY_SIGMA_WITHIN_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_Polydispersity_Sigma_Each_Mobility = FN.createRandomNormalArr(Center=AGG_Info['AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER'], Width=AGG_Info['AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_Prefactor_Projected_Area = FN.createRandomNormalArr(Center=AGG_Info['AGG_PREFACTOR_PROJECTED_AREA_COEFFICIENT_CENTER'], Width=AGG_Info['AGG_PREFACTOR_PROJECTED_AREA_COEFFICIENT_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+    arrAgg_Exponent_Projected_Area = FN.createRandomNormalArr(Center=AGG_Info['AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER'], Width=AGG_Info['AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+
+    if saveHistogram:
+        histogram_Folder = GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_GRAPH'] + "/Normal Histograms")
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_Fractal_Dimension", Array=arrAgg_Fractal_Dimension)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_Fractal_Prefactor", Array=arrAgg_Fractal_Prefactor)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_RI_Real", Array=arrAgg_RI_Real)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_RI_Imag", Array=arrAgg_RI_Imag)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_WLength", Array=arrAgg_WLength)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_Primary_Diameter", Array=arrAgg_Primary_Diameter)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_Polydispersity_Sigma_Within", Array=arrAgg_Polydispersity_Sigma_Within)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_Polydispersity_Sigma_Each_Mobility", Array=arrAgg_Polydispersity_Sigma_Each_Mobility)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_Prefactor_Projected_Area", Array=arrAgg_Prefactor_Projected_Area)
+        FN.toSaveHistogram(Folder=histogram_Folder, Name="Agg_Exponent_Projected_Area", Array=arrAgg_Exponent_Projected_Area)
+
+    arrAgg_Fractal_Dimension_Random = FN.getRandomFromArr(Array=arrAgg_Fractal_Dimension, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_Fractal_Prefactor_Random = FN.getRandomFromArr(Array=arrAgg_Fractal_Prefactor, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_RI_Real_Random = FN.getRandomFromArr(Array=arrAgg_RI_Real, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_RI_Imag_Random = FN.getRandomFromArr(Array=arrAgg_RI_Imag, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_WLength_Random = FN.getRandomFromArr(Array=arrAgg_WLength, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_Primary_Diameter_Random = FN.getRandomFromArr(Array=arrAgg_Primary_Diameter, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_Polydispersity_Sigma_Within_Random = FN.getRandomFromArr(Array=arrAgg_Polydispersity_Sigma_Within, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_Polydispersity_Sigma_Each_Mobility_Random = FN.getRandomFromArr(Array=arrAgg_Polydispersity_Sigma_Each_Mobility, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_Prefactor_Projected_Area_Random = FN.getRandomFromArr(Array=arrAgg_Prefactor_Projected_Area, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+    arrAgg_Exponent_Projected_Area_Random = FN.getRandomFromArr(Array=arrAgg_Exponent_Projected_Area, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+
+    ################################################################################################################
+    # Check Boundary for Inputs
+    Df_Bound = [1.801, 2.799]
+    RI_Real_Bound = [1.06, 1.99]
+    RI_Imag_Bound = [0.01, 0.99]
+    Np_Bound = [2, 2999]
+    MonomerParameter_Bound = [0.06, 0.49]
+    ######################################################################################
     logging.info("Application Started!")
     tableName = 'Raw_V1'
     columnName, dataFull = DB.readAllRowsfromTable(INFO=DB_Info, TableName=tableName)

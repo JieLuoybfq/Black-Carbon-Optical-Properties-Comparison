@@ -2,6 +2,33 @@ import DBMethods as DB
 from ConfigParserM import logging
 import GeneralFunctions as GF
 from decimal import Decimal
+import numpy as np
+from matplotlib import rcParams
+from matplotlib import pyplot as plt
+
+####### Plotting Parameters
+
+rcParams['mathtext.fontset'] = 'stix'
+rcParams['font.family'] = 'STIXGeneral'
+
+
+##############################
+
+
+def toSaveHistogram(Folder, Name, Array, Figure_DPI=400):
+    try:
+        n, bins, patches = plt.hist(Array, 50, density=True, facecolor='b', alpha=0.75)
+        plt.ylabel('Probability')
+        plt.title('Histogram of ' + str(Name))
+        plt.grid(True)
+        Address = GF.getAddressTo(Folder, None, Name, "jpg")
+        plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
+        plt.clf()
+        plt.close()
+
+    except Exception as e:
+        logging.exception(e)
+        raise
 
 
 def isNewInputDB(INFO, TableName, InputDictionary):
@@ -76,6 +103,27 @@ def checkIndex(tolerance, MainIndex, max):
             up = max
         return [up, down]
 
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def createRandomNormalArr(Center, Width, Number):
+    try:
+        A = np.random.normal(Center, Width, int(Number))
+        return A
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def getRandomFromArr(Array, Number):
+    try:
+        # uniform choice
+        A = np.random.choice(Array, size=Number, replace=False)
+        return A
 
     except Exception as e:
         logging.exception(e)

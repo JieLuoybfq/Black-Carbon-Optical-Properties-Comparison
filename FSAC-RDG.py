@@ -7,7 +7,6 @@ from math import pi
 from math import log
 from ConfigParserM import logging
 
-"""
 ####################### Aggregate Distribution Setting
 def RDG(Array):
     try:
