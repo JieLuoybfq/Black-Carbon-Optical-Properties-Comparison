@@ -18,7 +18,10 @@ rcParams['font.family'] = 'STIXGeneral'
 
 def toSaveHistogram(Folder, Name, Array, Figure_DPI=400):
     try:
-        n, bins, patches = plt.hist(Array, 50, density=True, facecolor='b', alpha=0.75)
+        Arr = []
+        for i in range(len(Array)):
+            Arr.append(float(Array[i]))
+        n, bins, patches = plt.hist(Arr, 50, density=True, facecolor='b', alpha=0.75)
         plt.ylabel('Probability')
         plt.title('Histogram of ' + str(Name))
         plt.grid(True)
@@ -39,6 +42,20 @@ def isNewInputDB(INFO, TableName, InputDictionary):
         hash_Database = DB.getHashofRow(INFO=INFO, TableName=TableName, ValuesDictionary=InputDictionary)
         ID_Database, rowCount_Database = DB.checkHashValue(INFO=INFO, TableName=TableName, Hash=hash_Database)
 
+        return ID_Database, rowCount_Database
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def isNewArrayDB(INFO, TableName, Header, Array):
+    try:
+
+        # DB.createTable(INFO=INFO, TableName=TableName, arrHeaderNamesInput=InputHeader, arrHeaderNamesOutput=OutputHeader)
+        hash_Database = DB.getHashofArray(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
+        ID_Database, rowCount_Database = DB.checkHashArray(INFO=INFO, TableName=TableName, HashArray=hash_Database)
+        A = 3
         return ID_Database, rowCount_Database
 
     except Exception as e:
@@ -113,7 +130,11 @@ def checkIndex(tolerance, MainIndex, max):
 def createRandomNormalArr(Center, Width, Number):
     try:
         A = np.random.normal(Center, Width, int(Number))
-        return np.around(A, 3)
+        length = len(A)
+        B = []
+        for i in range(length):
+            B.append(round(Decimal(A[i]), 3))
+        return B
 
     except Exception as e:
         logging.exception(e)
@@ -125,7 +146,7 @@ def calcMonomerParameter(dpArray, WaveLengthArray):
         rows = len(dpArray)
         A = []
         for i in range(rows):
-            A.append(pi * dpArray[i] / WaveLengthArray[i])
+            A.append(Decimal(pi) * dpArray[i] / WaveLengthArray[i])
 
         return A
 
@@ -137,7 +158,11 @@ def calcMonomerParameter(dpArray, WaveLengthArray):
 def createRandomNormalArrINT(Center, Width, Number):
     try:
         A = np.random.normal(Center, Width, int(Number))
-        return np.around(A, 0)
+        length = len(A)
+        B = []
+        for i in range(length):
+            B.append(round(Decimal(A[i]), 0))
+        return B
 
     except Exception as e:
         logging.exception(e)
@@ -170,18 +195,43 @@ def checkRDGDBforIndexes(*args):
         raise
 
 
-def checkTMatrixDBforIndexes(INFO, TableName, **kwargs):
+def checkTMatrixDBforIndexes(INFO, TableName, Header, Array):
     try:
-        rows = len(kwargs['Df'])
-        A = kwargs['Df'][1]
-        # for i in range(rows):
-        # dict1={
-        #    'Df':kwargs['Df'][i], 'kf':, 'R_RI':, 'I_RI':, 'WaveL':, 'dp':, 'Np':, 'Version':
-        # }
+
+        A = isNewArrayDB(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
+
         A = 3
 
 
 
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def joinArray(*args):
+    try:
+        rows = len(args[0])
+        Arr = []
+        for i in range(rows):
+            A = []
+            for j in range(len(args)):
+                A.append(args[j][i])
+            Arr.append(A)
+        return Arr
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def createConstantArray(Number, Howmany):
+    try:
+        B = []
+        for i in range(Howmany):
+            B.append(round(Decimal(Number), 1))
+        return B
 
     except Exception as e:
         logging.exception(e)

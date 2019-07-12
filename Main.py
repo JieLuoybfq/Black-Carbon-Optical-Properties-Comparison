@@ -1,6 +1,6 @@
 # Programmed by Keyhan Babaee Under Prof. Steven Rogak supervision, https://github.com/KeyhanB
 # Using Fortran Code from: C. Liu, X. Xu, Y. Yin, M. Schnaiter, Y. L. Yung, 2018: Black carbon aggregate: A database for optical properties
-# Version 0.1
+Version = 0.1
 # July 2019
 import ConfigParserM as CP
 import DBMethods as DB
@@ -27,12 +27,12 @@ if __name__ == "__main__":
     ################################################################################################################
     TMatrixTableName = "TMatrix_V1"
     TMatrixInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-    TMatrixOutputHeaders = ['RDG_ABS_CRS', 'RDG_SCA_CRS']
+    TMatrixOutputHeaders = ['TMatrix_ABS_CRS', 'TMatrix_SCA_CRS']
     DB.createTable(INFO=DB_Info, TableName=TMatrixTableName, arrHeaderNamesInput=TMatrixInputHeaders, arrHeaderNamesOutput=TMatrixOutputHeaders)
     ################################################################################################################
     ErrorTableName = "Error_V1"
     ErrorInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'sigma', 'Version']
-    ErrorOutputHeaders = ['RDG_ABS_CRS', 'RDG_SCA_CRS']
+    ErrorOutputHeaders = ['ERR_RDG_M_TMatrix_ABS_CRS', 'ERR_RDG_M_TMatrix_SCA_CRS']
     DB.createTable(INFO=DB_Info, TableName=ErrorTableName, arrHeaderNamesInput=ErrorInputHeaders, arrHeaderNamesOutput=ErrorOutputHeaders)
     ################################################################################################################
     # DB.createDB(INFO=DB_Info)
@@ -42,13 +42,13 @@ if __name__ == "__main__":
     # DB.dropTableSet(DB_Info, ErrorTableName)
     # DB.reinitializeDB(DB_Info)
     ################################################################################################################
-    RDGInputTableHeaderDB, RDGInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=RDGTableName)
-    TMatrixInputTableHeaderDB, TMatrixInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixTableName)
-    ErrorInputTableHeaderDB, ErrorInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=ErrorTableName)
+    # RDGInputTableHeaderDB, RDGInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=RDGTableName)
+    # TMatrixInputTableHeaderDB, TMatrixInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixTableName)
+    # ErrorInputTableHeaderDB, ErrorInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=ErrorTableName)
     ################################################################################################################
-    RDGOutputTableHeaderDB, RDGOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=RDGTableName + "_Out")
-    TMatrixOutputTableHeaderDB, TMatrixOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixTableName + "_Out")
-    ErrorOutputTableHeaderDB, ErrorOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=ErrorTableName + "_Out")
+    # RDGOutputTableHeaderDB, RDGOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=RDGTableName + "_Out")
+    # TMatrixOutputTableHeaderDB, TMatrixOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixTableName + "_Out")
+    # ErrorOutputTableHeaderDB, ErrorOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=ErrorTableName + "_Out")
     ################################################################################################################
     arrAgg_Fractal_Dimension = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_DIMENSION_CENTER'], Width=AGG_Info['AGG_FRACTAL_DIMENSION_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
     arrAgg_Fractal_Prefactor = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_PREFACTOR_CENTER'], Width=AGG_Info['AGG_FRACTAL_PREFACTOR_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
@@ -93,20 +93,23 @@ if __name__ == "__main__":
     arrAgg_Monomer_Parameter_Random = FN.calcMonomerParameter(dpArray=arrAgg_Primary_Diameter_Random, WaveLengthArray=arrAgg_WLength_Random)
 
     Df_Bound = [1.801, 2.799]
+    Kf_Bound = [1.19, 1.21]
     RI_Real_Bound = [1.06, 1.99]
     RI_Imag_Bound = [0.01, 0.99]
     Np_Bound = [2, 2999]
     MonomerParameter_Bound = [0.06, 0.49]
 
     Df_Index = FN.getGoodIndexes(Array=arrAgg_Fractal_Dimension_Random, Bound=Df_Bound)
+    Kf_Index = FN.getGoodIndexes(Array=arrAgg_Fractal_Prefactor_Random, Bound=Kf_Bound)
     RI_Real_Index = FN.getGoodIndexes(Array=arrAgg_RI_Real_Random, Bound=RI_Real_Bound)
     RI_Imag_Index = FN.getGoodIndexes(Array=arrAgg_RI_Imag_Random, Bound=RI_Imag_Bound)
     Np_Index = FN.getGoodIndexes(Array=arrAgg_Primary_Number_Random, Bound=Np_Bound)
     MonomerParameter_Index = FN.getGoodIndexes(Array=arrAgg_Monomer_Parameter_Random, Bound=MonomerParameter_Bound)
 
-    possible_Indexes = FN.findCommonIndex(Df_Index, RI_Real_Index, RI_Imag_Index, Np_Index, MonomerParameter_Index)
+    possible_Indexes = FN.findCommonIndex(Df_Index, Kf_Index, RI_Real_Index, RI_Imag_Index, Np_Index, MonomerParameter_Index)
 
     Df_Possible = FN.getPossibleArray(Array=arrAgg_Fractal_Dimension_Random, Indexes=possible_Indexes)
+    Kf_Possible = FN.getPossibleArray(Array=arrAgg_Fractal_Prefactor_Random, Indexes=possible_Indexes)
     RI_Real_Possible = FN.getPossibleArray(Array=arrAgg_RI_Real_Random, Indexes=possible_Indexes)
     RI_Imag_Possible = FN.getPossibleArray(Array=arrAgg_RI_Imag_Random, Indexes=possible_Indexes)
     Np_Possible = FN.getPossibleArray(Array=arrAgg_Primary_Number_Random, Indexes=possible_Indexes)
@@ -115,8 +118,11 @@ if __name__ == "__main__":
     # to do add more
     ################################################################################################################
     # Check with Databases
-    storedOutputTMatrixIndexes, plannedTMatrixInputIndexes = FN.checkTMatrixDBforIndexes(INFO=DB_Info, TableName=TMatrixTableName, Df=Df_Possible, RI_R=RI_Real_Possible, RI_I=RI_Imag_Possible, Np=Np_Possible, dp=Primary_Diameter_Possible, Wlength=WLength_Possible)
+    Version_Array = FN.createConstantArray(Number=Version, Howmany=len(possible_Indexes))
+    TMatrix_Input_Array = FN.joinArray(Df_Possible, Kf_Possible, RI_Real_Possible, RI_Imag_Possible, WLength_Possible, Primary_Diameter_Possible, Np_Possible, Version_Array)
+    storedOutputTMatrixIndexes, plannedTMatrixInputIndexes = FN.checkTMatrixDBforIndexes(INFO=DB_Info, TableName=TMatrixTableName, Header=TMatrixInputHeaders, Array=TMatrix_Input_Array)
     ################################################################################################################
+
     logging.info("Application Started!")
     tableName = 'Raw_V1'
     columnName, dataFull = DB.readAllRowsfromTable(INFO=DB_Info, TableName=tableName)
