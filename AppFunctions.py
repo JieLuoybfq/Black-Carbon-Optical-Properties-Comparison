@@ -51,12 +51,9 @@ def isNewInputDB(INFO, TableName, InputDictionary):
 
 def isNewArrayDB(INFO, TableName, Header, Array):
     try:
-
-        # DB.createTable(INFO=INFO, TableName=TableName, arrHeaderNamesInput=InputHeader, arrHeaderNamesOutput=OutputHeader)
-        hash_Database = DB.getHashofArray(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
-        ID_Database, rowCount_Database = DB.checkHashArray(INFO=INFO, TableName=TableName, HashArray=hash_Database)
-        A = 3
-        return ID_Database, rowCount_Database
+        hash_array = DB.getHashofArray(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
+        Hashes = DB.checkHashArray(INFO=INFO, TableName=TableName, HashArray=hash_array)
+        return Hashes
 
     except Exception as e:
         logging.exception(e)
@@ -195,15 +192,21 @@ def checkRDGDBforIndexes(*args):
         raise
 
 
-def checkTMatrixDBforIndexes(INFO, TableName, Header, Array):
+def checkMethodDBforIndexes(INFO, TableName, Header, Array):
     try:
 
-        A = isNewArrayDB(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
+        Found = isNewArrayDB(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
+        Newinput = []
+        OldOutput = []
+        OldInput = []
+        for i in range(len(Found)):
+            if Found[i] == -1:
+                Newinput.append(Array[i][:])
+            else:
+                OldOutput.append(DB.getOutputRowByHash(INFO=INFO, TableName=TableName, Hash=Found[i]))
+                OldInput.append(Array[i][:])
 
-        A = 3
-
-
-
+        return OldInput, OldOutput, Newinput
 
     except Exception as e:
         logging.exception(e)
@@ -242,7 +245,7 @@ def getPossibleArray(Array, Indexes):
     try:
         B = []
         for i in Indexes:
-            B.append(Decimal(Array[i]))
+            B.append(Array[i])
         return B
 
     except Exception as e:

@@ -7,7 +7,9 @@ import DBMethods as DB
 from ConfigParserM import logging
 import GeneralFunctions as GF
 import AppFunctions as FN
-from scipy.interpolate import griddata
+import TMatrix as TM
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 if __name__ == "__main__":
     CP.readLogConfig()
@@ -21,7 +23,7 @@ if __name__ == "__main__":
     saveHistogram = True
     ################################################################################################################
     RDGTableName = "RDG_V1"
-    RDGInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'sigma', 'Version']
+    RDGInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
     RDGOutputHeaders = ['RDG_ABS_CRS', 'RDG_SCA_CRS']
     DB.createTable(INFO=DB_Info, TableName=RDGTableName, arrHeaderNamesInput=RDGInputHeaders, arrHeaderNamesOutput=RDGOutputHeaders)
     ################################################################################################################
@@ -42,13 +44,15 @@ if __name__ == "__main__":
     # DB.dropTableSet(DB_Info, ErrorTableName)
     # DB.reinitializeDB(DB_Info)
     ################################################################################################################
-    # RDGInputTableHeaderDB, RDGInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=RDGTableName)
-    # TMatrixInputTableHeaderDB, TMatrixInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixTableName)
-    # ErrorInputTableHeaderDB, ErrorInputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=ErrorTableName)
-    ################################################################################################################
-    # RDGOutputTableHeaderDB, RDGOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=RDGTableName + "_Out")
-    # TMatrixOutputTableHeaderDB, TMatrixOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixTableName + "_Out")
-    # ErrorOutputTableHeaderDB, ErrorOutputDataFullDB = DB.readAllRowsfromTable(INFO=DB_Info, TableName=ErrorTableName + "_Out")
+    '''
+    TMatrixInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
+    TMatrixOutputHeaders = ['TMatrix_ABS_CRS', 'TMatrix_SCA_CRS','MLink']
+    Array1=[[2.3,1.2,1.6,0.6,860,33,50,0.1],[2.4,1.2,1.6,0.6,860,33,50,0.1],[2.6,1.2,1.6,0.6,860,33,50,0.1]]
+    Array2=[[0.056,0.666,1],[0.053,0.666,2],[0.051,0.666,3]]
+    DB.insertArrayIntoTable(INFO=DB_Info,TableName=TMatrixTableName,NameArray=TMatrixInputHeaders,Array=Array1)
+    DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrixTableName+"_out", NameArray=TMatrixOutputHeaders, Array=Array2)
+    DB.showAllTablesInDBSummary(DB_Info)
+    '''
     ################################################################################################################
     arrAgg_Fractal_Dimension = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_DIMENSION_CENTER'], Width=AGG_Info['AGG_FRACTAL_DIMENSION_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
     arrAgg_Fractal_Prefactor = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_PREFACTOR_CENTER'], Width=AGG_Info['AGG_FRACTAL_PREFACTOR_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
@@ -119,36 +123,67 @@ if __name__ == "__main__":
     ################################################################################################################
     # Check with Databases
     Version_Array = FN.createConstantArray(Number=Version, Howmany=len(possible_Indexes))
+    # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
     TMatrix_Input_Array = FN.joinArray(Df_Possible, Kf_Possible, RI_Real_Possible, RI_Imag_Possible, WLength_Possible, Primary_Diameter_Possible, Np_Possible, Version_Array)
-    storedOutputTMatrixIndexes, plannedTMatrixInputIndexes = FN.checkTMatrixDBforIndexes(INFO=DB_Info, TableName=TMatrixTableName, Header=TMatrixInputHeaders, Array=TMatrix_Input_Array)
+    # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
+    RDG_Input_Array = FN.joinArray(Df_Possible, Kf_Possible, RI_Real_Possible, RI_Imag_Possible, WLength_Possible, Primary_Diameter_Possible, Np_Possible, Version_Array)
+
+    storedInput_TMatrix, storedOutput_TMatrix, plannedInput_TMatrix = FN.checkMethodDBforIndexes(INFO=DB_Info, TableName=TMatrixTableName, Header=TMatrixInputHeaders, Array=TMatrix_Input_Array)
+    storedInput_RDG, storedOutput_RDG, plannedInput_RDG = FN.checkMethodDBforIndexes(INFO=DB_Info, TableName=RDGTableName, Header=RDGInputHeaders, Array=RDG_Input_Array)
     ################################################################################################################
 
-    logging.info("Application Started!")
-    tableName = 'Raw_V1'
-    columnName, dataFull = DB.readAllRowsfromTable(INFO=DB_Info, TableName=tableName)
-    columnName = GF.selectColumnsList(ColumnIndex=[1, 2, 3, 4, 5], List=columnName, Dimension=1)
-    EXT_Coeff_Full = GF.selectColumnsList(ColumnIndex=[6], List=dataFull)
-    SCT_Coeff_Full = GF.selectColumnsList(ColumnIndex=[7], List=dataFull)
-    ABS_Coeff_Full = GF.selectColumnsList(ColumnIndex=[8], List=dataFull)
-    inputData_Full = GF.selectColumnsList(ColumnIndex=[1, 2, 3, 4, 5], List=dataFull)
+    TMatrixDBTableName = 'Raw_V1'
 
-    uniqueColumn = FN.uniqueEntry(inputData_Full)
-    In = [2.3, 1.4, 0.6, 0.2, 52]
-    Tolerance = [1, 2, 2, 2, 2]
+    TMatrixDBColumnName, TMatrixDBDataFull = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrixDBTableName)
+    TMatrixDBColumnName = GF.selectColumnsList(ColumnIndex=[1, 2, 3, 4, 5], List=TMatrixDBColumnName, Dimension=1)
 
-    X, ind = FN.getToleratedArray(inputData_Full, In, Tolerance, uniqueColumn)
-    out = GF.selectColumnsList(ind, EXT_Coeff_Full, Dimension=1)
-    A = griddata(X, out, In)
+    TMatrixDBSCT_Coeff_Full = GF.selectColumnsList(ColumnIndex=[7], List=TMatrixDBDataFull)
+    TMatrixDBABS_Coeff_Full = GF.selectColumnsList(ColumnIndex=[8], List=TMatrixDBDataFull)
+    TMatrixDBInputData_Full = GF.selectColumnsList(ColumnIndex=[1, 2, 3, 4, 5], List=TMatrixDBDataFull)
 
-    In = [2.5, 1.3, 0.7, 0.2, 2100]
-    # Tolerance = [2, 2, 2, 2, 7]
-    X, ind = FN.getToleratedArray(inputData_Full, In, Tolerance, uniqueColumn)
-    out = GF.selectColumnsList(ind, EXT_Coeff_Full, Dimension=1)
-    A1 = griddata(X, out, In, rescale=True)
+    TMatrixDBUniqueColumn = FN.uniqueEntry(TMatrixDBInputData_Full)
+    ################################################################################################################
+    Division = 4
+    plannedInput_TMatrix_Chopped = GF.divideArray(NumberofDivisions=Division, List=plannedInput_TMatrix)
+    func = partial(TM.TmatrixInterpolator, TMatrixDBInputData_Full, TMatrixDBUniqueColumn, TMatrixDBABS_Coeff_Full, TMatrixDBSCT_Coeff_Full)
+    arrInTMatrix = []
+    arrOutTMatrix = []
+    with ThreadPoolExecutor() as executor:
+        for inputs, outputs in zip(plannedInput_TMatrix_Chopped, executor.map(func, plannedInput_TMatrix_Chopped)):
+            arrInTMatrix.append(inputs)
+            arrOutTMatrix.append(outputs)
+    ####################################
+    plannedInput_TMatrix_Out = []
+    plannedOutput_TMatrix_Out = []
+    for i in range(Division):
+        for j in range(len(arrInTMatrix[i])):
+            plannedInput_TMatrix_Out.append(arrInTMatrix[i][j])
 
-    In = [2.5, 1.3, 0.7, 0.2, 2100]
-    # Tolerance = [2, 2, 2, 2, 7]
-    X, ind = FN.getToleratedArray(inputData_Full, In, Tolerance, uniqueColumn)
-    out = GF.selectColumnsList(ind, ABS_Coeff_Full, Dimension=1)
-    A2 = griddata(X, out, In, rescale=True)
-    b = 3
+        for j in range(len(arrOutTMatrix[i][0])):
+            A = []
+            A.append(arrOutTMatrix[i][0][j])
+            A.append(arrOutTMatrix[i][1][j])
+            plannedOutput_TMatrix_Out.append(A)
+    ################################################################################################################
+    A = 3
+    ################################################################################################################
+    # TMatrix_ABS_CS, TMatrix_SCA_CS = TM.TmatrixInterpolator(FullMainDB=TMatrixDBInputData_Full, MainDBUniques=TMatrixDBUniqueColumn, ABS_MainDB=TMatrixDBABS_Coeff_Full, SCA_MainDB=TMatrixDBSCT_Coeff_Full, TargetArray=plannedInput_TMatrix)
+    ################################################################################################################
+    '''
+    TMatrixInputHeaders = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
+    TMatrixOutputHeaders = ['TMatrix_ABS_CRS', 'TMatrix_SCA_CRS', 'MLink']
+    C = []
+    counter = 1
+    for i in range(len(plannedInput_TMatrix)):
+        C.append([0.056 + counter * 0.001, 0.666, counter])
+        counter += 1
+    DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrixTableName, NameArray=TMatrixInputHeaders, Array=plannedInput_TMatrix)
+    DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrixTableName + "_out", NameArray=TMatrixOutputHeaders, Array=C)
+    DB.showAllTablesInDBSummary(DB_Info)
+
+    TMatrix_Input_Array.append([2.3, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
+    TMatrix_Input_Array.append([2.4, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
+    TMatrix_Input_Array.append([2.6, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
+    storedOutput_TMatrix1, plannedInput_TMatrix1 = FN.checkMethodDBforIndexes(INFO=DB_Info, TableName=TMatrixTableName, Header=TMatrixInputHeaders, Array=TMatrix_Input_Array)
+    '''
+    ################################################################################################################

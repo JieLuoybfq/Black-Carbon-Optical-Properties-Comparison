@@ -395,6 +395,17 @@ def readColwithColumnName(INFO, TableName, ColumnName, DBName=None):
         raise
 
 
+def getOutputRowByHash(INFO, TableName, Hash):
+    try:
+        Main = readRowwithColumnNameandValue(INFO=INFO, TableName=TableName, ColumnName="Hash", Value=Hash, isRowCount=False)
+        Output = readRowwithColumnNameandValue(INFO=INFO, TableName=TableName + "_out", ColumnName="MLink", Value=Main['ID_' + str(TableName)], isRowCount=False)
+        return Output
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
 ########################################################################################
 
 
