@@ -12,7 +12,7 @@ from decimal import Decimal
 def TmatrixInterpolator(FullMainDB, MainDBUniques, ABS_MainDB, SCA_MainDB, TargetArray):
     try:
 
-        Tolerance = [1, 2, 2, 2, 2]
+        Tolerance = [1, 3, 2, 2, 2]
         ABS_CS = []
         SCA_CS = []
         refinedInput, Area = TmatrixRefiner(TargetArray)

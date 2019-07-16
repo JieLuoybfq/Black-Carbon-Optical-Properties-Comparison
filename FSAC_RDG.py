@@ -50,9 +50,10 @@ def FSAC_RDG(Df, kf, R_RI, I_RL, WaveL_nm, dp, Np):
         Differential_Scattering_Cross_Section_Agg_um2 = Differential_Scattering_Cross_Section_Agg_meter * Decimal(10 ** (12))
 
         ########### Total Scattering
-        # Scattering_Cross_Section_Total_Agg = RDG_Total_Scattering(K=Wave_Number, N=Np, Dp=dp_meter, F=Soot_FM, D_RDG=Df, K_RDG=kf, Formula=2)
+        Scattering_Cross_Section_Total_Agg = RDG_Total_Scattering(K=Wave_Number, N=Np, Dp=dp_meter, F=Soot_FM, D_RDG=Df, K_RDG=kf, Formula=1)
+        Scattering_Cross_Section_Total_Agg_um2 = Scattering_Cross_Section_Total_Agg * Decimal(10 ** (12))
 
-        return Absorption_Cross_Section_Agg_um2, Differential_Scattering_Cross_Section_Agg_um2
+        return Absorption_Cross_Section_Agg_um2, Scattering_Cross_Section_Total_Agg_um2
 
 
     except Exception as e:
@@ -64,21 +65,21 @@ def RDG_Total_Scattering(K, N, Dp, F, D_RDG, K_RDG, Formula=1):
     try:
 
         if Formula == 1:  # Sorensen 2001
-            Monomer_Total = (8 / 3) * pi * (K ** 4) * ((Dp / 2) ** 6) * F
-            Rg = ((N / K_RDG) ** (1 / D_RDG)) * (Dp / 2)
-            G = (1 + ((4 / (3 * D_RDG)) * ((K * Rg) ** 2))) ** (-0.5 * D_RDG)
-            Aggregate_Total = (N ** 2) * Monomer_Total * G
+            Monomer_Total = (Decimal(8) / Decimal(3)) * Decimal(pi) * (K ** Decimal(4)) * ((Dp / Decimal(2)) ** Decimal(6)) * F
+            Rg = ((N / K_RDG) ** (Decimal(1) / D_RDG)) * (Dp / Decimal(2))
+            G = (Decimal(1) + ((Decimal(4) / (Decimal(3) * D_RDG)) * ((K * Rg) ** Decimal(2)))) ** (Decimal(-0.5) * D_RDG)
+            Aggregate_Total = (N ** Decimal(2)) * Monomer_Total * G
         if Formula == 2:  # Yang 2005
-            Monomer_Total = (8 / 3) * pi * (K ** 4) * ((Dp / 2) ** 6) * F
-            Rg = ((N / K_RDG) ** (1 / D_RDG)) * (Dp / 2)
-            Betha = 3 * D_RDG / (8 * (K * Rg) ** 2)
+            Monomer_Total = (Decimal(8) / Decimal(3)) * Decimal(pi) * (K ** Decimal(4)) * ((Dp / Decimal(2)) ** Decimal(6)) * F
+            Rg = ((N / K_RDG) ** (Decimal(1) / D_RDG)) * (Dp / Decimal(2))
+            Betha = Decimal(3) * D_RDG / (Decimal(8) * (K * Rg) ** Decimal(2))
             if Betha >= 1:
-                G = 1 - (2 * ((K * Rg) ** 2) / 3)
+                G = Decimal(1) - (Decimal(2) * ((K * Rg) ** Decimal(2)) / Decimal(3))
             elif Betha < 1:
-                G = ((Betha / 2) * (3 - 3 * Betha + 2 * (Betha ** 2))) - ((((K * Rg * Betha) ** 2) / 3) * (3 - 4 * Betha + 3 * (Betha ** 2))) + (
-                        ((2 * K * Rg) ** (-1 * D_RDG)) * ((3 / (2 - D_RDG)) - (12 / ((6 - D_RDG) * (4 - D_RDG))) - (3 * (Betha ** (1 - D_RDG / 2)) * ((1 / (2 - D_RDG)) - (2 * Betha / (4 - D_RDG)) + (2 * (Betha ** 2) / (6 - D_RDG))))))
+                G = ((Betha / Decimal(2)) * (Decimal(3) - Decimal(3) * Betha + Decimal(2) * (Betha ** Decimal(2)))) - ((((K * Rg * Betha) ** Decimal(2)) / Decimal(3)) * (Decimal(3) - Decimal(4) * Betha + Decimal(3) * (Betha ** Decimal(2)))) + (((Decimal(2) * K * Rg) ** (Decimal(-1) * D_RDG)) * (
+                        (Decimal(3) / (Decimal(2) - D_RDG)) - (Decimal(12) / ((Decimal(6) - D_RDG) * (Decimal(4) - D_RDG))) - (Decimal(3) * (Betha ** (Decimal(1) - D_RDG / Decimal(2))) * ((Decimal(1) / (Decimal(2) - D_RDG)) - (Decimal(2) * Betha / (Decimal(4) - D_RDG)) + (Decimal(2) * (Betha ** Decimal(2)) / (Decimal(6) - D_RDG))))))
 
-            Aggregate_Total = (N ** 2) * Monomer_Total * G
+            Aggregate_Total = (N ** Decimal(2)) * Monomer_Total * G
 
         return Aggregate_Total
 

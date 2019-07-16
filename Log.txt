@@ -1,0 +1,34 @@
+07/16/2019 06:30:02 AM, Execution failed on sql 'SELECT * FROM Raw_V1_Out': 1146 (42S02): Table 'bc_db_liu_v1.raw_v1_out' doesn't exist
+Traceback (most recent call last):
+  File "D:\ProgramData\Anaconda3\lib\site-packages\pandas\io\sql.py", line 1378, in execute
+    cur.execute(*args)
+  File "D:\ProgramData\Anaconda3\lib\site-packages\mysql\connector\cursor.py", line 569, in execute
+    self._handle_result(self._connection.cmd_query(stmt))
+  File "D:\ProgramData\Anaconda3\lib\site-packages\mysql\connector\connection.py", line 553, in cmd_query
+    result = self._handle_result(self._send_cmd(ServerCmd.QUERY, query))
+  File "D:\ProgramData\Anaconda3\lib\site-packages\mysql\connector\connection.py", line 442, in _handle_result
+    raise errors.get_exception(packet)
+mysql.connector.errors.ProgrammingError: 1146 (42S02): Table 'bc_db_liu_v1.raw_v1_out' doesn't exist
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\University\Thesis\BC-DB\Black-Carbon-Optical-Properties-Comparison\DBMethods.py", line 481, in dumpTableSetCSV
+    results = pandas.read_sql_query(query, mySQLDB)
+  File "D:\ProgramData\Anaconda3\lib\site-packages\pandas\io\sql.py", line 314, in read_sql_query
+    parse_dates=parse_dates, chunksize=chunksize)
+  File "D:\ProgramData\Anaconda3\lib\site-packages\pandas\io\sql.py", line 1413, in read_query
+    cursor = self.execute(*args)
+  File "D:\ProgramData\Anaconda3\lib\site-packages\pandas\io\sql.py", line 1390, in execute
+    raise_with_traceback(ex)
+  File "D:\ProgramData\Anaconda3\lib\site-packages\pandas\compat\__init__.py", line 404, in raise_with_traceback
+    raise exc.with_traceback(traceback)
+  File "D:\ProgramData\Anaconda3\lib\site-packages\pandas\io\sql.py", line 1378, in execute
+    cur.execute(*args)
+  File "D:\ProgramData\Anaconda3\lib\site-packages\mysql\connector\cursor.py", line 569, in execute
+    self._handle_result(self._connection.cmd_query(stmt))
+  File "D:\ProgramData\Anaconda3\lib\site-packages\mysql\connector\connection.py", line 553, in cmd_query
+    result = self._handle_result(self._send_cmd(ServerCmd.QUERY, query))
+  File "D:\ProgramData\Anaconda3\lib\site-packages\mysql\connector\connection.py", line 442, in _handle_result
+    raise errors.get_exception(packet)
+pandas.io.sql.DatabaseError: Execution failed on sql 'SELECT * FROM Raw_V1_Out': 1146 (42S02): Table 'bc_db_liu_v1.raw_v1_out' doesn't exist

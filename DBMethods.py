@@ -388,6 +388,7 @@ def readColwithColumnName(INFO, TableName, ColumnName, DBName=None):
             zipped_pairs = zip(Index, Target)
             z = [x for _, x in sorted(zipped_pairs)]
             return z
+
         mySQLDB = connectDB(INFO, DBName)
         cursor = mySQLDB.cursor(dictionary=True)
         cursor.execute("SELECT " + str(ColumnName) + ", " + "ID_" + str(TableName) + " FROM " + str(TableName))

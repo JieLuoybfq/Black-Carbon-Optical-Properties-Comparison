@@ -11,6 +11,7 @@ import TMatrix as TM
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import FSAC_RDG as FRDG
+from decimal import Decimal
 
 if __name__ == "__main__":
 
@@ -35,7 +36,7 @@ if __name__ == "__main__":
     ##############################################
     Error_Table_Name = "Error_V1"
     Error_Table_Input_Headers = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-    Error_Output_Headers = ['ERR_RDG_M_TMatrix_ABS_CRS', 'ERR_RDG_M_TMatrix_SCA_CRS']
+    Error_Output_Headers = ['ERR_RDG_M_TMatrix_ABS_CRS', 'ERR_RDG_M_TMatrix_SCA_CRS', 'ERR_RDG_M_TMatrix_ABS_CRS_Percent', 'ERR_RDG_M_TMatrix_SCA_CRS_Percent']
     DB.createTable(INFO=DB_Info, TableName=Error_Table_Name, arrHeaderNamesInput=Error_Table_Input_Headers, arrHeaderNamesOutput=Error_Output_Headers)
     ################################################################################################################ DB Control
     # DB.createDB(INFO=DB_Info)
@@ -46,9 +47,7 @@ if __name__ == "__main__":
     # DB.reinitializeDB(DB_Info)
     # DB.dumpDB(INFO=DB_Info, FileAddress=GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE'], FileName=GF.getDateandTimeUTC(), Extension="sql.gz"))
     # DB.loadDB(INFO=DB_Info, FileAddress=GF.findLatestFile(GF.getFilesNameAddressinFolder(GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE']), Extension="sql.gz")))
-    # tableNameCSV = TMatrix_Table_Name
-    # CSV_Address = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_CSV'], FileName=GF.getDateandTimeUTC() + "_TN_" + str(tableNameCSV), Extension="csv")
-    # DB.dumpTableCSV(INFO=DB_Info, TableName=TMatrix_Table_Name, Address=CSV_Address)
+    # DB.dumpTableSetCSV(INFO=DB_Info, TableName=Error_Table_Name, AddressMain=appDirectory)
     ################################################################################################################
     ################################################################################################################
     arrAgg_Fractal_Dimension = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_DIMENSION_CENTER'], Width=AGG_Info['AGG_FRACTAL_DIMENSION_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'], digit=2)
@@ -120,12 +119,7 @@ if __name__ == "__main__":
     ################################################################################################################
     # Check with Databases
     arrVersion_Array = FN.createConstantArray(Number=Version, Howmany=len(arrPossible_Indexes))
-    # arrIndex_Array = FN.createIndexArray(0, len=len(arrVersion_Array))
-    # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-    # TMatrix_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     TMatrix_Main_Input_Array = FN.joinArray(arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
-    # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-    # RDG_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     RDG_Main_Input_Array = FN.joinArray(arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
 
     TMatrix_DB_Input_Found, TMatrix_DB_Output_Found, TMatrix_Planned_Input, TMatrix_New = FN.checkMethodDBforTMatrixIndexes(INFO=DB_Info, TableName=TMatrix_Table_Name, Header=TMatrix_Table_Input_Headers, Array=TMatrix_Main_Input_Array)
@@ -166,7 +160,8 @@ if __name__ == "__main__":
             old_Counter += 1
 
     if RDG_Main_Input_Array != RDG_Final_Input:
-        raise Exception('change in TMatrix input: Database!')
+        logging.error("change in RDG input: Database: " + "\n" + "RDG_Main_Input_Array---" + str(RDG_Main_Input_Array) + "\n" + "RDG_Final_Input---" + str(RDG_Final_Input))
+        raise Exception('change in RDG input: Database')
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
@@ -227,20 +222,72 @@ if __name__ == "__main__":
                 TMatrix_Final_Output.append(TMatrix_DB_Output_Found[old_Counter])
                 old_Counter += 1
     else:
-        raise Exception('change in TMatrix input: Interpolation!')
+        logging.error("change in T-Matrix input: Interpolation: " + "\n" + "TMatrix_Interpolation_Input---" + str(TMatrix_Interpolation_Input) + "\n" + "TMatrix_Planned_Input---" + str(TMatrix_Planned_Input))
+        raise Exception('change in TMatrix input: Interpolation')
 
     if TMatrix_Main_Input_Array != TMatrix_Final_Input:
-        raise Exception('change in TMatrix input: Database!')
+        logging.error("change in T-Matrix input: Database: " + "\n" + "TMatrix_Main_Input_Array---" + str(TMatrix_Main_Input_Array) + "\n" + "TMatrix_Final_Input---" + str(TMatrix_Final_Input))
+        raise Exception('change in T-Matrix input: Database')
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
-    if TMatrix_Interpolation_Input and TMatrix_Interpolation_Output:
-        LastID = DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name, NameArray=TMatrix_Table_Input_Headers, giveID=True, Array=TMatrix_Interpolation_Input)
-        TMatrix_Interpolation_Output_M = FN.addMlinkToArray(Array=TMatrix_Interpolation_Output, LastID=LastID)
-        TMatrix_Table_Output_Headers.append('MLink')
-        DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name + "_Out", NameArray=TMatrix_Table_Output_Headers, Array=TMatrix_Interpolation_Output_M)
+    if RDG_Final_Input != TMatrix_Final_Input:
+        logging.error("discrepancy between RDG and T-Matrix inputs: Array " + "\n" + "RDG_Final_Input---" + str(RDG_Final_Input) + "\n" + "TMatrix_Final_Input---" + str(TMatrix_Final_Input))
+        raise Exception('discrepancy between RDG and T-Matrix inputs: Array')
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    Error_Final_Input = []
+    Error_Final_Output = []
+    for i in range(len(RDG_Final_Output)):
+        arrErr = []
+        arrErr.append(RDG_Final_Output[i][0] - TMatrix_Final_Output[i][0])
+        arrErr.append(RDG_Final_Output[i][1] - TMatrix_Final_Output[i][1])
+        arrErr.append((RDG_Final_Output[i][0] - TMatrix_Final_Output[i][0]) * Decimal(100) / TMatrix_Final_Output[i][0])
+        arrErr.append((RDG_Final_Output[i][1] - TMatrix_Final_Output[i][1]) * Decimal(100) / TMatrix_Final_Output[i][1])
+        Error_Final_Output.append(arrErr)
+        Error_Final_Input.append(RDG_Final_Input[i][:])
+    ####################################
+    if Error_Final_Input and Error_Final_Output:
+        LastID = DB.insertArrayIntoTable(INFO=DB_Info, TableName=Error_Table_Name, NameArray=Error_Table_Input_Headers, giveID=True, Array=Error_Final_Input)
+        Error_Final_Output_M = FN.addMlinkToArray(Array=Error_Final_Output, LastID=LastID)
+        Error_Output_Headers.append('MLink')
+        DB.insertArrayIntoTable(INFO=DB_Info, TableName=Error_Table_Name + "_Out", NameArray=Error_Output_Headers, Array=Error_Final_Output_M)
     DB.showAllTablesInDBSummary(DB_Info)
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    # Selected Error array
+    address_Graph_Real_Selected = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Selected_Points_Real_Error", Extension="jpg")
+    address_Graph_Percent_Selected = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Selected_Points_Percent_Error", Extension="jpg")
+
+    ABS_Error_Real_Selected = GF.selectColumnsList(ColumnIndex=[0], List=Error_Final_Output)
+    SCA_Error_Real_Selected = GF.selectColumnsList(ColumnIndex=[1], List=Error_Final_Output)
+    ABS_Error_Percent_Selected = GF.selectColumnsList(ColumnIndex=[2], List=Error_Final_Output)
+    SCA_Error_Percent_Selected = GF.selectColumnsList(ColumnIndex=[3], List=Error_Final_Output)
+    FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Real_Selected, X_Array=ABS_Error_Real_Selected, Y_array=SCA_Error_Real_Selected, X_Label="Absorption Difference(um" + "$^{}$".format(2) + ")", Y_label="Scattering Difference(um" + "$^{}$".format(2) + ")", Plot_Title="RDG and T-Matrix Real Difference")
+    FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Percent_Selected, X_Array=ABS_Error_Percent_Selected, Y_array=SCA_Error_Percent_Selected, tickLabelStyle='plain', X_Label="Absorption Difference (%)", Y_label="Scattering Difference (%)", Plot_Title="RDG and T-Matrix Percentage Difference")
+    ################################################
+    # Full Error Array
+    address_Graph_Real_Full = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Full_Points_Real_Error", Extension="jpg")
+    address_Graph_Percent_Full = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Full_Points_Percent_Error", Extension="jpg")
+
+    ABS_Error_Real_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_ABS_CRS")
+    SCA_Error_Real_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_SCA_CRS")
+    ABS_Error_Percent_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_ABS_CRS_Percent")
+    SCA_Error_Percent_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_SCA_CRS_Percent")
+    FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Real_Full, X_Array=ABS_Error_Real_Full, Y_array=SCA_Error_Real_Full, X_Label="Absorption Difference(um" + "$^{}$".format(2) + ")", Y_label="Scattering Difference(um" + "$^{}$".format(2) + ")", Plot_Title="RDG and T-Matrix Real Difference")
+    FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Percent_Full, X_Array=ABS_Error_Percent_Full, Y_array=SCA_Error_Percent_Full, tickLabelStyle='plain', X_Label="Absorption Difference (%)", Y_label="Scattering Difference (%)", Plot_Title="RDG and T-Matrix Percentage Difference")
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
 
     A = 51

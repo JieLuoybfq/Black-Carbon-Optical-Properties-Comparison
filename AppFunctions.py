@@ -204,6 +204,45 @@ def TMatrixOutputDictoArray(Dictionary):
         raise
 
 
+def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabelStyle='sci', X_Min=None, X_Max=None, Y_Min=None, Y_Max=None, X_Label=None, Y_label=None, Plot_Title=None, label_font_size=12, Plot_Title_Size=12, Figure_DPI=900, alpha_Y=0.6, Marker_Size=3):
+    try:
+
+        fig, ax1 = plt.subplots()
+        plt.ticklabel_format(style=tickLabelStyle, axis='x', scilimits=(0, 0))
+        plt.ticklabel_format(style=tickLabelStyle, axis='y', scilimits=(0, 0))
+
+        if X_Min == None:
+            X_Min = float(min(X_Array))
+            X_Min = X_Min - (abs(X_Min) * 0.2)
+        if X_Max == None:
+            X_Max = float(max(X_Array))
+            X_Max = X_Max + (abs(X_Max) * 0.2)
+        if Y_Min == None:
+            Y_Min = float(min(Y_array))
+            Y_Min = Y_Min - (abs(Y_Min) * 0.2)
+        if Y_Max == None:
+            Y_Max = float(max(Y_array))
+            Y_Max = Y_Max + (abs(Y_Max) * 0.2)
+
+        ax1.scatter(X_Array, Y_array, alpha=alpha_Y)
+        if X_Label != None:
+            ax1.set_xlabel(X_Label, fontsize=label_font_size)
+        if Y_label != None:
+            ax1.set_ylabel(Y_label, fontsize=label_font_size)
+        ax1.set_xlim(X_Min, X_Max)
+        ax1.set_ylim(Y_Min, Y_Max)
+        ax1.grid(True, which='major', axis="both", alpha=0.5)
+        if Plot_Title != None:
+            plt.title(Plot_Title, fontsize=Plot_Title_Size, y=1.0)
+        plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
+        plt.clf()
+        plt.close()
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
 def checkMethodDBforTMatrixIndexes(INFO, TableName, Header, Array):
     try:
 
