@@ -14,11 +14,12 @@ import FSAC_RDG as FRDG
 from decimal import Decimal
 
 if __name__ == "__main__":
-
+    logging.info("App Started.")
     CP.readLogConfig()
     DB_Info = CP.readConfigToDict(SectionName="DatabaseInfo")
     FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
     AGG_Info = CP.readConfigToDict(SectionName="AggregateDetails", ConvertParseTo='float', hasComment=True)
+    logging.info("config retrieved.")
     #######################
     appDirectory = GF.getRootDirectory()
     #######################
@@ -47,6 +48,8 @@ if __name__ == "__main__":
     # DB.reinitializeDB(DB_Info)
     # DB.dumpDB(INFO=DB_Info, FileAddress=GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE'], FileName=GF.getDateandTimeUTC(), Extension="sql.gz"))
     # DB.loadDB(INFO=DB_Info, FileAddress=GF.findLatestFile(GF.getFilesNameAddressinFolder(GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE']), Extension="sql.gz")))
+    # DB.dumpTableSetCSV(INFO=DB_Info, TableName=RDG_Table_Name, AddressMain=appDirectory)
+    # DB.dumpTableSetCSV(INFO=DB_Info, TableName=TMatrix_Table_Name, AddressMain=appDirectory)
     # DB.dumpTableSetCSV(INFO=DB_Info, TableName=Error_Table_Name, AddressMain=appDirectory)
     ################################################################################################################
     ################################################################################################################
@@ -87,7 +90,7 @@ if __name__ == "__main__":
     arrAgg_Prefactor_Projected_Area_Random = FN.getRandomFromArr(Array=arrAgg_Prefactor_Projected_Area, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
     arrAgg_Exponent_Projected_Area_Random = FN.getRandomFromArr(Array=arrAgg_Exponent_Projected_Area, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
     arrAgg_Primary_Number_Random = FN.getRandomFromArr(Array=arrAgg_Primary_Number, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-
+    logging.info("Random parameter generated.")
     ################################################################################################################
     # Check Boundary for Inputs
     arrAgg_Monomer_Parameter_Random = FN.calcMonomerParameter(dpArray=arrAgg_Primary_Diameter_Random, WaveLengthArray=arrAgg_WLength_Random)
@@ -116,6 +119,7 @@ if __name__ == "__main__":
     arrPrimary_Diameter_Possible = FN.getPossibleArray(Array=arrAgg_Primary_Diameter_Random, Indexes=arrPossible_Indexes)
     arrWLength_Possible = FN.getPossibleArray(Array=arrAgg_WLength_Random, Indexes=arrPossible_Indexes)
     #### to do add more if needed
+    logging.info("Boundary issued.")
     ################################################################################################################
     # Check with Databases
     arrVersion_Array = FN.createConstantArray(Number=Version, Howmany=len(arrPossible_Indexes))
@@ -124,11 +128,13 @@ if __name__ == "__main__":
 
     TMatrix_DB_Input_Found, TMatrix_DB_Output_Found, TMatrix_Planned_Input, TMatrix_New = FN.checkMethodDBforTMatrixIndexes(INFO=DB_Info, TableName=TMatrix_Table_Name, Header=TMatrix_Table_Input_Headers, Array=TMatrix_Main_Input_Array)
     RDG_DB_Input_Found, RDG_DB_Output_Found, RDG_Planned_Input, RDG_New = FN.checkMethodDBforRDGIndexes(INFO=DB_Info, TableName=RDG_Table_Name, Header=RDG_Table_Input_Headers, Array=RDG_Main_Input_Array)
+    logging.info("DB old and new ones retrieved.")
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
+    logging.info("RDG started.")
     RDG_Planned_Output = []
     for i in range(len(RDG_Planned_Input)):
         arrRDG = []
@@ -162,11 +168,13 @@ if __name__ == "__main__":
     if RDG_Main_Input_Array != RDG_Final_Input:
         logging.error("change in RDG input: Database: " + "\n" + "RDG_Main_Input_Array---" + str(RDG_Main_Input_Array) + "\n" + "RDG_Final_Input---" + str(RDG_Final_Input))
         raise Exception('change in RDG input: Database')
+    logging.info("RDG finished retrieved.")
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
+    logging.info("T-Matrix started.")
     TMatrix_DB_Main_TableName = 'Raw_V1'
 
     TMatrix_DB_Main_Column_Name, TMatrix_DB_Main_Data_Full = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrix_DB_Main_TableName)
@@ -228,6 +236,7 @@ if __name__ == "__main__":
     if TMatrix_Main_Input_Array != TMatrix_Final_Input:
         logging.error("change in T-Matrix input: Database: " + "\n" + "TMatrix_Main_Input_Array---" + str(TMatrix_Main_Input_Array) + "\n" + "TMatrix_Final_Input---" + str(TMatrix_Final_Input))
         raise Exception('change in T-Matrix input: Database')
+    logging.info("T-Matrix Finished.")
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
@@ -241,6 +250,7 @@ if __name__ == "__main__":
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
+    logging.info("Error calculation started.")
     Error_Final_Input = []
     Error_Final_Output = []
     for i in range(len(RDG_Final_Output)):
@@ -258,11 +268,13 @@ if __name__ == "__main__":
         Error_Output_Headers.append('MLink')
         DB.insertArrayIntoTable(INFO=DB_Info, TableName=Error_Table_Name + "_Out", NameArray=Error_Output_Headers, Array=Error_Final_Output_M)
     DB.showAllTablesInDBSummary(DB_Info)
+    logging.info("Error calculation finished.")
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
+    logging.info("Plotting error calculation started.")
     # Selected Error array
     address_Graph_Real_Selected = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Selected_Points_Real_Error", Extension="jpg")
     address_Graph_Percent_Selected = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Selected_Points_Percent_Error", Extension="jpg")
@@ -284,10 +296,11 @@ if __name__ == "__main__":
     SCA_Error_Percent_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_SCA_CRS_Percent")
     FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Real_Full, X_Array=ABS_Error_Real_Full, Y_array=SCA_Error_Real_Full, X_Label="Absorption Difference(um" + "$^{}$".format(2) + ")", Y_label="Scattering Difference(um" + "$^{}$".format(2) + ")", Plot_Title="RDG and T-Matrix Real Difference")
     FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Percent_Full, X_Array=ABS_Error_Percent_Full, Y_array=SCA_Error_Percent_Full, tickLabelStyle='plain', X_Label="Absorption Difference (%)", Y_label="Scattering Difference (%)", Plot_Title="RDG and T-Matrix Percentage Difference")
+    logging.info("Plotting error calculation finished.")
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
-
+    logging.info("App finished.")
     A = 51
