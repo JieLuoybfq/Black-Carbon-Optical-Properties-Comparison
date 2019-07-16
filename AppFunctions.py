@@ -204,7 +204,7 @@ def TMatrixOutputDictoArray(Dictionary):
         raise
 
 
-def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabelStyle='sci', X_Min=None, X_Max=None, Y_Min=None, Y_Max=None, X_Label=None, Y_label=None, Plot_Title=None, label_font_size=12, Plot_Title_Size=12, Figure_DPI=900, alpha_Y=0.6, Marker_Size=3):
+def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabelStyle='sci', X_Min=None, X_Max=None, Y_Min=None, Y_Max=None, X_Label=None, Y_label=None, Plot_Title=None, label_font_size=12, Plot_Title_Size=12, Figure_DPI=1000, alpha_Y=0.35, Marker_Size=3):
     try:
 
         fig, ax1 = plt.subplots()
@@ -224,7 +224,7 @@ def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabel
             Y_Max = float(max(Y_array))
             Y_Max = Y_Max + (abs(Y_Max) * 0.2)
 
-        ax1.scatter(X_Array, Y_array, alpha=alpha_Y)
+        ax1.scatter(X_Array, Y_array, s=8, alpha=alpha_Y)
         if X_Label != None:
             ax1.set_xlabel(X_Label, fontsize=label_font_size)
         if Y_label != None:
