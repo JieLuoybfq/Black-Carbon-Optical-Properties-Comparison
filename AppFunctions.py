@@ -124,13 +124,13 @@ def checkIndex(tolerance, MainIndex, max):
         raise
 
 
-def createRandomNormalArr(Center, Width, Number):
+def createRandomNormalArr(Center, Width, Number, digit=3):
     try:
         A = np.random.normal(Center, Width, int(Number))
         length = len(A)
         B = []
         for i in range(length):
-            B.append(round(Decimal(A[i]), 3))
+            B.append(round(Decimal(A[i]), digit))
         return B
 
     except Exception as e:
@@ -192,21 +192,36 @@ def checkRDGDBforIndexes(*args):
         raise
 
 
-def checkMethodDBforIndexes(INFO, TableName, Header, Array):
+def TMatrixOutputDictoArray(Dictionary):
+    try:
+        A = []
+        A.append(Dictionary['TMatrix_ABS_CRS'])
+        A.append(Dictionary['TMatrix_SCA_CRS'])
+        return A
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def checkMethodDBforTMatrixIndexes(INFO, TableName, Header, Array):
     try:
 
         Found = isNewArrayDB(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
         Newinput = []
         OldOutput = []
         OldInput = []
+        Indexes = []
         for i in range(len(Found)):
             if Found[i] == -1:
                 Newinput.append(Array[i][:])
+                Indexes.append(-1)
             else:
-                OldOutput.append(DB.getOutputRowByHash(INFO=INFO, TableName=TableName, Hash=Found[i]))
+                OldOutput.append(TMatrixOutputDictoArray(DB.getOutputRowByHash(INFO=INFO, TableName=TableName, Hash=Found[i])))
                 OldInput.append(Array[i][:])
+                Indexes.append(1)
 
-        return OldInput, OldOutput, Newinput
+        return OldInput, OldOutput, Newinput, Indexes
 
     except Exception as e:
         logging.exception(e)
@@ -234,6 +249,18 @@ def createConstantArray(Number, Howmany):
         B = []
         for i in range(Howmany):
             B.append(round(Decimal(Number), 1))
+        return B
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def createIndexArray(start, len):
+    try:
+        B = []
+        for i in range(start, len):
+            B.append(int(i))
         return B
 
     except Exception as e:
@@ -280,6 +307,25 @@ def getGoodIndexes(Array, Bound):
         raise
 
 
+def addMlinkToArray(Array, LastID):
+    try:
+        arrLen = len(Array)
+        arrCol = len(Array[0])
+        MainArr = []
+        Mlink = list(range(LastID, arrLen + LastID))
+        for i in range(arrLen):
+            A = []
+            for j in range(arrCol):
+                A.append(Array[i][j])
+            A.append(Mlink[i])
+            MainArr.append(A)
+        return MainArr
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
 def getToleratedArray(Array, Input, Tolerance, uniques):
     try:
         B = []
@@ -307,18 +353,6 @@ def getToleratedArray(Array, Input, Tolerance, uniques):
                 index.append(i)
 
         return B, index
-        '''
-        for i in range(rows):
-            k = 0
-            for j in range(col):
-                if (Array[i][j] >= Input[j] - Tolerance[j]) and (Array[i][j] <= Input[j] + Tolerance[j]):
-                    k += 1
-            if k == col:
-                B.append(Array[i][:])
-                index.append(i)
-
-        return B, index
-        '''
     except Exception as e:
         logging.exception(e)
         raise

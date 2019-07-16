@@ -25,7 +25,6 @@ def TmatrixInterpolator(FullMainDB, MainDBUniques, ABS_MainDB, SCA_MainDB, Targe
             SCA_Interpolated = griddata(XXX, SCA_Coeff_Full, input, rescale=True)
             ABS_CS.append(Decimal(ABS_Interpolated[0]) * Area[i])
             SCA_CS.append(Decimal(SCA_Interpolated[0]) * Area[i])
-            # print(input, "---", TargetArray[i], "---", "Abs:", ABS_CS[i], "Sca:", SCA_CS[i], "Area:", Area[i], "\n")
 
         return ABS_CS, SCA_CS
 

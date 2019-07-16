@@ -155,6 +155,7 @@ def createTable(INFO, TableName, arrHeaderNamesInput, DataType="DECIMAL(40,30)",
                      + "Hash varchar(255) AS (" + str(HashType) + "(CONCAT(" + S_hash + "))), "
                      + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
                      + "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, "
+                     + "UNIQUE(Hash), "
                      + "PRIMARY KEY (ID_" + str(TableName) + "))"
                      + " ENGINE=InnoDB"
                      )
@@ -183,6 +184,7 @@ def createTable(INFO, TableName, arrHeaderNamesInput, DataType="DECIMAL(40,30)",
                      + " (ID_" + shadowTableName + " INT NOT NULL AUTO_INCREMENT, "
                      + S_in
                      + "Hash varchar(255) AS (SHA1(CONCAT(" + S_hash + "))), "
+                     + "UNIQUE(Hash), "
                      + "PRIMARY KEY (ID_" + shadowTableName + "))"
                      + " ENGINE=InnoDB"
                      )
@@ -291,7 +293,7 @@ def insertRowIntoTable(INFO, TableName, ValuesDictionary, giveID=False, DBName=N
         raise
 
 
-def insertArrayIntoTable(INFO, TableName, NameArray, Array, DBName=None):
+def insertArrayIntoTable(INFO, TableName, NameArray, Array, giveID=False, DBName=None):
     try:
         mySQLDB = connectDB(INFO, DBName)
         cursor = mySQLDB.cursor()
@@ -307,11 +309,12 @@ def insertArrayIntoTable(INFO, TableName, NameArray, Array, DBName=None):
         query = ("INSERT INTO " + str(TableName) + S1 + "VALUES" + S2)
 
         cursor.executemany(query, Array)
+        ID = cursor.lastrowid
         mySQLDB.commit()
         cursor.close()
         mySQLDB.close()
-
-
+        if giveID:
+            return ID
     except Exception as e:
         logging.exception(e)
         raise
@@ -381,13 +384,21 @@ def readRowwithColumnNameandValue(INFO, TableName, ColumnName, Value, isRowCount
 
 def readColwithColumnName(INFO, TableName, ColumnName, DBName=None):
     try:
+        def sortList(Target, Index):
+            zipped_pairs = zip(Index, Target)
+            z = [x for _, x in sorted(zipped_pairs)]
+            return z
         mySQLDB = connectDB(INFO, DBName)
         cursor = mySQLDB.cursor(dictionary=True)
-        cursor.execute("SELECT " + str(ColumnName) + " FROM " + str(TableName))
+        cursor.execute("SELECT " + str(ColumnName) + ", " + "ID_" + str(TableName) + " FROM " + str(TableName))
         # sql = ('select field1, field2 from table')
-        List = []
+        List1 = []
+        ID = []
         for rows in cursor:
-            List.append(rows[str(ColumnName)])
+            List1.append(rows[str(ColumnName)])
+            ID.append(rows["ID_" + str(TableName)])
+        List = sortList(List1, ID)
+
         return List
 
     except Exception as e:
