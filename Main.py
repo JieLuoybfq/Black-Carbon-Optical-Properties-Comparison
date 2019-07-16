@@ -10,6 +10,7 @@ import AppFunctions as FN
 import TMatrix as TM
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import FSAC_RDG as FRDG
 
 if __name__ == "__main__":
     CP.readLogConfig()
@@ -129,10 +130,10 @@ if __name__ == "__main__":
     arrVersion_Array = FN.createConstantArray(Number=Version, Howmany=len(arrPossible_Indexes))
     arrIndex_Array = FN.createIndexArray(0, len=len(arrVersion_Array))
     # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-    TMatrix_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
+    # TMatrix_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     TMatrix_Main_Input_Array = FN.joinArray(arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-    RDG_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
+    # RDG_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     RDG_Main_Input_Array = FN.joinArray(arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     '''
     TMatrix_Main_Input_Array.append([2.3, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
@@ -141,9 +142,49 @@ if __name__ == "__main__":
     TMatrix_Main_Input_Array.append([2.1, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
     '''
     TMatrix_DB_Input_Found, TMatrix_DB_Output_Found, TMatrix_Planned_Input, TMatrix_New = FN.checkMethodDBforTMatrixIndexes(INFO=DB_Info, TableName=TMatrix_Table_Name, Header=TMatrix_Table_Input_Headers, Array=TMatrix_Main_Input_Array)
-    # storedInput_RDG, storedOutput_RDG, plannedInput_RDG = FN.checkMethodDBforTMatrixIndexes(INFO=DB_Info, TableName=RDG_Table_Name, Header=RDG_Table_Input_Headers, Array=RDG_Main_Input_Array)
+    RDG_DB_Input_Found, RDG_DB_Output_Found, RDG_Planned_Input, RDG_New = FN.checkMethodDBforRDGIndexes(INFO=DB_Info, TableName=RDG_Table_Name, Header=RDG_Table_Input_Headers, Array=RDG_Main_Input_Array)
     ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    RDG_Planned_Output = []
+    for i in range(len(RDG_Planned_Input)):
+        arrRDG = []
+        rDG_ABS, rDG_SCA = FRDG.FSAC_RDG(Df=RDG_Planned_Input[i][0], kf=RDG_Planned_Input[i][1], R_RI=RDG_Planned_Input[i][2], I_RL=RDG_Planned_Input[i][3], WaveL_nm=RDG_Planned_Input[i][4], dp=RDG_Planned_Input[i][5], Np=RDG_Planned_Input[i][6])
+        arrRDG.append(rDG_ABS)
+        arrRDG.append(rDG_SCA)
+        RDG_Planned_Output.append(arrRDG)
 
+    ####################################
+    if RDG_Planned_Input and RDG_Planned_Output:
+        LastID = DB.insertArrayIntoTable(INFO=DB_Info, TableName=RDG_Table_Name, NameArray=RDG_Table_Input_Headers, giveID=True, Array=RDG_Planned_Input)
+        RDG_Planned_Output_M = FN.addMlinkToArray(Array=RDG_Planned_Output, LastID=LastID)
+        RDG_Table_Output_Headers.append('MLink')
+        DB.insertArrayIntoTable(INFO=DB_Info, TableName=RDG_Table_Name + "_Out", NameArray=RDG_Table_Output_Headers, Array=RDG_Planned_Output_M)
+    DB.showAllTablesInDBSummary(DB_Info)
+    ################################################################################################################
+    RDG_Final_Input = []
+    RDG_Final_Output = []
+    old_Counter = 0
+    new_Counter = 0
+    for i in range(len(RDG_New)):
+        if RDG_New[i] == -1:
+            RDG_Final_Input.append(RDG_Planned_Input[new_Counter])
+            RDG_Final_Output.append(RDG_Planned_Output[new_Counter])
+            new_Counter += 1
+        elif RDG_New[i] == 1:
+            RDG_Final_Input.append(RDG_DB_Input_Found[old_Counter])
+            RDG_Final_Output.append(RDG_DB_Output_Found[old_Counter])
+            old_Counter += 1
+
+    if RDG_Main_Input_Array != RDG_Final_Input:
+        raise Exception('change in TMatrix input: Database!')
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
     TMatrix_DB_Main_TableName = 'Raw_V1'
 
     TMatrix_DB_Main_Column_Name, TMatrix_DB_Main_Data_Full = DB.readAllRowsfromTable(INFO=DB_Info, TableName=TMatrix_DB_Main_TableName)
@@ -203,9 +244,9 @@ if __name__ == "__main__":
 
     if TMatrix_Main_Input_Array != TMatrix_Final_Input:
         raise Exception('change in TMatrix input: Database!')
-
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
+    ################################################################################################################
     ################################################################################################################
     A = 51
-    ################################################################################################################
-    # TMatrix_ABS_CS, TMatrix_SCA_CS = TM.TmatrixInterpolator(FullMainDB=TMatrixDBInputData_Full, MainDBUniques=TMatrixDBUniqueColumn, ABS_MainDB=TMatrixDBABS_Coeff_Full, SCA_MainDB=TMatrixDBSCT_Coeff_Full, TargetArray=plannedInput_TMatrix)
-    ################################################################################################################

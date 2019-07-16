@@ -228,6 +228,42 @@ def checkMethodDBforTMatrixIndexes(INFO, TableName, Header, Array):
         raise
 
 
+def RDGOutputDictoArray(Dictionary):
+    try:
+        A = []
+        A.append(Dictionary['RDG_ABS_CRS'])
+        A.append(Dictionary['RDG_SCA_CRS'])
+        return A
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def checkMethodDBforRDGIndexes(INFO, TableName, Header, Array):
+    try:
+
+        Found = isNewArrayDB(INFO=INFO, TableName=TableName, Header=Header, Array=Array)
+        Newinput = []
+        OldOutput = []
+        OldInput = []
+        Indexes = []
+        for i in range(len(Found)):
+            if Found[i] == -1:
+                Newinput.append(Array[i][:])
+                Indexes.append(-1)
+            else:
+                OldOutput.append(RDGOutputDictoArray(DB.getOutputRowByHash(INFO=INFO, TableName=TableName, Hash=Found[i])))
+                OldInput.append(Array[i][:])
+                Indexes.append(1)
+
+        return OldInput, OldOutput, Newinput, Indexes
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
 def joinArray(*args):
     try:
         rows = len(args[0])
