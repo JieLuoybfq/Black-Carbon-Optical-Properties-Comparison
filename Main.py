@@ -44,6 +44,8 @@ if __name__ == "__main__":
     # DB.reinitializeDB(DB_Info)
     # DB.dumpDB(INFO=DB_Info, FileAddress=GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE'], FileName=GF.getDateandTimeUTC(), Extension="sql.gz"))
     # DB.loadDB(INFO=DB_Info, FileAddress=GF.findLatestFile(GF.getFilesNameAddressinFolder(GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE']), Extension="sql.gz")))
+    # CSV_Address = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_CSV'], FileName=GF.getDateandTimeUTC(), Extension="csv")
+    # DB.dumpTableCSV(INFO=DB_Info, TableName=TMatrix_Table_Name, Address=CSV_Address)
     ################################################################################################################
     '''
     TMatrix_Table_Input_Headers1 = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
@@ -197,7 +199,10 @@ if __name__ == "__main__":
                 TMatrix_Final_Output.append(TMatrix_DB_Output_Found[old_Counter])
                 old_Counter += 1
     else:
-        raise Exception('change in TMatrix input!')
+        raise Exception('change in TMatrix input: Interpolation!')
+
+    if TMatrix_Main_Input_Array != TMatrix_Final_Input:
+        raise Exception('change in TMatrix input: Database!')
 
     ################################################################################################################
     A = 51
