@@ -14,8 +14,8 @@ import FSAC_RDG as FRDG
 from decimal import Decimal
 
 if __name__ == "__main__":
-    logging.info("App Started.")
     CP.readLogConfig()
+    logging.info("App Started.")
     DB_Info = CP.readConfigToDict(SectionName="DatabaseInfo")
     FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
     AGG_Info = CP.readConfigToDict(SectionName="AggregateDetails", ConvertParseTo='float', hasComment=True)

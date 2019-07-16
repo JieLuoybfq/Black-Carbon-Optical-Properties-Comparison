@@ -1,0 +1,2 @@
+07/16/2019 02:37:16 PM, App Started.
+07/16/2019 02:37:16 PM, config retrieved.
