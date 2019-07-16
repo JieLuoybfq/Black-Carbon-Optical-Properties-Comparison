@@ -13,6 +13,7 @@ from functools import partial
 import FSAC_RDG as FRDG
 
 if __name__ == "__main__":
+
     CP.readLogConfig()
     DB_Info = CP.readConfigToDict(SectionName="DatabaseInfo")
     FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
@@ -21,42 +22,34 @@ if __name__ == "__main__":
     appDirectory = GF.getRootDirectory()
     #######################
     saveHistogram = True
-    ################################################################################################################
+    ##############################################
     RDG_Table_Name = "RDG_V1"
     RDG_Table_Input_Headers = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
     RDG_Table_Output_Headers = ['RDG_ABS_CRS', 'RDG_SCA_CRS']
     DB.createTable(INFO=DB_Info, TableName=RDG_Table_Name, arrHeaderNamesInput=RDG_Table_Input_Headers, arrHeaderNamesOutput=RDG_Table_Output_Headers)
-    ################################################################################################################
+    ##############################################
     TMatrix_Table_Name = "TMatrix_V1"
     TMatrix_Table_Input_Headers = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
     TMatrix_Table_Output_Headers = ['TMatrix_ABS_CRS', 'TMatrix_SCA_CRS']
     DB.createTable(INFO=DB_Info, TableName=TMatrix_Table_Name, arrHeaderNamesInput=TMatrix_Table_Input_Headers, arrHeaderNamesOutput=TMatrix_Table_Output_Headers)
-    ################################################################################################################
+    ##############################################
     Error_Table_Name = "Error_V1"
-    Error_Table_Input_Headers = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'sigma', 'Version']
+    Error_Table_Input_Headers = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
     Error_Output_Headers = ['ERR_RDG_M_TMatrix_ABS_CRS', 'ERR_RDG_M_TMatrix_SCA_CRS']
     DB.createTable(INFO=DB_Info, TableName=Error_Table_Name, arrHeaderNamesInput=Error_Table_Input_Headers, arrHeaderNamesOutput=Error_Output_Headers)
-    ################################################################################################################
+    ################################################################################################################ DB Control
     # DB.createDB(INFO=DB_Info)
     DB.showAllTablesInDBSummary(DB_Info)
-    # DB.dropTableSet(DB_Info,RDG_Table_Name)
+    # DB.dropTableSet(DB_Info, RDG_Table_Name)
     # DB.dropTableSet(DB_Info, TMatrix_Table_Name)
     # DB.dropTableSet(DB_Info, Error_Table_Name)
     # DB.reinitializeDB(DB_Info)
     # DB.dumpDB(INFO=DB_Info, FileAddress=GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE'], FileName=GF.getDateandTimeUTC(), Extension="sql.gz"))
     # DB.loadDB(INFO=DB_Info, FileAddress=GF.findLatestFile(GF.getFilesNameAddressinFolder(GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE']), Extension="sql.gz")))
-    # CSV_Address = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_CSV'], FileName=GF.getDateandTimeUTC(), Extension="csv")
+    # tableNameCSV = TMatrix_Table_Name
+    # CSV_Address = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_CSV'], FileName=GF.getDateandTimeUTC() + "_TN_" + str(tableNameCSV), Extension="csv")
     # DB.dumpTableCSV(INFO=DB_Info, TableName=TMatrix_Table_Name, Address=CSV_Address)
     ################################################################################################################
-    '''
-    TMatrix_Table_Input_Headers1 = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-    TMatrix_Table_Output_Headers1 = ['TMatrix_ABS_CRS', 'TMatrix_SCA_CRS', 'MLink']
-    Array1 = [[2.3, 1.2, 1.6, 0.6, 860, 33, 50, 0.1], [2.4, 1.2, 1.6, 0.6, 860, 33, 50, 0.1], [2.6, 1.2, 1.6, 0.6, 860, 33, 50, 0.1]]
-    Array2 = [[0.056, 0.666, 20], [0.053, 0.666, 21], [0.051, 0.666, 22]]
-    DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name, NameArray=TMatrix_Table_Input_Headers1, Array=Array1)
-    DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name + "_out", NameArray=TMatrix_Table_Output_Headers1, Array=Array2)
-    DB.showAllTablesInDBSummary(DB_Info)
-    '''
     ################################################################################################################
     arrAgg_Fractal_Dimension = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_DIMENSION_CENTER'], Width=AGG_Info['AGG_FRACTAL_DIMENSION_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'], digit=2)
     arrAgg_Fractal_Prefactor = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_PREFACTOR_CENTER'], Width=AGG_Info['AGG_FRACTAL_PREFACTOR_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'], digit=2)
@@ -123,24 +116,18 @@ if __name__ == "__main__":
     arrNp_Possible = FN.getPossibleArray(Array=arrAgg_Primary_Number_Random, Indexes=arrPossible_Indexes)
     arrPrimary_Diameter_Possible = FN.getPossibleArray(Array=arrAgg_Primary_Diameter_Random, Indexes=arrPossible_Indexes)
     arrWLength_Possible = FN.getPossibleArray(Array=arrAgg_WLength_Random, Indexes=arrPossible_Indexes)
-    #### to do add more
-
+    #### to do add more if needed
     ################################################################################################################
     # Check with Databases
     arrVersion_Array = FN.createConstantArray(Number=Version, Howmany=len(arrPossible_Indexes))
-    arrIndex_Array = FN.createIndexArray(0, len=len(arrVersion_Array))
+    # arrIndex_Array = FN.createIndexArray(0, len=len(arrVersion_Array))
     # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
     # TMatrix_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     TMatrix_Main_Input_Array = FN.joinArray(arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     # ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
     # RDG_Main_Input_Array_Indexed = FN.joinArray(arrIndex_Array, arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
     RDG_Main_Input_Array = FN.joinArray(arrDf_Possible, arrKf_Possible, arrRI_Real_Possible, arrRI_Imag_Possible, arrWLength_Possible, arrPrimary_Diameter_Possible, arrNp_Possible, arrVersion_Array)
-    '''
-    TMatrix_Main_Input_Array.append([2.3, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    TMatrix_Main_Input_Array.append([2.4, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    TMatrix_Main_Input_Array.append([2.6, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    TMatrix_Main_Input_Array.append([2.1, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    '''
+
     TMatrix_DB_Input_Found, TMatrix_DB_Output_Found, TMatrix_Planned_Input, TMatrix_New = FN.checkMethodDBforTMatrixIndexes(INFO=DB_Info, TableName=TMatrix_Table_Name, Header=TMatrix_Table_Input_Headers, Array=TMatrix_Main_Input_Array)
     RDG_DB_Input_Found, RDG_DB_Output_Found, RDG_Planned_Input, RDG_New = FN.checkMethodDBforRDGIndexes(INFO=DB_Info, TableName=RDG_Table_Name, Header=RDG_Table_Input_Headers, Array=RDG_Main_Input_Array)
     ################################################################################################################
@@ -249,4 +236,11 @@ if __name__ == "__main__":
     ################################################################################################################
     ################################################################################################################
     ################################################################################################################
+    if TMatrix_Interpolation_Input and TMatrix_Interpolation_Output:
+        LastID = DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name, NameArray=TMatrix_Table_Input_Headers, giveID=True, Array=TMatrix_Interpolation_Input)
+        TMatrix_Interpolation_Output_M = FN.addMlinkToArray(Array=TMatrix_Interpolation_Output, LastID=LastID)
+        TMatrix_Table_Output_Headers.append('MLink')
+        DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name + "_Out", NameArray=TMatrix_Table_Output_Headers, Array=TMatrix_Interpolation_Output_M)
+    DB.showAllTablesInDBSummary(DB_Info)
+
     A = 51
