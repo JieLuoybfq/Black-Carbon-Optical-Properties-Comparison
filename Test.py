@@ -14,7 +14,7 @@ DB.showAllTablesInDBSummary(DB_Info)
     TMatrix_Main_Input_Array.append([2.1, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
     '''
 import matplotlib.pyplot as plt
-import seaborn as sns
+
 
 
 def corrdot(*args, **kwargs):
@@ -33,7 +33,7 @@ def corrdot(*args, **kwargs):
 sns.set(style='white', font_scale=1.6)
 iris = sns.load_dataset('iris')
 g = sns.PairGrid(iris, aspect=1.4, diag_sharey=False)
-# g.map_lower(sns.regplot, lowess=True, ci=False, line_kws={'color': 'black'})
+g.map_lower(sns.regplot, ci=False, line_kws={'color': 'black'})
 g.map_diag(sns.distplot, kde_kws={'color': 'black'})
 g.map_upper(corrdot)
 plt.show()

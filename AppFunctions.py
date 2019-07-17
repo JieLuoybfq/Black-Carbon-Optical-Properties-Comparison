@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
 from math import pi
+import seaborn as sns
 
 ####### Plotting Parameters
 
@@ -204,7 +205,7 @@ def TMatrixOutputDictoArray(Dictionary):
         raise
 
 
-def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabelStyle='sci', X_Min=None, X_Max=None, Y_Min=None, Y_Max=None, X_Label=None, Y_label=None, Plot_Title=None, label_font_size=12, Plot_Title_Size=12, Figure_DPI=1000, alpha_Y=0.35, Marker_Size=3):
+def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabelStyle='sci', X_Min=None, X_Max=None, Y_Min=None, Y_Max=None, X_Label=None, Y_label=None, Plot_Title=None, label_font_size=12, Plot_Title_Size=12, Figure_DPI=1000, alpha_Y=0.3, Marker_Size=3):
     try:
 
         fig, ax1 = plt.subplots()
@@ -224,7 +225,7 @@ def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabel
             Y_Max = float(max(Y_array))
             Y_Max = Y_Max + (abs(Y_Max) * 0.2)
 
-        ax1.scatter(X_Array, Y_array, s=8, alpha=alpha_Y)
+        ax1.scatter(X_Array, Y_array, s=7, alpha=alpha_Y)
         if X_Label != None:
             ax1.set_xlabel(X_Label, fontsize=label_font_size)
         if Y_label != None:
@@ -235,6 +236,45 @@ def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabel
         if Plot_Title != None:
             plt.title(Plot_Title, fontsize=Plot_Title_Size, y=1.0)
         plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
+        plt.clf()
+        plt.close()
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def corrdot(*args, **kwargs):
+    corr_r = args[0].corr(args[1], 'pearson')
+    corr_text = f"{corr_r:2.2f}".replace("0.", ".")
+    ax = plt.gca()
+    ax.set_axis_off()
+    marker_size = abs(corr_r) * 10000
+    ax.scatter([.5], [.5], marker_size, [corr_r], alpha=0.6, cmap="coolwarm",
+               vmin=-1, vmax=1, transform=ax.transAxes)
+    font_size = abs(corr_r) * 40 + 5
+    ax.annotate(corr_text, [.5, .5, ], xycoords="axes fraction",
+                ha='center', va='center', fontsize=font_size)
+
+
+def corrfunc(x, y, **kws):
+    r, p = scipystats.pearsonr(x, y)
+    ax = plt.gca()
+    ax.annotate("r = {:.2f}".format(r), xy=(.1, .9), xycoords=ax.transAxes)
+    ax.annotate("p = {:.2f}".format(p), xy=(.2, .8), xycoords=ax.transAxes)
+    if p > 0.04:
+        ax.patch.set_alpha(0.1)
+
+
+def Fig_Plot_Save_Scatterplot_Matrix(Address, Dataframe, Figure_DPI=1000, alpha_Y=0.3, Marker_Size=3):
+    try:
+        sns.set()
+        g = sns.PairGrid(Dataframe)
+        g.map_lower(sns.kdeplot)
+        g.map_diag(plt.hist)
+        g.map_upper(corrfunc)
+        # plt.show()
+        plt.savefig(Address, format='jpg', dpi=Figure_DPI)
         plt.clf()
         plt.close()
 
@@ -313,6 +353,34 @@ def joinArray(*args):
                 A.append(args[j][i])
             Arr.append(A)
         return Arr
+
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def joinColumnsToArray(Array, ArrtobeJoined, ColumnIndexes):
+    try:
+        arr = []
+        rows = len(Array)
+        cols = len(Array[0])
+        for i in range(rows):
+            A = []
+            A.append(Array[i][0])
+            A.append(Array[i][1])
+            A.append(Array[i][2])
+            A.append(Array[i][3])
+            A.append(Array[i][6])
+            A.append(Decimal(pi) * Array[i][5] / Array[i][4])
+            for k in ColumnIndexes:
+                A.append(ArrtobeJoined[i][k])
+            arr.append(A)
+
+        Name = ['Df', 'kf', 'Real_RI', 'Imag_RI', 'Np', 'Monomer_Parameter']
+        return arr, Name
+
+
+
 
     except Exception as e:
         logging.exception(e)
