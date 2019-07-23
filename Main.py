@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # DB.loadDB(INFO=DB_Info, FileAddress=GF.findLatestFile(GF.getFilesNameAddressinFolder(GF.getAddressTo(appDirectory, FF_Info['FOLDER_NAME_DATABASE']), Extension="sql.gz")))
     # DB.dumpTableSetCSV(INFO=DB_Info, TableName=RDG_Table_Name, AddressMain=appDirectory)
     # DB.dumpTableSetCSV(INFO=DB_Info, TableName=TMatrix_Table_Name, AddressMain=appDirectory)
-    #DB.dumpTableSetCSV(INFO=DB_Info, TableName=Error_Table_Name, AddressMain=appDirectory)
+    # DB.dumpTableSetCSV(INFO=DB_Info, TableName=Error_Table_Name, AddressMain=appDirectory)
     ################################################################################################################
     ################################################################################################################
     arrAgg_Fractal_Dimension = FN.createRandomNormalArr(Center=AGG_Info['AGG_FRACTAL_DIMENSION_CENTER'], Width=AGG_Info['AGG_FRACTAL_DIMENSION_STANDARD_DEVIATION'], Number=AGG_Info['MONTECARLO_ARRAY_SIZE'], digit=2)
@@ -283,35 +283,58 @@ if __name__ == "__main__":
     address_Graph_Real_Selected_Scatter = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Selected_Points_Real_Error_ScatterMatrix", Extension="jpg")
     address_Graph_Percent_Selected_Scatter = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Selected_Points_Percent_Error_ScatterMatrix", Extension="jpg")
 
-    ABS_Error_Real_Selected = GF.selectColumnsList(ColumnIndex=[0], List=Error_Final_Output)
-    SCA_Error_Real_Selected = GF.selectColumnsList(ColumnIndex=[1], List=Error_Final_Output)
-    ABS_Error_Percent_Selected = GF.selectColumnsList(ColumnIndex=[2], List=Error_Final_Output)
-    SCA_Error_Percent_Selected = GF.selectColumnsList(ColumnIndex=[3], List=Error_Final_Output)
-
-    '''
     Data_Frame_Error_Real_Selected_Arr, n1 = FN.joinColumnsToArray(Array=Error_Final_Input, ArrtobeJoined=Error_Final_Output, ColumnIndexes=[0, 1])
     Data_Frame_Error_Percent_Selected_Arr, n2 = FN.joinColumnsToArray(Array=Error_Final_Input, ArrtobeJoined=Error_Final_Output, ColumnIndexes=[2, 3])
     n1.append("Absorption Difference(um" + "$^{}$".format(2) + ")")
     n1.append("Scattering Difference(um" + "$^{}$".format(2) + ")")
     n2.append("Absorption Difference(%)")
     n2.append("Scattering Difference(%)")
-    Data_Frame_Error_Real_Selected_Object = pd.DataFrame(Data_Frame_Error_Real_Selected_Arr, columns=n1)
-    Data_Frame_Error_Percent_Selected_Object = pd.DataFrame(Data_Frame_Error_Percent_Selected_Arr, columns=n2)
-
+    Data_Frame_Error_Real_Selected_Object = pd.DataFrame(Data_Frame_Error_Real_Selected_Arr, columns=n1, dtype=float)
+    Data_Frame_Error_Percent_Selected_Object = pd.DataFrame(Data_Frame_Error_Percent_Selected_Arr, columns=n2, dtype=float)
     FN.Fig_Plot_Save_Scatterplot_Matrix(Address=address_Graph_Real_Selected_Scatter, Dataframe=Data_Frame_Error_Real_Selected_Object)
     FN.Fig_Plot_Save_Scatterplot_Matrix(Address=address_Graph_Percent_Selected_Scatter, Dataframe=Data_Frame_Error_Percent_Selected_Object)
-    '''
+
+    ABS_Error_Real_Selected = GF.selectColumnsList(ColumnIndex=[0], List=Error_Final_Output)
+    SCA_Error_Real_Selected = GF.selectColumnsList(ColumnIndex=[1], List=Error_Final_Output)
+    ABS_Error_Percent_Selected = GF.selectColumnsList(ColumnIndex=[2], List=Error_Final_Output)
+    SCA_Error_Percent_Selected = GF.selectColumnsList(ColumnIndex=[3], List=Error_Final_Output)
     FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Real_Selected, X_Array=ABS_Error_Real_Selected, Y_array=SCA_Error_Real_Selected, X_Label="Absorption Difference(um" + "$^{}$".format(2) + ")", Y_label="Scattering Difference(um" + "$^{}$".format(2) + ")", Plot_Title="RDG and T-Matrix Real Difference")
     FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Percent_Selected, X_Array=ABS_Error_Percent_Selected, Y_array=SCA_Error_Percent_Selected, tickLabelStyle='plain', X_Label="Absorption Difference (%)", Y_label="Scattering Difference (%)", Plot_Title="RDG and T-Matrix Percentage Difference")
     ################################################
     # Full Error Array
     address_Graph_Real_Full = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Full_Points_Real_Error", Extension="jpg")
     address_Graph_Percent_Full = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'], FileName="Full_Points_Percent_Error", Extension="jpg")
+    address_Graph_Real_Full_Scatter = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'],
+                                                      FileName="Full_Points_Real_Error_ScatterMatrix", Extension="jpg")
+    address_Graph_Percent_Full_Scatter = GF.getAddressTo(Main=appDirectory, FolderName=FF_Info['FOLDER_NAME_GRAPH'],
+                                                         FileName="Full_Points_Percent_Error_ScatterMatrix", Extension="jpg")
+
+    Error_Table_Df = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name, ColumnName="Df")
+    Error_Table_kf = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name, ColumnName="kf")
+    Error_Table_R_RI = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name, ColumnName="R_RI")
+    Error_Table_I_RI = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name, ColumnName="I_RI")
+    Error_Table_WaveL = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name, ColumnName="WaveL")
+    Error_Table_dp = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name, ColumnName="dp")
+    Error_Table_Np = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name, ColumnName="Np")
+    Error_In = FN.joinArray(Error_Table_Df, Error_Table_kf, Error_Table_R_RI, Error_Table_I_RI, Error_Table_WaveL, Error_Table_dp, Error_Table_Np)
 
     ABS_Error_Real_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_ABS_CRS")
     SCA_Error_Real_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_SCA_CRS")
     ABS_Error_Percent_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_ABS_CRS_Percent")
     SCA_Error_Percent_Full = DB.readColwithColumnName(INFO=DB_Info, TableName=Error_Table_Name + "_Out", ColumnName="ERR_RDG_M_TMatrix_SCA_CRS_Percent")
+    Error_Out = FN.joinArray(ABS_Error_Real_Full, SCA_Error_Real_Full, ABS_Error_Percent_Full, SCA_Error_Percent_Full)
+
+    Data_Frame_Error_Real_Full_Arr, n1 = FN.joinColumnsToArray(Array=Error_In, ArrtobeJoined=Error_Out, ColumnIndexes=[0, 1])
+    Data_Frame_Error_Percent_Full_Arr, n2 = FN.joinColumnsToArray(Array=Error_In, ArrtobeJoined=Error_Out, ColumnIndexes=[2, 3])
+    n1.append("Absorption Difference(um" + "$^{}$".format(2) + ")")
+    n1.append("Scattering Difference(um" + "$^{}$".format(2) + ")")
+    n2.append("Absorption Difference(%)")
+    n2.append("Scattering Difference(%)")
+    Data_Frame_Error_Real_Full_Object = pd.DataFrame(Data_Frame_Error_Real_Full_Arr, columns=n1, dtype=float)
+    Data_Frame_Error_Percent_Full_Object = pd.DataFrame(Data_Frame_Error_Percent_Full_Arr, columns=n2, dtype=float)
+    FN.Fig_Plot_Save_Scatterplot_Matrix(Address=address_Graph_Real_Full_Scatter, Dataframe=Data_Frame_Error_Real_Full_Object)
+    FN.Fig_Plot_Save_Scatterplot_Matrix(Address=address_Graph_Percent_Full_Scatter, Dataframe=Data_Frame_Error_Percent_Full_Object)
+
     FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Real_Full, X_Array=ABS_Error_Real_Full, Y_array=SCA_Error_Real_Full, X_Label="Absorption Difference(um" + "$^{}$".format(2) + ")", Y_label="Scattering Difference(um" + "$^{}$".format(2) + ")", Plot_Title="RDG and T-Matrix Real Difference")
     FN.Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address=address_Graph_Percent_Full, X_Array=ABS_Error_Percent_Full, Y_array=SCA_Error_Percent_Full, tickLabelStyle='plain', X_Label="Absorption Difference (%)", Y_label="Scattering Difference (%)", Plot_Title="RDG and T-Matrix Percentage Difference")
     logging.info("Plotting error calculation finished.")

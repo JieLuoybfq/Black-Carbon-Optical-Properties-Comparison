@@ -244,36 +244,37 @@ def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(Address, X_Array, Y_array, tickLabel
         raise
 
 
-def corrdot(*args, **kwargs):
+def corrDots(*args, **kwargs):
     corr_r = args[0].corr(args[1], 'pearson')
     corr_text = f"{corr_r:2.2f}".replace("0.", ".")
     ax = plt.gca()
     ax.set_axis_off()
     marker_size = abs(corr_r) * 10000
-    ax.scatter([.5], [.5], marker_size, [corr_r], alpha=0.6, cmap="coolwarm",
-               vmin=-1, vmax=1, transform=ax.transAxes)
+    ax.scatter([.5], [.5], marker_size, [corr_r], alpha=0.95, cmap="coolwarm", vmin=-1, vmax=1, transform=ax.transAxes)
     font_size = abs(corr_r) * 40 + 5
-    ax.annotate(corr_text, [.5, .5, ], xycoords="axes fraction",
-                ha='center', va='center', fontsize=font_size)
+    ax.annotate(corr_text, [.5, .5, ], xycoords="axes fraction", ha='center', va='center', fontsize=font_size)
 
 
-def corrfunc(x, y, **kws):
-    r, p = scipystats.pearsonr(x, y)
-    ax = plt.gca()
-    ax.annotate("r = {:.2f}".format(r), xy=(.1, .9), xycoords=ax.transAxes)
-    ax.annotate("p = {:.2f}".format(p), xy=(.2, .8), xycoords=ax.transAxes)
-    if p > 0.04:
-        ax.patch.set_alpha(0.1)
-
-
-def Fig_Plot_Save_Scatterplot_Matrix(Address, Dataframe, Figure_DPI=1000, alpha_Y=0.3, Marker_Size=3):
+def Fig_Plot_Save_Scatterplot_Matrix(Address, Dataframe, Figure_DPI=1000):
     try:
-        sns.set()
-        g = sns.PairGrid(Dataframe)
-        g.map_lower(sns.kdeplot)
-        g.map_diag(plt.hist)
-        g.map_upper(corrfunc)
-        # plt.show()
+        sns.set(style='white')
+        g = sns.pairplot(Dataframe)
+        g.map_lower(sns.kdeplot, cmap="GnBu", shade=True)
+        g.map_diag(plt.hist, edgecolor="b")
+        g.map_upper(corrDots)
+
+        xlabels, ylabels = [], []
+        for ax in g.axes[-1, :]:
+            xlabel = ax.xaxis.get_label_text()
+            xlabels.append(xlabel)
+        for ax in g.axes[:, 0]:
+            ylabel = ax.yaxis.get_label_text()
+            ylabels.append(ylabel)
+        for i in range(len(xlabels)):
+            for j in range(len(ylabels)):
+                g.axes[j, i].xaxis.set_label_text(xlabels[i])
+                g.axes[j, i].yaxis.set_label_text(ylabels[j])
+
         plt.savefig(Address, format='jpg', dpi=Figure_DPI)
         plt.clf()
         plt.close()
