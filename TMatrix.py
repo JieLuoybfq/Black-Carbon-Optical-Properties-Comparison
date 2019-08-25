@@ -32,6 +32,7 @@ class TMatrixCalculation:
 
     def TMatrixCalc(self, TMatrix_Planned_Input, thread=3):
         try:
+            logging.info("T-Matrix calculation started.")
             division = thread
             TMatrix_Planned_Input_Chopped = GF.divideArray(NumberofDivisions=division, List=TMatrix_Planned_Input)
             func = partial(self.TMatrixInterpolator, self.__TMatrix_DB_Main_Data_Full, self.__TMatrix_DB_Main_Unique_Values, self.__TMatrix_DB_Main_ABS_Coeff_Full,
@@ -53,7 +54,7 @@ class TMatrixCalculation:
                     arrT.append(arrOutTMatrix[i][0][j])
                     arrT.append(arrOutTMatrix[i][1][j])
                     self.__TMatrix_Interpolation_Output.append(arrT)
-
+            logging.info("T-Matrix calculation finished.")
             return self.__TMatrix_Interpolation_Input, self.__TMatrix_Interpolation_Output
 
         except Exception as e:

@@ -13,7 +13,7 @@ class RDGCalculation:
 
     def RDGCalc(self, RDG_Planned_Input):
         try:
-            logging.info("RDG started.")
+            logging.info("RDG calculation started.")
             RDG_Planned_Output = []
             for i in range(len(RDG_Planned_Input)):
                 arrRDG = []
@@ -22,6 +22,7 @@ class RDGCalculation:
                 arrRDG.append(rDG_ABS)
                 arrRDG.append(rDG_SCA)
                 RDG_Planned_Output.append(arrRDG)
+            logging.info("RDG calculation finished.")
             return RDG_Planned_Input, RDG_Planned_Output
 
         except Exception as e:

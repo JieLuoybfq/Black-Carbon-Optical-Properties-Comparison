@@ -7,11 +7,11 @@ class BCDBBoundaryCheck:
     def __init__(self):
         try:
             self._arrDf_Bound = [1.801, 2.799]
-            self._arrKf_Bound = [1.19, 1.21]
-            self._arrRI_Real_Bound = [1.06, 1.99]
-            self._arrRI_Imag_Bound = [0.01, 0.99]
-            self._arrNp_Bound = [2, 2999]
-            self._arrMonomerParameter_Bound = [0.06, 0.49]
+            self._arrKf_Bound = [1.199, 1.201]
+            self._arrRI_Real_Bound = [1.051, 1.999]
+            self._arrRI_Imag_Bound = [0.001, 0.999]
+            self._arrNp_Bound = [1, 3000]
+            self._arrMonomerParameter_Bound = [0.051, 0.499]
         except Exception as e:
             logging.exception(e)
             raise

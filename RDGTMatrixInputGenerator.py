@@ -10,13 +10,20 @@ from BoundaryFinder import BCDBBoundaryCheck as BCheck
 from decimal import Decimal
 from TMatrix import TMatrixCalculation
 from FSAC_RDG import RDGCalculation
-from GraphFunctions import GraphMethods
+import pandas as pd
+import GeneralFunctions as GF
 import csv
 
 
 class KeyhanV1:
     def __init__(self, inputDict):
         try:
+            time_now = GF.getDateandTimeUTCNow()
+            temp = {}
+            temp['AA_FileName'] = f"TR_{time_now}.csv"
+            temp['AA_Plot'] = 1
+
+            self.infoDict = {**temp, **inputDict}
             self.__AGG_EFF_DM_CENTER = inputDict['AGG_EFF_DM_CENTER']
             self.__AGG_EFF_RHO_100NM_CENTER = inputDict['AGG_EFF_RHO_100NM_CENTER']
             self.__AGG_MATERIAL_DENSITY_CENTER = inputDict['AGG_MATERIAL_DENSITY_CENTER']
@@ -31,9 +38,13 @@ class KeyhanV1:
             self.__AGG_WLENGTH_CENTER = inputDict['AGG_WLENGTH_CENTER']
             self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER = inputDict['AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
 
-            self.__Sample_Sigma_Bins = 50  # Number of bins
+            self.__Sample_Sigma_Bins = 5  # Number of bins
             self.__Primary_Sigma_dm_CTE_Bound = 3  # Number of Sigma G to cover
-            self.__Primary_Sigma_dm_CTE_Nt = 30  # Number of bins
+            self.__Primary_Sigma_dm_CTE_Nt = 6  # Number of bins
+            self.infoDict['MobilityBins'] = self.__Sample_Sigma_Bins
+            self.infoDict['NumberOfSigma'] = self.__Primary_Sigma_dm_CTE_Bound
+            self.infoDict['PrimaryBins'] = self.__Primary_Sigma_dm_CTE_Nt
+
 
         except Exception as e:
             logging.exception(e)
@@ -73,116 +84,113 @@ class KeyhanV1:
             self.Np_Mobility_Distributed = self.PrimaryParticleNumber()
             suggestedCalcDict = self.CreateDictForEvaluation()
             checkedDict = self.CheckDictWithBoundary(dict=suggestedCalcDict)
-            convertedDict = self.ConvertDictToArray(Dict=checkedDict)
+            convertedDict = self.ConvertDictToArray(dict=checkedDict)
             T1 = TMatrixCalculation(DBInfo=DB_Info)
             R1 = RDGCalculation()
             inputT1 = {}
             outputT1 = {}
             inputR1 = {}
             outputR1 = {}
-            errorReal = {}
             for dm in convertedDict:
                 inputT1[dm], outputT1[dm] = T1.TMatrixCalc(TMatrix_Planned_Input=convertedDict[dm])
                 inputR1[dm], outputR1[dm] = R1.RDGCalc(RDG_Planned_Input=convertedDict[dm])
-            res_ABS_CRS_T1, res_SCA_CRS_T1, res_ABS_CRS_R1, res_SCA_CRS_R1 = self.CalcTotalCrossSection(outTMatrix=outputT1, outRDG=outputR1, checkedDict=checkedDict)
-            A = self.ErrorEvaluation(ABS_CRS_T=res_ABS_CRS_T1, SCA_CRS_T=res_SCA_CRS_T1, ABS_CRS_R=res_ABS_CRS_R1, SCA_CRS_R=res_SCA_CRS_R1)
-            csv_file = "Names.csv"
-            with open(csv_file, 'w') as csvfile:
-                writer = csv.writer(csvfile)
-                # writer.writeheader()
+                if inputT1[dm] != inputR1[dm]:
+                    raise
+            resDF = self.CalcTotalCrossSection(outTMatrix=outputT1, outRDG=outputR1, checkedDict=checkedDict)
 
-                writer.writerows(A)
+            previousInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
+            previousInfoDB.loc[len(previousInfoDB)] = self.infoDict
+            # newInfoDf = pd.DataFrame([self.infoDict])
+            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            previousInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
 
-            # G=GraphMethods()
-            # G.toSaveHistogram()
-            b = 3
+            resDF.to_csv(f"TMatrix_RDG_Result\{self.infoDict['AA_FileName']}", index=False)
 
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def ErrorEvaluation(self, ABS_CRS_T, SCA_CRS_T, ABS_CRS_R, SCA_CRS_R):
-        try:
-            out = []
-            dm2 = []
-            errorRealABS = {}
-            errorRealSCA = {}
-            errorAbsoluteABS = {}
-            errorAbsoluteSCA = {}
-            errorPercentABS = {}
-            errorPercentSCA = {}
-            errorNormalABS = {}
-            errorNormalSCA = {}
-            for dm in ABS_CRS_T:
-                dm2.append(dm)
-                errorRealABS[dm] = ABS_CRS_T[dm] - ABS_CRS_R[dm]
-                errorRealSCA[dm] = SCA_CRS_T[dm] - SCA_CRS_R[dm]
-                errorAbsoluteABS[dm] = abs(ABS_CRS_T[dm] - ABS_CRS_R[dm])
-                errorAbsoluteSCA[dm] = abs(SCA_CRS_T[dm] - SCA_CRS_R[dm])
-                if ABS_CRS_R[dm] != 0:
-                    errorPercentABS[dm] = 100 * abs(ABS_CRS_T[dm] - ABS_CRS_R[dm]) / ABS_CRS_R[dm]
-                    errorPercentSCA[dm] = 100 * abs(SCA_CRS_T[dm] - SCA_CRS_R[dm]) / SCA_CRS_R[dm]
-                    errorNormalABS[dm] = ABS_CRS_T[dm] / ABS_CRS_R[dm]
-                    errorNormalSCA[dm] = SCA_CRS_T[dm] / SCA_CRS_R[dm]
-                else:
-                    errorPercentABS[dm] = 0
-                    errorPercentSCA[dm] = 0
-                    errorNormalABS[dm] = 0
-                    errorNormalSCA[dm] = 0
-
-                out.append([errorRealABS[dm], errorRealSCA[dm], errorAbsoluteABS[dm], errorAbsoluteSCA[dm]
-                               , errorPercentABS[dm], errorPercentSCA[dm], errorNormalABS[dm], errorNormalSCA[dm]])
-            # out={'errorRealABS':errorRealABS,
-            #      'errorRealSCA': errorRealSCA,
-            #      'errorAbsoluteABS': errorAbsoluteABS,
-            #      'errorAbsoluteSCA': errorAbsoluteSCA,
-            #      'errorPercentABS': errorPercentABS,
-            #      'errorPercentSCA':errorPercentSCA,
-            #      'errorNormalABS': errorNormalABS,
-            #      'errorNormalSCA': errorNormalSCA,
-            #      }
-            csv_file = "dm.csv"
-            with open(csv_file, 'w') as csvfile:
-                writer = csv.writer(csvfile)
-                # writer.writeheader()
-                writer.writerow(dm2)
-            return out
         except Exception as e:
             logging.exception(e)
             raise
 
     def CalcTotalCrossSection(self, outTMatrix, outRDG, checkedDict):
         try:
-
-            res_ABS_T = {}
-            res_SCA_T = {}
-            res_ABS_R = {}
-            res_SCA_R = {}
+            df = pd.DataFrame(columns=['dm', 'ABS_TMatrix', 'SCA_TMatrix', 'ABS_RDG', 'SCA_RDG', 'Np_Ave', 'dp_Ave',
+                                       'RealErrorABS', 'RealErrorSCA', 'AbsoluteErrorABS', 'AbsoluteErrorSCA',
+                                       'RealPercentErrorABS', 'AbsolutePercentErrorABS', 'RatioABS',
+                                       'RealPercentErrorSCA', 'AbsolutePercentErrorSCA', 'RatioSCA',
+                                       'SSA_TMatrix', 'SSA_RDG'])
             for dm in outTMatrix:
-                ABS_T = 0
-                SCA_T = 0
-                ABS_R = 0
-                SCA_R = 0
-                for i in range(len(outTMatrix[dm])):
-                    ABS_T += outTMatrix[dm][i][0] * checkedDict[dm]['chance'][i]
-                    SCA_T += outTMatrix[dm][i][1] * checkedDict[dm]['chance'][i]
-                    ABS_R += outRDG[dm][i][0] * checkedDict[dm]['chance'][i]
-                    SCA_R += outRDG[dm][i][1] * checkedDict[dm]['chance'][i]
-                res_ABS_T[dm] = ABS_T
-                res_SCA_T[dm] = SCA_T
-                res_ABS_R[dm] = ABS_R
-                res_SCA_R[dm] = SCA_R
 
-            return res_ABS_T, res_SCA_T, res_ABS_R, res_SCA_R
+                Np_Ave = 0
+                dp_Ave = 0
+                ABS_TMatrix = 0
+                SCA_TMatrix = 0
+                ABS_RDG = 0
+                SCA_RDG = 0
+
+                for i in range(len(outTMatrix[dm])):
+                    ABS_TMatrix += outTMatrix[dm][i][0] * checkedDict[dm]['chance'][i]
+                    SCA_TMatrix += outTMatrix[dm][i][1] * checkedDict[dm]['chance'][i]
+                    ABS_RDG += outRDG[dm][i][0] * checkedDict[dm]['chance'][i]
+                    SCA_RDG += outRDG[dm][i][1] * checkedDict[dm]['chance'][i]
+                    Np_Ave += checkedDict[dm]['Np'][i] * checkedDict[dm]['chance'][i]
+                    dp_Ave += checkedDict[dm]['dp'][i] * checkedDict[dm]['chance'][i]
+
+                errorRealABS = ABS_TMatrix - ABS_RDG
+                errorRealSCA = SCA_TMatrix - SCA_RDG
+                errorAbsoluteABS = abs(ABS_TMatrix - ABS_RDG)
+                errorAbsoluteSCA = abs(SCA_TMatrix - SCA_RDG)
+                ################################################
+                ################################################
+                ################################################ SSA
+                if (ABS_TMatrix + SCA_TMatrix) != 0:
+                    SSA_TMatrix = SCA_TMatrix / (ABS_TMatrix + SCA_TMatrix)
+                else:
+                    SSA_TMatrix = 0
+
+                if (ABS_RDG + SCA_RDG) != 0:
+                    SSA_RDG = SCA_RDG / (ABS_RDG + SCA_RDG)
+                else:
+                    SSA_RDG = 0
+                ################################################
+                ################################################
+                ################################################ Error percenet and ratio
+                if ABS_RDG != 0:
+                    errorRealPercentABS = 100 * (ABS_TMatrix - ABS_RDG) / ABS_RDG
+                    errorAbsolutePercentABS = 100 * abs(ABS_TMatrix - ABS_RDG) / ABS_RDG
+                    ratioABS = ABS_TMatrix / ABS_RDG
+                else:
+                    errorRealPercentABS = 0
+                    errorAbsolutePercentABS = 0
+                    ratioABS = 0
+
+                if SCA_RDG != 0:
+                    errorRealPercentSCA = 100 * (SCA_TMatrix - SCA_RDG) / SCA_RDG
+                    errorAbsolutePercentSCA = 100 * abs(SCA_TMatrix - SCA_RDG) / SCA_RDG
+                    ratioSCA = SCA_TMatrix / SCA_RDG
+                else:
+                    errorRealPercentSCA = 0
+                    errorAbsolutePercentSCA = 0
+                    ratioSCA = 0
+                ################################################
+                ################################################
+                ################################################
+                df.loc[len(df)] = {'dm': dm, 'ABS_TMatrix': ABS_TMatrix, 'SCA_TMatrix': SCA_TMatrix,
+                                   'ABS_RDG': ABS_RDG, 'SCA_RDG': SCA_RDG,
+                                   'Np_Ave': Np_Ave, 'dp_Ave': dp_Ave,
+                                   'RealErrorABS': errorRealABS, 'RealErrorSCA': errorRealSCA,
+                                   'AbsoluteErrorABS': errorAbsoluteABS, 'AbsoluteErrorSCA': errorAbsoluteSCA,
+                                   'RealPercentErrorABS': errorRealPercentABS, 'AbsolutePercentErrorABS': errorAbsolutePercentABS, 'RatioABS': ratioABS,
+                                   'RealPercentErrorSCA': errorRealPercentSCA, 'AbsolutePercentErrorSCA': errorAbsolutePercentSCA, 'RatioSCA': ratioSCA,
+                                   'SSA_TMatrix': SSA_TMatrix, 'SSA_RDG': SSA_RDG}
+            return df
         except Exception as e:
             logging.exception(e)
             raise
 
-    def ConvertDictToArray(self, Dict):
+    def ConvertDictToArray(self, dict):
         try:
             conDict = {}
-            for dm in Dict:
-                L = Dict[dm]
+            for dm in dict:
+                L = dict[dm]
                 X = []
                 for i in range(len(L['Df'])):
                     S = []
@@ -232,6 +240,7 @@ class KeyhanV1:
                 checking = BCheck()
                 checked[dm] = checking.CheckInputDict(inputDict=dict[dm])
             return checked
+
         except Exception as e:
             logging.exception(e)
             raise

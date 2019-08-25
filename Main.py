@@ -4,7 +4,6 @@ Version = 0.2
 # Aug 2019
 import ConfigParserM as CP
 from ConfigParserM import logging
-
 import RDGTMatrixInputGenerator as InputG
 
 if __name__ == "__main__":

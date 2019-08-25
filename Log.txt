@@ -1,2 +1,30 @@
-08/24/2019 05:47:07 PM, App Started.
-08/24/2019 05:47:07 PM, config retrieved.
+08/25/2019 08:22:35 AM, App Started.
+08/25/2019 08:22:35 AM, config retrieved.
+08/25/2019 08:22:35 AM, Boundary issued.
+08/25/2019 08:22:35 AM, Boundary issued.
+08/25/2019 08:22:35 AM, Boundary issued.
+08/25/2019 08:22:35 AM, Boundary issued.
+08/25/2019 08:22:35 AM, Boundary issued.
+08/25/2019 08:22:35 AM, T-Matrix method started.
+08/25/2019 08:22:42 AM, MySQL connection is closed
+08/25/2019 08:22:45 AM, T-Matrix calculation started.
+08/25/2019 08:22:51 AM, T-Matrix calculation finished.
+08/25/2019 08:22:51 AM, RDG calculation started.
+08/25/2019 08:22:51 AM, RDG calculation finished.
+08/25/2019 08:22:51 AM, T-Matrix calculation started.
+08/25/2019 08:23:00 AM, T-Matrix calculation finished.
+08/25/2019 08:23:00 AM, RDG calculation started.
+08/25/2019 08:23:01 AM, RDG calculation finished.
+08/25/2019 08:23:01 AM, T-Matrix calculation started.
+08/25/2019 08:23:14 AM, T-Matrix calculation finished.
+08/25/2019 08:23:14 AM, RDG calculation started.
+08/25/2019 08:23:15 AM, RDG calculation finished.
+08/25/2019 08:23:15 AM, T-Matrix calculation started.
+08/25/2019 08:23:28 AM, T-Matrix calculation finished.
+08/25/2019 08:23:28 AM, RDG calculation started.
+08/25/2019 08:23:29 AM, RDG calculation finished.
+08/25/2019 08:23:29 AM, T-Matrix calculation started.
+08/25/2019 08:23:42 AM, T-Matrix calculation finished.
+08/25/2019 08:23:42 AM, RDG calculation started.
+08/25/2019 08:23:44 AM, RDG calculation finished.
+08/25/2019 08:23:44 AM, App finished.
