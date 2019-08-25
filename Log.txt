@@ -1,14 +1,2 @@
-07/21/2019 11:14:37 AM, App Started.
-07/21/2019 11:14:37 AM, config retrieved.
-07/21/2019 11:15:00 AM, Random parameter generated.
-07/21/2019 11:15:00 AM, Boundary issued.
-07/21/2019 11:15:06 AM, DB old and new ones retrieved.
-07/21/2019 11:15:06 AM, RDG started.
-07/21/2019 11:15:10 AM, RDG finished retrieved.
-07/21/2019 11:15:10 AM, T-Matrix started.
-07/21/2019 11:16:54 AM, T-Matrix Finished.
-07/21/2019 11:16:54 AM, Error calculation started.
-07/21/2019 11:16:55 AM, Error calculation finished.
-07/21/2019 11:16:55 AM, Plotting error calculation started.
-07/21/2019 11:32:34 AM, Plotting error calculation finished.
-07/21/2019 11:32:34 AM, App finished.
+08/24/2019 05:47:07 PM, App Started.
+08/24/2019 05:47:07 PM, config retrieved.

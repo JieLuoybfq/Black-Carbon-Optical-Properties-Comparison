@@ -13,9 +13,10 @@ DB.showAllTablesInDBSummary(DB_Info)
     TMatrix_Main_Input_Array.append([2.6, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
     TMatrix_Main_Input_Array.append([2.1, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
     '''
+import DBManagement
 import matplotlib.pyplot as plt
 
-
+S1 = DBManagement.MySQLManagement()
 
 def corrdot(*args, **kwargs):
     corr_r = args[0].corr(args[1], 'pearson')

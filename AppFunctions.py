@@ -3,15 +3,14 @@ from ConfigParserM import logging
 import GeneralFunctions as GF
 from decimal import Decimal
 import numpy as np
-from matplotlib import rcParams
-from matplotlib import pyplot as plt
+
 from math import pi
-import seaborn as sns
+
 
 ####### Plotting Parameters
 
-rcParams['mathtext.fontset'] = 'stix'
-rcParams['font.family'] = 'STIXGeneral'
+# rcParams['mathtext.fontset'] = 'stix'
+# rcParams['font.family'] = 'STIXGeneral'
 
 
 ##############################
@@ -388,10 +387,10 @@ def joinColumnsToArray(Array, ArrtobeJoined, ColumnIndexes):
         raise
 
 
-def createConstantArray(Number, Howmany):
+def CreateConstantArray(Number, HowMany):
     try:
         B = []
-        for i in range(Howmany):
+        for i in range(HowMany):
             B.append(round(Decimal(Number), 1))
         return B
 

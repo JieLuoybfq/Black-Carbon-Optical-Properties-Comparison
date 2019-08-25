@@ -1,15 +1,16 @@
 # Keyhan Babaee, https://github.com/KeyhanB
-# V1.1
+# V1.2
 # July 2019
-
-from pathlib import Path
-import os
-from ConfigParserM import logging
-from dateutil.parser import parse
-import datetime
 import configparser
-import glob
 import csv
+import datetime
+import glob
+import os
+from pathlib import Path
+
+from dateutil.parser import parse
+
+from ConfigParserM import logging
 
 
 def writeFile(Address, String, Mode='w'):
@@ -159,17 +160,6 @@ def changeArrayType(List, ColumnNumber, ChangeTo):
         raise
 
 
-def getDateandTimeUTC():
-    try:
-
-        return str(datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat("T", "seconds")).replace(":", "")
-
-
-    except Exception as e:
-        logging.exception(e)
-        raise
-
-
 def selectColumnsList(ColumnIndex, List, Dimension=2):
     try:
         B = []
@@ -312,6 +302,7 @@ def getVarName(obj, namespace):
     except Exception as e:
         logging.exception(e)
         raise
+
 
 
 def getRootDirectory():
