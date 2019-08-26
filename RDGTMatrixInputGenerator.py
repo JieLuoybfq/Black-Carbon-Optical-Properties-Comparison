@@ -40,7 +40,7 @@ class KeyhanV1:
 
             self.__Sample_Sigma_Bins = 5  # Number of bins
             self.__Primary_Sigma_dm_CTE_Bound = 3  # Number of Sigma G to cover
-            self.__Primary_Sigma_dm_CTE_Nt = 6  # Number of bins
+            self.__Primary_Sigma_dm_CTE_Nt = 4  # Number of bins
             self.infoDict['MobilityBins'] = self.__Sample_Sigma_Bins
             self.infoDict['NumberOfSigma'] = self.__Primary_Sigma_dm_CTE_Bound
             self.infoDict['PrimaryBins'] = self.__Primary_Sigma_dm_CTE_Nt
@@ -96,13 +96,14 @@ class KeyhanV1:
                 inputR1[dm], outputR1[dm] = R1.RDGCalc(RDG_Planned_Input=convertedDict[dm])
                 if inputT1[dm] != inputR1[dm]:
                     raise
+                logging.info(f"Calculation for dm:{dm} was finished.")
             resDF = self.CalcTotalCrossSection(outTMatrix=outputT1, outRDG=outputR1, checkedDict=checkedDict)
 
-            previousInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
-            previousInfoDB.loc[len(previousInfoDB)] = self.infoDict
-            # newInfoDf = pd.DataFrame([self.infoDict])
-            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            previousInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            # previousInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
+            # previousInfoDB.loc[len(previousInfoDB)] = self.infoDict
+            newInfoDf = pd.DataFrame([self.infoDict])
+            newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            # previousInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
 
             resDF.to_csv(f"TMatrix_RDG_Result\{self.infoDict['AA_FileName']}", index=False)
 
@@ -112,11 +113,15 @@ class KeyhanV1:
 
     def CalcTotalCrossSection(self, outTMatrix, outRDG, checkedDict):
         try:
-            df = pd.DataFrame(columns=['dm', 'ABS_TMatrix', 'SCA_TMatrix', 'ABS_RDG', 'SCA_RDG', 'Np_Ave', 'dp_Ave',
+            df = pd.DataFrame(columns=['dm', 'ABS_TMatrix', 'SCA_TMatrix', 'ABS_RDG', 'SCA_RDG',
+                                       'NumberOfCalcs', 'dp_median', 'Np_Ave', 'dp_Ave',
+                                       'D_TEM', 'dp_100nm',
                                        'RealErrorABS', 'RealErrorSCA', 'AbsoluteErrorABS', 'AbsoluteErrorSCA',
                                        'RealPercentErrorABS', 'AbsolutePercentErrorABS', 'RatioABS',
                                        'RealPercentErrorSCA', 'AbsolutePercentErrorSCA', 'RatioSCA',
-                                       'SSA_TMatrix', 'SSA_RDG'])
+                                       'SSA_TMatrix', 'SSA_RDG',
+                                       'MAC_TMatrix', 'MSC_TMatrix', 'MAC_RDG', 'MSC_RDG', 'Agg_Mass_gr'])
+
             for dm in outTMatrix:
 
                 Np_Ave = 0
@@ -125,6 +130,7 @@ class KeyhanV1:
                 SCA_TMatrix = 0
                 ABS_RDG = 0
                 SCA_RDG = 0
+                AggregateMass = 0
 
                 for i in range(len(outTMatrix[dm])):
                     ABS_TMatrix += outTMatrix[dm][i][0] * checkedDict[dm]['chance'][i]
@@ -133,6 +139,21 @@ class KeyhanV1:
                     SCA_RDG += outRDG[dm][i][1] * checkedDict[dm]['chance'][i]
                     Np_Ave += checkedDict[dm]['Np'][i] * checkedDict[dm]['chance'][i]
                     dp_Ave += checkedDict[dm]['dp'][i] * checkedDict[dm]['chance'][i]
+                    AggregateMass += self.DensitytoMass(dp=checkedDict[dm]['dp'][i], density=self.__AGG_MATERIAL_DENSITY_CENTER, Np=checkedDict[dm]['Np'][i]) * checkedDict[dm]['chance'][i]
+                ################################################
+                ################################################
+                ################################################ MAC and MSC
+                if AggregateMass != 0:
+                    MAC_TMatrix = ABS_TMatrix * (Decimal(10) ** (Decimal(-12))) / AggregateMass
+                    MSC_TMatrix = SCA_TMatrix * (Decimal(10) ** (Decimal(-12))) / AggregateMass
+                    MAC_RDG = ABS_RDG * (Decimal(10) ** (Decimal(-12))) / AggregateMass
+                    MSC_RDG = SCA_RDG * (Decimal(10) ** (Decimal(-12))) / AggregateMass
+
+                else:
+                    MAC_TMatrix = 0
+                    MSC_TMatrix = 0
+                    MAC_RDG = 0
+                    MSC_RDG = 0
 
                 errorRealABS = ABS_TMatrix - ABS_RDG
                 errorRealSCA = SCA_TMatrix - SCA_RDG
@@ -174,14 +195,27 @@ class KeyhanV1:
                 ################################################
                 ################################################
                 df.loc[len(df)] = {'dm': dm, 'ABS_TMatrix': ABS_TMatrix, 'SCA_TMatrix': SCA_TMatrix,
-                                   'ABS_RDG': ABS_RDG, 'SCA_RDG': SCA_RDG,
-                                   'Np_Ave': Np_Ave, 'dp_Ave': dp_Ave,
+                                   'ABS_RDG': ABS_RDG, 'SCA_RDG': SCA_RDG, 'NumberOfCalcs': len(outTMatrix[dm]),
+                                   'dp_median': self.dp_Median_nano[dm], 'Np_Ave': Np_Ave, 'dp_Ave': dp_Ave,
                                    'RealErrorABS': errorRealABS, 'RealErrorSCA': errorRealSCA,
+                                   'D_TEM': self.D_TEM, 'dp_100nm': self.dp100_nano,
                                    'AbsoluteErrorABS': errorAbsoluteABS, 'AbsoluteErrorSCA': errorAbsoluteSCA,
                                    'RealPercentErrorABS': errorRealPercentABS, 'AbsolutePercentErrorABS': errorAbsolutePercentABS, 'RatioABS': ratioABS,
                                    'RealPercentErrorSCA': errorRealPercentSCA, 'AbsolutePercentErrorSCA': errorAbsolutePercentSCA, 'RatioSCA': ratioSCA,
-                                   'SSA_TMatrix': SSA_TMatrix, 'SSA_RDG': SSA_RDG}
+                                   'SSA_TMatrix': SSA_TMatrix, 'SSA_RDG': SSA_RDG,
+                                   'MAC_TMatrix': MAC_TMatrix, 'MSC_TMatrix': MSC_TMatrix, 'MAC_RDG': MAC_RDG, 'MSC_RDG': MSC_RDG,
+                                   'Agg_Mass_gr': AggregateMass}
             return df
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def DensitytoMass(self, dp, density, Np):
+        try:
+            V = (Decimal(10) ** (Decimal(-27))) * Decimal(pi) * (dp ** Decimal(3)) / Decimal(6)
+            mass = Np * V * Decimal(density) * Decimal(1000)  # to gram
+            return mass
+
         except Exception as e:
             logging.exception(e)
             raise
@@ -342,6 +376,8 @@ class KeyhanV1:
         try:
             self.dp100_nano = self.PrimaryDiameter100nm_nano()
             self.D_TEM = self.D_TEM_FromEffDens_D_Alpha()
+            self.infoDict['dp100_nano'] = self.dp100_nano
+            self.infoDict['D_TEM'] = self.D_TEM
             dm_dp = self.PPSM_Calc()
             return dm_dp
 
