@@ -30,14 +30,14 @@ class GraphTools:
 
             self.__plotTitle_Size = 12
             self.__labelFont_size = 12
-            self.__figureDPI = 900
-            self.__markerSize = 3
+            self.__figureDPI = 700
+            self.__markerSize = 3.5
             self.__alphaMainLine = 0.75
             self.__lineColor = ['red', 'blue', 'green']
             self.__lineStyle = ['-', '--', ':']
             self.__markerStyle = ["o", "X", "^"]
             self.__lineWidth = [1.5, 1, 0.5]
-            self.__mobilityDiamLimits = [75, 820]
+            self.__mobilityDiamLimits = [75, 840]
 
         except Exception as e:
             logging.exception(e)
@@ -129,56 +129,8 @@ class GraphTools:
             logging.exception(e)
             raise
 
-    def PlotCrossSections(self):
+    def PlotCrossSectionsIntermediate(self, clName, tlName):
         try:
-            ######################## Absorption RDG
-            clName = 'ABS_RDG'
-            tlName = "RDG Absorption Cross Section"
-            if self.__rhoEff100nmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-            if self.__DmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
-
-            if self.__sigmaMobCTE == True:
-                self.PlotCrossSectionsCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                           A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
-            ######################## Scattering RDG
-            clName = 'SCA_RDG'
-            tlName = "RDG Scattering Cross Section"
-            if self.__rhoEff100nmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-            if self.__DmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
-
-            if self.__sigmaMobCTE == True:
-                self.PlotCrossSectionsCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                           A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
-            ######################## Absorption TMatrix
-            clName = 'ABS_TMatrix'
-            tlName = "TMatrix Absorption Cross Section"
-            if self.__rhoEff100nmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-            if self.__DmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
-
-            if self.__sigmaMobCTE == True:
-                self.PlotCrossSectionsCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                           A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
-            ######################## Scattering TMatrix
-            clName = 'SCA_TMatrix'
-            tlName = "TMatrix Scattering Cross Section"
             if self.__rhoEff100nmCTE == True:
                 self.PlotCrossSectionsCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
                                            column=clName, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
@@ -196,19 +148,24 @@ class GraphTools:
             logging.exception(e)
             raise
 
-    def PlotCross1Sections(self):
+    def PlotCrossSections(self):
         try:
-            Arr = []
-            for i in range(len(Array)):
-                Arr.append(float(Array[i]))
-            n, bins, patches = plt.hist(Arr, 50, density=True, facecolor='b', alpha=0.75)
-            plt.ylabel('Probability')
-            plt.title('Histogram of ' + str(Name))
-            plt.grid(True)
-            # Address = GF.getAddressTo(Folder, None, Name, "jpg")
-            # plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
-            plt.clf()
-            plt.close()
+            ######################## Absorption RDG
+            clName = 'ABS_RDG'
+            tlName = "RDG Absorption Cross Section"
+            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
+            ######################## Scattering RDG
+            clName = 'SCA_RDG'
+            tlName = "RDG Scattering Cross Section"
+            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
+            ######################## Absorption TMatrix
+            clName = 'ABS_TMatrix'
+            tlName = "TMatrix Absorption Cross Section"
+            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
+            ######################## Scattering TMatrix
+            clName = 'SCA_TMatrix'
+            tlName = "TMatrix Scattering Cross Section"
+            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
 
         except Exception as e:
             logging.exception(e)
