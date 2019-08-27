@@ -271,8 +271,10 @@ def getDateandTimeUTCNow():
         raise
 
 
-def getAddressTo(Main, FolderName=None, FileName=None, Extension=None):
+def getAddressTo(Main=None, FolderName=None, FileName=None, Extension=None):
     try:
+        if Main is None:
+            Main = getRootDirectory()
         if FolderName:
             Path1 = Path(Main) / Path(FolderName)
         else:

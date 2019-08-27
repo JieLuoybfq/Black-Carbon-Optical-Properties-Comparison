@@ -12,7 +12,6 @@ from TMatrix import TMatrixCalculation
 from FSAC_RDG import RDGCalculation
 import pandas as pd
 import GeneralFunctions as GF
-import csv
 
 
 class KeyhanV1:
@@ -38,9 +37,9 @@ class KeyhanV1:
             self.__AGG_WLENGTH_CENTER = inputDict['AGG_WLENGTH_CENTER']
             self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER = inputDict['AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
 
-            self.__Sample_Sigma_Bins = 5  # Number of bins
+            self.__Sample_Sigma_Bins = 50  # Number of bins
             self.__Primary_Sigma_dm_CTE_Bound = 3  # Number of Sigma G to cover
-            self.__Primary_Sigma_dm_CTE_Nt = 4  # Number of bins
+            self.__Primary_Sigma_dm_CTE_Nt = 45  # Number of bins
             self.infoDict['MobilityBins'] = self.__Sample_Sigma_Bins
             self.infoDict['NumberOfSigma'] = self.__Primary_Sigma_dm_CTE_Bound
             self.infoDict['PrimaryBins'] = self.__Primary_Sigma_dm_CTE_Nt
@@ -99,11 +98,11 @@ class KeyhanV1:
                 logging.info(f"Calculation for dm:{dm} was finished.")
             resDF = self.CalcTotalCrossSection(outTMatrix=outputT1, outRDG=outputR1, checkedDict=checkedDict)
 
-            # previousInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
-            # previousInfoDB.loc[len(previousInfoDB)] = self.infoDict
-            newInfoDf = pd.DataFrame([self.infoDict])
-            newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            # previousInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            previousInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
+            previousInfoDB.loc[len(previousInfoDB)] = self.infoDict
+            # newInfoDf = pd.DataFrame([self.infoDict])
+            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            previousInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
 
             resDF.to_csv(f"TMatrix_RDG_Result\{self.infoDict['AA_FileName']}", index=False)
 
