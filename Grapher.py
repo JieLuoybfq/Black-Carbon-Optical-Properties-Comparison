@@ -1,4 +1,4 @@
-# Graphing using exisiting data
+# Graphing using existing data
 Version = 0.1
 # Aug 2019
 import ConfigParserM as CP
