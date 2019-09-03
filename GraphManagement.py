@@ -1203,3 +1203,84 @@ class GraphTools:
         except Exception as e:
             logging.exception(e)
             raise
+
+    def Fig_Plot_Save_Scatterplot_Matrix(self, Address, Dataframe, Figure_DPI=1000):
+        try:
+            sns.set(style='white')
+            g = sns.pairplot(Dataframe)
+            g.map_lower(sns.kdeplot, cmap="GnBu", shade=True)
+            g.map_diag(plt.hist, edgecolor="b")
+            g.map_upper(self.corrDots)
+
+            xlabels, ylabels = [], []
+            for ax in g.axes[-1, :]:
+                xlabel = ax.xaxis.get_label_text()
+                xlabels.append(xlabel)
+            for ax in g.axes[:, 0]:
+                ylabel = ax.yaxis.get_label_text()
+                ylabels.append(ylabel)
+            for i in range(len(xlabels)):
+                for j in range(len(ylabels)):
+                    g.axes[j, i].xaxis.set_label_text(xlabels[i])
+                    g.axes[j, i].yaxis.set_label_text(ylabels[j])
+
+            plt.savefig(Address, format='jpg', dpi=Figure_DPI)
+            plt.clf()
+            plt.close()
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(self, Address, X_Array, Y_array, tickLabelStyle='sci', X_Min=None, X_Max=None, Y_Min=None, Y_Max=None, X_Label=None, Y_label=None, Plot_Title=None,
+                                                label_font_size=12, Plot_Title_Size=12, Figure_DPI=1000, alpha_Y=0.3, Marker_Size=3):
+        try:
+
+            fig, ax1 = plt.subplots()
+            plt.ticklabel_format(style=tickLabelStyle, axis='x', scilimits=(0, 0))
+            plt.ticklabel_format(style=tickLabelStyle, axis='y', scilimits=(0, 0))
+
+            if X_Min == None:
+                X_Min = float(min(X_Array))
+                X_Min = X_Min - (abs(X_Min) * 0.2)
+            if X_Max == None:
+                X_Max = float(max(X_Array))
+                X_Max = X_Max + (abs(X_Max) * 0.2)
+            if Y_Min == None:
+                Y_Min = float(min(Y_array))
+                Y_Min = Y_Min - (abs(Y_Min) * 0.2)
+            if Y_Max == None:
+                Y_Max = float(max(Y_array))
+                Y_Max = Y_Max + (abs(Y_Max) * 0.2)
+
+            ax1.scatter(X_Array, Y_array, s=7, alpha=alpha_Y)
+            if X_Label != None:
+                ax1.set_xlabel(X_Label, fontsize=label_font_size)
+            if Y_label != None:
+                ax1.set_ylabel(Y_label, fontsize=label_font_size)
+            ax1.set_xlim(X_Min, X_Max)
+            ax1.set_ylim(Y_Min, Y_Max)
+            ax1.grid(True, which='major', axis="both", alpha=0.5)
+            if Plot_Title != None:
+                plt.title(Plot_Title, fontsize=Plot_Title_Size, y=1.0)
+            plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
+            plt.clf()
+            plt.close()
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def corrDots(self, *args, **kwargs):
+        try:
+            corr_r = args[0].corr(args[1], 'pearson')
+            corr_text = f"{corr_r:2.2f}".replace("0.", ".")
+            ax = plt.gca()
+            ax.set_axis_off()
+            marker_size = abs(corr_r) * 10000
+            ax.scatter([.5], [.5], marker_size, [corr_r], alpha=0.95, cmap="coolwarm", vmin=-1, vmax=1, transform=ax.transAxes)
+            font_size = abs(corr_r) * 40 + 5
+            ax.annotate(corr_text, [.5, .5, ], xycoords="axes fraction", ha='center', va='center', fontsize=font_size)
+
+        except Exception as e:
+            logging.exception(e)
+            raise

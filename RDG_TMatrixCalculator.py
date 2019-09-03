@@ -55,22 +55,20 @@ class KeyhanV1:
             self.arrMobilityDiamNano = self.CalcMobilityDiamBins()
             self.dict_dpMedianNano = self.CalcPrimaryParticleSizeMedianNano()
             self.dict_dpMobDistribNano, self.dict_dpMobDistribChance = self.CalcPrimDiamBinAtEachMob()
-            self.Np_Mobility_Distributed = self.PrimaryParticleNumber()
+            self.dict_NpMobDistrib = self.CalcPrimaryParticleNumber()
             suggestedCalcDict = self.CreateDictForEvaluation()
             checkedDict = self.CheckDictWithBoundary(dict=suggestedCalcDict)
             convertedDict = self.ConvertDictToArray(dict=checkedDict)
             T1 = TMatrixCalculation(DBInfo=DB_Info)
             R1 = RDGCalculation()
-            inputT1 = {}
-            outputT1 = {}
-            inputR1 = {}
-            outputR1 = {}
+            inputT1, outputT1, inputR1, outputR1 = {}, {}, {}, {}
             for dm in convertedDict:
                 inputT1[dm], outputT1[dm] = T1.TMatrixCalc(TMatrix_Planned_Input=convertedDict[dm])
                 inputR1[dm], outputR1[dm] = R1.RDGCalc(RDG_Planned_Input=convertedDict[dm])
                 if inputT1[dm] != inputR1[dm]:
                     raise
                 logging.info(f"Calculation for dm:{dm} was finished.")
+
             resDF = self.CalcTotalCrossSection(outTMatrix=outputT1, outRDG=outputR1, checkedDict=checkedDict)
 
             previousInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
@@ -251,22 +249,22 @@ class KeyhanV1:
             logging.exception(e)
             raise
 
-    def PrimaryParticleNumber(self):
+    def CalcPrimaryParticleNumber(self):
         try:
-            Np = {}
+            dictNp = {}
             for dm in self.arrMobilityDiamNano:
-                NArr = []
+                arrNp = []
                 dpArr = self.dict_dpMobDistribNano[dm]
                 for dp in dpArr:
-                    NArr.append(self.PPN_Calc(dm=dm, dp=dp))
-                Np[dm] = NArr
-            return Np
+                    arrNp.append(self._calcPPN(dm=dm, dp=dp))
+                dictNp[dm] = arrNp
+            return dictNp
 
         except Exception as e:
             logging.exception(e)
             raise
 
-    def PPN_Calc(self, dm, dp):
+    def _calcPPN(self, dm, dp):
         try:
             N = self.__AGG_PREFACTOR_PROJECTED_AREA_COEFFICIENT_CENTER * ((dm / dp) ** (2 * self.__AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER))
             return round(Decimal(N), 3)
@@ -305,7 +303,7 @@ class KeyhanV1:
                 S['Kf'] = kf
                 S['RI_Real'] = RI_Real
                 S['RI_Imag'] = RI_Imag
-                S['Np'] = self.Np_Mobility_Distributed[dm]
+                S['Np'] = self.dict_NpMobDistrib[dm]
                 S['chance'] = self.dict_dpMobDistribChance[dm]
                 S['wL'] = wavelength
 
@@ -373,13 +371,14 @@ class KeyhanV1:
 
                 diameter_Nano = sorted(diameter_Nano, key=float)
                 diameter_Nano = gaussian_filter1d(diameter_Nano, 8)
+                diameter_Nano = diameter_Nano.tolist()
 
                 sum = 0
 
                 if self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER != 1:
                     for i in range(0, total_Number_Bins):
                         if i != 0:
-                            l1 = self.LogN_Distribution(dpMedian, self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, diameter_Nano[i], diameter_Nano[i - 1])
+                            l1 = self.CalcLogNDistribPDF(dpMedian, self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, diameter_Nano[i], diameter_Nano[i - 1])
                         else:
                             l1 = 0
                         sum += l1
@@ -404,14 +403,14 @@ class KeyhanV1:
             self.D_TEM = self.D_TEM_FromEffDens_D_Alpha()
             self.infoDict['dp100_nano'] = self.dp100_nano
             self.infoDict['D_TEM'] = self.D_TEM
-            dm_dp = self.PPSM_Calc()
+            dm_dp = self._calcPPSM()
             return dm_dp
 
         except Exception as e:
             logging.exception(e)
             raise
 
-    def PPSM_Calc(self):
+    def _calcPPSM(self):
         # Primary particle size for each mobility diameter
         try:
             dm_dp = {}
@@ -424,12 +423,12 @@ class KeyhanV1:
             logging.exception(e)
             raise
 
-    def LogN_Distribution(self, Median, SigmaG, Dp2, Dp1):  # return number between 0 to 1
+    def CalcLogNDistribPDF(self, median, sigmaG, D2, D1):  # return number between 0 to 1
         try:
-            if SigmaG != 1:
-                A = (1 / (log(SigmaG) * (2 * pi) ** 0.5)) * exp(-1 * (((log(Dp1) - log(Median)) ** 2) / (2 * (log(SigmaG)) ** 2))) * (log(Dp2) - log(Dp1))
-            elif SigmaG == 1:
-                if Dp2 >= Median and Median > Dp1:
+            if sigmaG != 1:
+                A = (1 / (log(sigmaG) * (2 * pi) ** 0.5)) * exp(-1 * (((log(D1) - log(median)) ** 2) / (2 * (log(sigmaG)) ** 2))) * (log(D2) - log(D1))
+            elif sigmaG == 1:
+                if D2 >= median and median > D1:
                     return 1
                 else:
                     return 0

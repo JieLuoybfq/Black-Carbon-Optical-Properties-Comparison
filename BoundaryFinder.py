@@ -36,6 +36,10 @@ class BCDBBoundaryCheck:
             outputDict['dp'] = FN.getPossibleArray(Array=inputDict['dp'], Indexes=arrPossible_Indexes)
             outputDict['wL'] = FN.getPossibleArray(Array=inputDict['wL'], Indexes=arrPossible_Indexes)
             outputDict['chance'] = FN.getPossibleArray(Array=inputDict['chance'], Indexes=arrPossible_Indexes)
+            sum = 0
+            for i in outputDict['chance']:
+                sum += i
+            outputDict['chanceSum'] = sum
             #### to do add more if needed
             logging.info("Boundary issued.")
 
