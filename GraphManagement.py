@@ -8,6 +8,7 @@ import pandas as pd
 from matplotlib.ticker import FormatStrFormatter
 from math import pi
 from math import exp
+from math import isnan
 from scipy.optimize import fsolve
 
 ####### Plotting Parameters
@@ -20,6 +21,9 @@ rcParams['font.family'] = 'STIXGeneral'
 class GraphTools:
     def __init__(self, FolderInfo):
         try:
+            self.__dpDeviation = True
+            self.__dpDeviationPercent = 25
+            #################################################
             self.__CRSGraphs = True
             self.__ErrorAndRatioGraphs = True
             self.__MACMSCGraphs = True
@@ -61,7 +65,7 @@ class GraphTools:
             self.__lineStyle = ['-', '--', ':']
             self.__markerStyle = ["o", "X", "^"]
             self.__lineWidth = [1.5, 1, 0.5]
-            self.__mobilityDiamLimits = [82, 850]
+            self.__mobilityDiamLimits = [49, 960]
 
         except Exception as e:
             logging.exception(e)
@@ -634,6 +638,7 @@ class GraphTools:
             self.MainDF = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName='beacon', Extension='csv'))
             self.full_data_src_dict = {}
             self.full_data_label_dict = {}
+
             self.mainFileNames = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AA_FileName']
             self.DmSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
             self.rhoEff100nmSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
@@ -644,6 +649,20 @@ class GraphTools:
             for index, item in self.mainFileNames.iteritems():
                 self.full_data_src_dict[item] = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName=item))
                 self.full_data_src_dict[item] = self.full_data_src_dict[item].replace(0, np.nan)
+
+                if self.__dpDeviation:
+                    dpMedSeries = self.full_data_src_dict[item]['dp_median']
+                    dpAveSeries = self.full_data_src_dict[item]['dp_Ave']
+                    for indexdp, itemdp in dpMedSeries.iteritems():
+                        if isnan(dpMedSeries.loc[indexdp]):
+                            ratio = 0
+                        else:
+                            ratio = dpAveSeries.loc[indexdp] / dpMedSeries.loc[indexdp] * 100
+                        if ratio < 100 + self.__dpDeviationPercent and ratio > 100 - self.__dpDeviationPercent:
+                            pass
+                        else:
+                            self.full_data_src_dict[item] = self.full_data_src_dict[item].drop([indexdp], axis=0)
+
                 self.full_data_label_dict[item] = "$D_m=$" + str(round(self.DmSeries.loc[index], 2)) + ", " + "$\\rho_{eff,100}$=" + str(round(self.rhoEff100nmSeries.loc[index], 1)) \
                                                   + ", " + "$\sigma_p|d_m=$" + str(round(self.sigmaMobSeries.loc[index], 2)) + ", " + "$D_{TEM}=$" + str(round(self.D_TEMSeries.loc[index], 2)) \
                                                   + ", " + "$d_{p,100}=$" + str(round(self.dp100_nanoSeries.loc[index], 1))
