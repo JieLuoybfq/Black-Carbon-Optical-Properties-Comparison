@@ -56,66 +56,40 @@ class KeyhanV1:
             self.dict_dpMedianNano = self.CalcPrimaryParticleSizeMedianNano()
             self.dict_dpMobDistribNano, self.dict_dpMobDistribChance = self.CalcPrimDiamBinAtEachMob()
             self.dict_NpMobDistrib = self.CalcPrimaryParticleNumber()
-            suggestedCalcDict = self.CreateDictForEvaluation()
-            checkedDict = self.CheckDictWithBoundary(dict=suggestedCalcDict)
-            convertedDict = self.ConvertDictToArray(dict=checkedDict)
+            dictSuggested = self.CreateDictForEvaluation()
+            dictChecked = self.CheckDictWithBoundary(dict=dictSuggested)
+            dictConverted = self.ConvertDictToArray(dict=dictChecked)
             T1 = TMatrixCalculation(DBInfo=DB_Info)
             R1 = RDGCalculation()
-            inputT1, outputT1, inputR1, outputR1 = {}, {}, {}, {}
-            for dm in convertedDict:
-                inputT1[dm], outputT1[dm] = T1.TMatrixCalc(TMatrix_Planned_Input=convertedDict[dm])
-                inputR1[dm], outputR1[dm] = R1.RDGCalc(RDG_Planned_Input=convertedDict[dm])
-                if inputT1[dm] != inputR1[dm]:
+
+            dictInputT1, dictOutputT1, dictInputR1, dictOutputR1 = {}, {}, {}, {}
+            for dm in dictConverted:
+                dictInputT1[dm], dictOutputT1[dm] = T1.TMatrixCalc(TMatrix_Planned_Input=dictConverted[dm])
+                dictInputR1[dm], dictOutputR1[dm] = R1.RDGCalc(RDG_Planned_Input=dictConverted[dm])
+                if dictInputT1[dm] != dictInputR1[dm]:
                     raise
                 logging.info(f"Calculation for dm:{dm} was finished.")
 
-            resDF = self.CalcTotalCrossSection(outTMatrix=outputT1, outRDG=outputR1, checkedDict=checkedDict)
+            dfResult = self.CalcTotalCrossSection(outTMatrix=dictOutputT1, outRDG=dictOutputR1, checkedDict=dictChecked)
 
-            previousInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
-            previousInfoDB.loc[len(previousInfoDB)] = self.infoDict
+            dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
+            dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
             # newInfoDf = pd.DataFrame([self.infoDict])
             # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            previousInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-
-            resDF.to_csv(f"TMatrix_RDG_Result\{self.infoDict['AA_FileName']}", index=False)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ######################################################################################
-    ######################################################################################
-    ######################################################################################
-    ######################################################################################
-    ######################################################################################
-    ######################################################################################
-    ######################################################################################
-
-    def D_TEM_FromEffDens_D_Alpha(self):
-        try:
-            Primary_D_Alpha = self.__AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER
-            Eff_Dm = self.__AGG_EFF_DM_CENTER
-
-            D_TEM = (2 * Primary_D_Alpha - Eff_Dm) / (2 * Primary_D_Alpha - 3)
-            return D_TEM
+            dfInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            dfResult.to_csv(f"TMatrix_RDG_Result\{self.infoDict['AA_FileName']}", index=False)
 
         except Exception as e:
             logging.exception(e)
             raise
 
-    def PrimaryDiameter100nm_nano(self):
-        try:
-            Eff_rho_100nm = self.__AGG_EFF_RHO_100NM_CENTER
-            Primary_K_Alpha = self.__AGG_PREFACTOR_PROJECTED_AREA_COEFFICIENT_CENTER
-            Soot_Material_Density = self.__AGG_MATERIAL_DENSITY_CENTER
-            Primary_D_Alpha = self.__AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER
-
-            K = ((Eff_rho_100nm / (Primary_K_Alpha * Soot_Material_Density)) ** (1 / (3 - 2 * Primary_D_Alpha))) * (100)
-            return K
-
-        except Exception as e:
-            logging.exception(e)
-            raise
+    ######################################################################################
+    ######################################################################################
+    ######################################################################################
+    ######################################################################################
+    ######################################################################################
+    ######################################################################################
+    ######################################################################################
 
     def CalcTotalCrossSection(self, outTMatrix, outRDG, checkedDict):
         try:
@@ -145,7 +119,7 @@ class KeyhanV1:
                     SCA_RDG += outRDG[dm][i][1] * checkedDict[dm]['chance'][i]
                     Np_Ave += checkedDict[dm]['Np'][i] * checkedDict[dm]['chance'][i]
                     dp_Ave += checkedDict[dm]['dp'][i] * checkedDict[dm]['chance'][i]
-                    AggregateMass += self.DensitytoMass(dp=checkedDict[dm]['dp'][i], density=self.__AGG_MATERIAL_DENSITY_CENTER, Np=checkedDict[dm]['Np'][i]) * checkedDict[dm]['chance'][i]
+                    AggregateMass += self._convertDensityToMass(dp=checkedDict[dm]['dp'][i], density=self.__AGG_MATERIAL_DENSITY_CENTER, Np=checkedDict[dm]['Np'][i]) * checkedDict[dm]['chance'][i]
                 ################################################
                 ################################################
                 ################################################ MAC and MSC
@@ -216,16 +190,6 @@ class KeyhanV1:
             logging.exception(e)
             raise
 
-    def DensitytoMass(self, dp, density, Np):
-        try:
-            V = (Decimal(10) ** (Decimal(-27))) * Decimal(pi) * (dp ** Decimal(3)) / Decimal(6)
-            mass = Np * V * Decimal(density) * Decimal(1000)  # to gram
-            return mass
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
     def ConvertDictToArray(self, dict):
         try:
             conDict = {}
@@ -249,6 +213,18 @@ class KeyhanV1:
             logging.exception(e)
             raise
 
+    def CheckDictWithBoundary(self, dict):
+        try:
+            checked = {}
+            for dm in dict:
+                checking = BCheck()
+                checked[dm] = checking.CheckInputDict(inputDict=dict[dm])
+            return checked
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
     def CalcPrimaryParticleNumber(self):
         try:
             dictNp = {}
@@ -259,27 +235,6 @@ class KeyhanV1:
                     arrNp.append(self._calcPPN(dm=dm, dp=dp))
                 dictNp[dm] = arrNp
             return dictNp
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def _calcPPN(self, dm, dp):
-        try:
-            N = self.__AGG_PREFACTOR_PROJECTED_AREA_COEFFICIENT_CENTER * ((dm / dp) ** (2 * self.__AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER))
-            return round(Decimal(N), 3)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def CheckDictWithBoundary(self, dict):
-        try:
-            checked = {}
-            for dm in dict:
-                checking = BCheck()
-                checked[dm] = checking.CheckInputDict(inputDict=dict[dm])
-            return checked
 
         except Exception as e:
             logging.exception(e)
@@ -378,7 +333,7 @@ class KeyhanV1:
                 if self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER != 1:
                     for i in range(0, total_Number_Bins):
                         if i != 0:
-                            l1 = self.CalcLogNDistribPDF(dpMedian, self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, diameter_Nano[i], diameter_Nano[i - 1])
+                            l1 = self._calcLogNDistribPDF(dpMedian, self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, diameter_Nano[i], diameter_Nano[i - 1])
                         else:
                             l1 = 0
                         sum += l1
@@ -399,12 +354,57 @@ class KeyhanV1:
 
     def CalcPrimaryParticleSizeMedianNano(self):
         try:
-            self.dp100_nano = self.PrimaryDiameter100nm_nano()
-            self.D_TEM = self.D_TEM_FromEffDens_D_Alpha()
+            self.dp100_nano = self._calcPrimaryDiameter100nm_nano()
+            self.D_TEM = self._calc_D_TEM_From_EffDens_D_Alpha()
             self.infoDict['dp100_nano'] = self.dp100_nano
             self.infoDict['D_TEM'] = self.D_TEM
             dm_dp = self._calcPPSM()
             return dm_dp
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def _calc_D_TEM_From_EffDens_D_Alpha(self):
+        try:
+            Primary_D_Alpha = self.__AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER
+            Eff_Dm = self.__AGG_EFF_DM_CENTER
+
+            D_TEM = (2 * Primary_D_Alpha - Eff_Dm) / (2 * Primary_D_Alpha - 3)
+            return D_TEM
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def _calcPrimaryDiameter100nm_nano(self):
+        try:
+            Eff_rho_100nm = self.__AGG_EFF_RHO_100NM_CENTER
+            Primary_K_Alpha = self.__AGG_PREFACTOR_PROJECTED_AREA_COEFFICIENT_CENTER
+            Soot_Material_Density = self.__AGG_MATERIAL_DENSITY_CENTER
+            Primary_D_Alpha = self.__AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER
+
+            K = ((Eff_rho_100nm / (Primary_K_Alpha * Soot_Material_Density)) ** (1 / (3 - 2 * Primary_D_Alpha))) * (100)
+            return K
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def _convertDensityToMass(self, dp, density, Np):
+        try:
+            V = (Decimal(10) ** (Decimal(-27))) * Decimal(pi) * (dp ** Decimal(3)) / Decimal(6)
+            mass = Np * V * Decimal(density) * Decimal(1000)  # to gram
+            return mass
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def _calcPPN(self, dm, dp):
+        try:
+            N = self.__AGG_PREFACTOR_PROJECTED_AREA_COEFFICIENT_CENTER * ((dm / dp) ** (2 * self.__AGG_EXPONENT_PROJECTED_AREA_COEFFICIENT_CENTER))
+            return round(Decimal(N), 3)
 
         except Exception as e:
             logging.exception(e)
@@ -423,7 +423,7 @@ class KeyhanV1:
             logging.exception(e)
             raise
 
-    def CalcLogNDistribPDF(self, median, sigmaG, D2, D1):  # return number between 0 to 1
+    def _calcLogNDistribPDF(self, median, sigmaG, D2, D1):  # return number between 0 to 1
         try:
             if sigmaG != 1:
                 A = (1 / (log(sigmaG) * (2 * pi) ** 0.5)) * exp(-1 * (((log(D1) - log(median)) ** 2) / (2 * (log(sigmaG)) ** 2))) * (log(D2) - log(D1))

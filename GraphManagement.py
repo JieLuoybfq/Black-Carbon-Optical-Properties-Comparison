@@ -9,6 +9,7 @@ from matplotlib.ticker import FormatStrFormatter
 from math import pi
 from math import exp
 from math import isnan
+from math import log
 from scipy.optimize import fsolve
 
 ####### Plotting Parameters
@@ -23,23 +24,30 @@ class GraphTools:
         try:
             self.__dpDeviation = True
             self.__dpDeviationPercent = 25
+            self.__dmDistibGraphs = True
+            self.__dmSigmaLogN = [1.2, 1.4, 1.6]
+            self.__dmMedianLogN = [100, 200, 300]
             #################################################
-            self.__CRSGraphs = True
-            self.__ErrorAndRatioGraphs = True
-            self.__MACMSCGraphs = True
-            self.__SSAGraphs = True
-            self.__dpMedianGraphs = True
             #################################################
+            ################################################# Main Graphs
+            self.__CRSGraphs = False
+            self.__ErrorAndRatioGraphs = False
+            self.__MACMSCGraphs = False
+            self.__SSAGraphs = False
+            self.__dpMedianGraphs = False
+            self.__dmDistibGraphs = True
+            #####
             self.__DmCTE = True
             self.__rhoEff100nmCTE = True
-            self.__sigmaMobCTE = True
+            self.__sigmaEachMobCTE = True
             #################################################
+            #################################################
+            ################################################# Experiment Graphs
             self.__CRSGraphs_EXP = True
             self.__ErrorAndRatioGraphs_EXP = True
             self.__MACMSCGraphs_EXP = True
             self.__SSAGraphs_EXP = True
             self.__dpMedianGraphs_EXP = True
-            #################################################
             self.__DmCTE_EXP = True
             self.__rhoEff100nmCTE_EXP = True
             self.__sigmaMobCTE_EXP = True
@@ -53,19 +61,26 @@ class GraphTools:
             self.__yLabelSSA = "SSA"
             self.__yLabelMAC = "MAC (m$^2$/g)"
             self.__yLabelMSC = "MSC (m$^2$/g)"
-            self.__yLabeldpMedian = "Primary Median Diameter (nm)"
+            self.__yLabel_dpMedian = "Primary Median Diameter (nm)"
             self.__yLabelCalcNumber = "#"
             #################################################
-            self.__plotTitle_Size = 12
-            self.__labelFont_size = 12
-            self.__figureDPI = 750
-            self.__markerSize = 2
-            self.__alphaMainLine = 0.5
+            self.__plotTitleFontSize = 14
+            self.__xLabelFontSize = 12
+            self.__yLabelFontSize = 12
+            self.__xMajorTickLabelFontSize = 9
+            self.__xMinorTickLabelFontSize = 8
+            self.__yMajorTickLabelFontSize = 9
+            self.__yMinorTickLabelFontSize = 8
+            self.__legendMarkerScale = 2
+            self.__figureDPI = 500
+            self.__markerSize = 3
+            self.__alphaMainLine = 0.55
             self.__lineColor = ['red', 'blue', 'green']
             self.__lineStyle = ['-', '--', ':']
             self.__markerStyle = ["o", "X", "^"]
             self.__lineWidth = [1.5, 1, 0.5]
-            self.__mobilityDiamLimits = [49, 960]
+            self.__xAxisLimits1 = [49, 960]
+            self.__xAxisLimits2 = [49, 960]
 
         except Exception as e:
             logging.exception(e)
@@ -365,24 +380,22 @@ class GraphTools:
             ###########################################
             ###########################################
 
-            B = 3
+            self.dfMainInfo = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName='beacon', Extension='csv'))
+            self.dictFullData = {}
+            self.dictFullDataLabel = {}
+            self.serMainFileName = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AA_FileName']
+            self.ser_Dm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
+            self.ser_rhoEff100nm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
+            self.ser_SigmaMob = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
+            self.ser_D_TEM = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'D_TEM']
+            self.ser_dp100_nano = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'dp100_nano']
 
-            self.MainDF = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName='beacon', Extension='csv'))
-            self.full_data_src_dict = {}
-            self.full_data_label_dict = {}
-            self.mainFileNames = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AA_FileName']
-            self.DmSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
-            self.rhoEff100nmSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
-            self.sigmaMobSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
-            self.D_TEMSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'D_TEM']
-            self.dp100_nanoSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'dp100_nano']
-
-            for index, item in self.mainFileNames.iteritems():
-                self.full_data_src_dict[item] = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName=item))
-                self.full_data_src_dict[item] = self.full_data_src_dict[item].replace(0, np.nan)
-                self.full_data_label_dict[item] = "$D_m=$" + str(round(self.DmSeries.loc[index], 2)) + ", " + "$\\rho_{eff,100}$=" + str(round(self.rhoEff100nmSeries.loc[index], 1)) \
-                                                  + ", " + "$\sigma_p|d_m=$" + str(round(self.sigmaMobSeries.loc[index], 2)) + ", " + "$D_{TEM}=$" + str(round(self.D_TEMSeries.loc[index], 2)) \
-                                                  + ", " + "$d_{p,100}=$" + str(round(self.dp100_nanoSeries.loc[index], 1))
+            for index, item in self.serMainFileName.iteritems():
+                self.dictFullData[item] = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName=item))
+                self.dictFullData[item] = self.dictFullData[item].replace(0, np.nan)
+                self.dictFullDataLabel[item] = "$D_m=$" + str(round(self.ser_Dm.loc[index], 2)) + ", " + "$\\rho_{eff,100}$=" + str(round(self.ser_rhoEff100nm.loc[index], 1)) \
+                                               + ", " + "$\sigma_p|d_m=$" + str(round(self.ser_SigmaMob.loc[index], 2)) + ", " + "$D_{TEM}=$" + str(round(self.ser_D_TEM.loc[index], 2)) \
+                                               + ", " + "$d_{p,100}=$" + str(round(self.ser_dp100_nano.loc[index], 1))
 
             if self.__CRSGraphs_EXP:
                 self.PlotCrossSections_EXP()
@@ -418,16 +431,16 @@ class GraphTools:
 
                 for j in A2.unique():
 
-                    fileNames = self.MainDF[(A1Name == i) & (A2Name == j)].AA_FileName
+                    fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
 
                     c_lineStyle = 0
                     c_markerStyle = 0
                     c_lineColor = 0
 
                     for index, item in fileNames.iteritems():
-                        if item in self.full_data_src_dict:
-                            df = self.full_data_src_dict[item]
-                            ax1.plot(df['dm'], df[column], label=self.full_data_label_dict[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
+                        if item in self.dictFullData:
+                            df = self.dictFullData[item]
+                            ax1.plot(df['dm'], df[column], label=self.dictFullDataLabel[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
                                      linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine, marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
 
                         c_lineStyle += 1
@@ -454,9 +467,9 @@ class GraphTools:
                 # ax1.set_yscale("log")
                 ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__labelFont_size)
                 ax1.set_ylabel(yLabel, fontsize=self.__labelFont_size)
-                ax1.set_xlim(self.__mobilityDiamLimits[0], self.__mobilityDiamLimits[1])
+                ax1.set_xlim(self.__xAxisLimits1[0], self.__xAxisLimits1[1])
 
-                ax1.set_title(T1, fontsize=self.__plotTitle_Size)
+                ax1.set_title(T1, fontsize=self.__plotTitleFontSize)
                 ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
                 ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
                 ax1.legend(bbox_to_anchor=(1.00, 0.5), loc='center left', fontsize='large')
@@ -472,7 +485,7 @@ class GraphTools:
     def PlotSSAIntermediate_EXP(self, clName, tlName, yLabel, mean, STD):
         try:
             if self.__rhoEff100nmCTE == True:
-                self.PlotSSACore_EXP(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
+                self.PlotSSACore_EXP(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER, A2=self.ser_Dm, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
                                      column=clName, mean=mean, STD=STD, yLabel=yLabel, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
 
             # if self.__DmCTE == True:
@@ -526,16 +539,16 @@ class GraphTools:
 
                 for j in A2.unique():
 
-                    fileNames = self.MainDF[(A1Name == i) & (A2Name == j)].AA_FileName
+                    fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
 
                     c_lineStyle = 0
                     c_markerStyle = 0
                     c_lineColor = 0
 
                     for index, item in fileNames.iteritems():
-                        if item in self.full_data_src_dict:
-                            df = self.full_data_src_dict[item]
-                            ax1.plot(df['dm'], df[column], label=self.full_data_label_dict[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
+                        if item in self.dictFullData:
+                            df = self.dictFullData[item]
+                            ax1.plot(df['dm'], df[column], label=self.dictFullDataLabel[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
                                      linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine, marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
 
                         c_lineStyle += 1
@@ -562,9 +575,9 @@ class GraphTools:
                 ax1.set_yscale("log")
                 ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__labelFont_size)
                 ax1.set_ylabel(self.__yLabelPlotCrossSections, fontsize=self.__labelFont_size)
-                ax1.set_xlim(self.__mobilityDiamLimits[0], self.__mobilityDiamLimits[1])
+                ax1.set_xlim(self.__xAxisLimits1[0], self.__xAxisLimits1[1])
 
-                ax1.set_title(T1, fontsize=self.__plotTitle_Size)
+                ax1.set_title(T1, fontsize=self.__plotTitleFontSize)
                 ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
                 ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
                 ax1.legend(bbox_to_anchor=(1.00, 0.5), loc='center left', fontsize='large')
@@ -580,15 +593,15 @@ class GraphTools:
     def PlotCrossSectionsIntermediate_EXP(self, clName, tlName, mean, STD):
         try:
             if self.__rhoEff100nmCTE_EXP == True:
-                self.PlotCrossSectionsCore_EXP(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
+                self.PlotCrossSectionsCore_EXP(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER, A2=self.ser_Dm, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
                                                column=clName, mean=mean, STD=STD, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
 
             # if self.__DmCTE == True:
-            #     self.PlotCrossSectionsCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
+            #     self.PlotRevolving(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
             #                                column=clName, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
             #
             # if self.__sigmaMobCTE == True:
-            #     self.PlotCrossSectionsCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
+            #     self.PlotRevolving(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
             #                                A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
             #                                column=clName, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
 
@@ -623,7 +636,7 @@ class GraphTools:
             STD = 'SCA_CRS_STD'
             tlName = "Experiment and TMatrix Scattering Cross Section"
             self.PlotCrossSectionsIntermediate_EXP(clName=clName, tlName=tlName, mean=mean, STD=STD)
-            a = 3
+
 
         except Exception as e:
             logging.exception(e)
@@ -633,39 +646,142 @@ class GraphTools:
     ###################################
     ###################################
     ###################################
+    def GetDataDefinition(self):
+        try:
+            self.serMainFileName = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AA_FileName']
+            self.ser_Dm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
+            self.ser_rhoEff100nm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
+            self.ser_SigmaMob = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
+            self.ser_D_TEM = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'D_TEM']
+            self.ser_dp100_nano = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'dp100_nano']
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def GetDataLabel(self, item, index):
+        try:
+            self.dictFullDataLabel[item] = "$D_m=$" + str(round(self.ser_Dm.loc[index], 2)) + ", " + "$\\rho_{eff,100}$=" + str(round(self.ser_rhoEff100nm.loc[index], 1)) \
+                                           + ", " + "$\sigma_p|d_m=$" + str(round(self.ser_SigmaMob.loc[index], 2)) + ", " + "$D_{TEM}=$" + str(abs(round(self.ser_D_TEM.loc[index], 2))) \
+                                           + ", " + "$d_{p,100}=$" + str(round(self.ser_dp100_nano.loc[index], 1))
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def Check_dpRatio(self, item):
+        try:
+            ser_dpMed = self.dictFullData[item]['dp_median']
+            ser_dpAve = self.dictFullData[item]['dp_Ave']
+            for index_dp, item_dp in ser_dpMed.iteritems():
+                ##############################################
+                if isnan(ser_dpMed.loc[index_dp]):
+                    ratio = 0
+                else:
+                    ratio = (ser_dpAve.loc[index_dp] / ser_dpMed.loc[index_dp]) * 100  # Percent
+                ##############################################
+                if (ratio < 100 + self.__dpDeviationPercent) and (ratio > 100 - self.__dpDeviationPercent):
+                    pass
+                else:
+                    self.dictFullData[item] = self.dictFullData[item].drop([index_dp], axis=0)
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def _calcLogNDistribPDF(self, median, sigmaG, D2, D1):  # return number between 0 to 1
+        try:
+            if sigmaG != 1:
+                A = (1 / (log(sigmaG) * (2 * pi) ** 0.5)) * exp(-1 * (((log(D1) - log(median)) ** 2) / (2 * (log(sigmaG)) ** 2))) * (log(D2) - log(D1))
+            elif sigmaG == 1:
+                if D2 >= median and median > D1:
+                    return 1
+                else:
+                    return 0
+
+            return A
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CalcTotalMACMSC(self, dataFrame, name):  # return number between 0 to 1
+        try:
+
+            df = pd.DataFrame(columns=['sigma', 'median', 'TotalMassGram', 'ABS_RDG_Total', 'SCA_RDG_Total',
+                                       'ABS_TMatrix_Total', 'SCA_TMatrix_Total',
+                                       'MAC_RDG_Total', 'MSC_RDG_Total',
+                                       'MAC_TMatrix_Total', 'MSC_TMatrix_Total',
+                                       'SSA_RDG_Total', 'SSA_TMatrix_Total', 'sum'])
+            for sigma in self.__dmSigmaLogN:
+                for median in self.__dmMedianLogN:
+                    result = {}
+                    sum = 0
+                    dmSeries = dataFrame['dm']
+                    length = len(dmSeries)
+                    AggMassGrSeries = dataFrame['Agg_Mass_gr']
+                    RDG_ABSSeries = dataFrame['ABS_RDG']
+                    RDG_SCASeries = dataFrame['SCA_RDG']
+                    TMatrix_ABSSeries = dataFrame['ABS_TMatrix']
+                    TMatrix_SCASeries = dataFrame['SCA_TMatrix']
+                    totalMassGr, RDG_ABSTotal, RDG_SCATotal, TMatrix_ABSTotal, TMatrix_SCATotal = 0, 0, 0, 0, 0
+
+                    for index, item in dmSeries.iteritems():
+
+                        if index == length - 1:
+                            break
+
+                        chance = self._calcLogNDistribPDF(median=median, sigmaG=sigma, D2=dmSeries.loc[index + 1], D1=dmSeries.loc[index])
+                        totalMassGr += chance * AggMassGrSeries.loc[index]
+                        RDG_ABSTotal += chance * RDG_ABSSeries.loc[index]
+                        RDG_SCATotal += chance * RDG_SCASeries.loc[index]
+                        TMatrix_ABSTotal += chance * TMatrix_ABSSeries.loc[index]
+                        TMatrix_SCATotal += chance * TMatrix_SCASeries.loc[index]
+                        sum += chance
+
+                    result['sigma'] = sigma
+                    result['median'] = median
+                    result['sum'] = sum
+                    result['TotalMassGram'] = totalMassGr
+                    result['ABS_RDG_Total'] = RDG_ABSTotal
+                    result['SCA_RDG_Total'] = RDG_SCATotal
+                    result['ABS_TMatrix_Total'] = TMatrix_ABSTotal
+                    result['SCA_TMatrix_Total'] = TMatrix_SCATotal
+                    result['MAC_RDG_Total'] = RDG_ABSTotal * (10 ** (-12)) / totalMassGr
+                    result['MSC_RDG_Total'] = RDG_SCATotal * (10 ** (-12)) / totalMassGr
+                    result['MAC_TMatrix_Total'] = TMatrix_ABSTotal * (10 ** (-12)) / totalMassGr
+                    result['MSC_TMatrix_Total'] = TMatrix_SCATotal * (10 ** (-12)) / totalMassGr
+                    result['SSA_RDG_Total'] = RDG_SCATotal / (RDG_SCATotal + RDG_ABSTotal)
+                    result['SSA_TMatrix_Total'] = TMatrix_SCATotal / (TMatrix_SCATotal + TMatrix_ABSTotal)
+                    df.loc[len(df)] = result
+
+            self.dictTotalOpticalProp[name] = df
+
+
+
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
     def RDG_TMatrixComparisonGraphs(self):
         try:
-            self.MainDF = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName='beacon', Extension='csv'))
-            self.full_data_src_dict = {}
-            self.full_data_label_dict = {}
+            self.dfMainInfo = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName='beacon', Extension='csv'))
+            self.dictFullData = {}
+            self.dictFullDataLabel = {}
+            self.dictTotalOpticalProp = {}
 
-            self.mainFileNames = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AA_FileName']
-            self.DmSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
-            self.rhoEff100nmSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
-            self.sigmaMobSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
-            self.D_TEMSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'D_TEM']
-            self.dp100_nanoSeries = self.MainDF.loc[self.MainDF['AA_Plot'] == 1, 'dp100_nano']
+            self.GetDataDefinition()
 
-            for index, item in self.mainFileNames.iteritems():
-                self.full_data_src_dict[item] = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName=item))
-                self.full_data_src_dict[item] = self.full_data_src_dict[item].replace(0, np.nan)
+            for index, item in self.serMainFileName.iteritems():
+
+                self.dictFullData[item] = pd.read_csv(GF.getAddressTo(FolderName=self.__folderNameData, FileName=item))
+                self.dictFullData[item] = self.dictFullData[item].replace(0, np.nan)
 
                 if self.__dpDeviation:
-                    dpMedSeries = self.full_data_src_dict[item]['dp_median']
-                    dpAveSeries = self.full_data_src_dict[item]['dp_Ave']
-                    for indexdp, itemdp in dpMedSeries.iteritems():
-                        if isnan(dpMedSeries.loc[indexdp]):
-                            ratio = 0
-                        else:
-                            ratio = dpAveSeries.loc[indexdp] / dpMedSeries.loc[indexdp] * 100
-                        if ratio < 100 + self.__dpDeviationPercent and ratio > 100 - self.__dpDeviationPercent:
-                            pass
-                        else:
-                            self.full_data_src_dict[item] = self.full_data_src_dict[item].drop([indexdp], axis=0)
+                    self.Check_dpRatio(item=item)
 
-                self.full_data_label_dict[item] = "$D_m=$" + str(round(self.DmSeries.loc[index], 2)) + ", " + "$\\rho_{eff,100}$=" + str(round(self.rhoEff100nmSeries.loc[index], 1)) \
-                                                  + ", " + "$\sigma_p|d_m=$" + str(round(self.sigmaMobSeries.loc[index], 2)) + ", " + "$D_{TEM}=$" + str(round(self.D_TEMSeries.loc[index], 2)) \
-                                                  + ", " + "$d_{p,100}=$" + str(round(self.dp100_nanoSeries.loc[index], 1))
+                self.CalcTotalMACMSC(self.dictFullData[item], item)
+
+                self.GetDataLabel(item=item, index=index)
 
             if self.__CRSGraphs:
                 self.PlotCrossSections()
@@ -677,6 +793,8 @@ class GraphTools:
                 self.PlotMACMSC()
             if self.__dpMedianGraphs:
                 self.PlotdpMedian()
+            if self.__dmDistibGraphs:
+                pass
 
         except Exception as e:
             logging.exception(e)
@@ -686,93 +804,39 @@ class GraphTools:
     ###################################
     ###################################
     ###################################
-    def PlotdpMedianCore(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, yLabel, T1B=None, F1B=None):
+
+    def PlotTotalGraphs(self):
         try:
-            alphaMainLine = self.__alphaMainLine
-
-            for i in A1.unique():
-
-                fig, ax1 = plt.subplots()
-
-                c_lineColor = 0
-                c_lineWidth = 0
-
-                for j in A2.unique():
-
-                    fileNames = self.MainDF[(A1Name == i) & (A2Name == j)].AA_FileName
-
-                    c_lineStyle = 0
-                    c_markerStyle = 0
-
-                    for index, item in fileNames.iteritems():
-                        if item in self.full_data_src_dict:
-                            df = self.full_data_src_dict[item]
-                            ax1.plot(df['dm'], df[column], label=self.full_data_label_dict[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine, marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-
-                        c_lineStyle += 1
-                        c_markerStyle += 1
-
-                    c_lineColor += 1
-                    c_lineWidth += 1
-                if T1B:
-                    T1 = title + T1A + str(round(i, T1I)) + T1B
-                else:
-                    T1 = title + T1A + str(round(i, T1I))
-                if F1B:
-                    F1 = title + F1A + str(round(i, F1I)) + F1B
-                else:
-                    F1 = title + F1A + str(round(i, F1I))
-
-                ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale("log")
-                # ax1.set_yscale("log")
-                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__labelFont_size)
-                ax1.set_ylabel(yLabel, fontsize=self.__labelFont_size)
-                ax1.set_xlim(self.__mobilityDiamLimits[0], self.__mobilityDiamLimits[1])
-
-                ax1.set_title(T1, fontsize=self.__plotTitle_Size)
-                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
-                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), loc='center left', fontsize='large')
-                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + "\PrimaryParticle", FileName=F1, Extension="jpg")
-                plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
-                plt.clf()
-                plt.close()
+            folderName = 'TotalGraphs'
+            ######################## MAC RDG
+            columnName = 'dp_median'
+            titleName = "Primary Median Diameter for each Mobility Diameter"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabel_dpMedian)
+            ######################## MSC RDG
+            columnName = 'NumberOfCalcs'
+            titleName = "Number of Calculations for each Mobility Diameter"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelCalcNumber)
 
         except Exception as e:
             logging.exception(e)
             raise
 
-    def PlotdpMedianIntermediate(self, clName, tlName, yLabel):
-        try:
-            if self.__rhoEff100nmCTE == True:
-                self.PlotdpMedianCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                      column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-            if self.__DmCTE == True:
-                self.PlotdpMedianCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                      column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
-
-            if self.__sigmaMobCTE == True:
-                self.PlotdpMedianCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                      A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                      column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
+    ###################################
+    ###################################
+    ###################################
+    ###################################
 
     def PlotdpMedian(self):
         try:
+            folderName = 'PrimaryParticle'
             ######################## MAC RDG
-            clName = 'dp_median'
-            tlName = "Primary Median Diameter for each Mobility Diameter"
-            self.PlotdpMedianIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabeldpMedian)
+            columnName = 'dp_median'
+            titleName = "Primary Median Diameter for each Mobility Diameter"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabel_dpMedian)
             ######################## MSC RDG
-            clName = 'NumberOfCalcs'
-            tlName = "Number of Calculations for each Mobility Diameter"
-            self.PlotdpMedianIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelCalcNumber)
+            columnName = 'NumberOfCalcs'
+            titleName = "Number of Calculations for each Mobility Diameter"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelCalcNumber)
 
         except Exception as e:
             logging.exception(e)
@@ -782,101 +846,26 @@ class GraphTools:
     ###################################
     ###################################
     ###################################
-    def PlotMACMSCCore(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, yLabel, T1B=None, F1B=None):
-        try:
-            alphaMainLine = self.__alphaMainLine
-
-            for i in A1.unique():
-
-                fig, ax1 = plt.subplots()
-
-                c_lineColor = 0
-                c_lineWidth = 0
-
-                for j in A2.unique():
-
-                    fileNames = self.MainDF[(A1Name == i) & (A2Name == j)].AA_FileName
-
-                    c_lineStyle = 0
-                    c_markerStyle = 0
-
-                    for index, item in fileNames.iteritems():
-                        if item in self.full_data_src_dict:
-                            df = self.full_data_src_dict[item]
-                            ax1.plot(df['dm'], df[column], label=self.full_data_label_dict[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine, marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-
-                        c_lineStyle += 1
-                        c_markerStyle += 1
-
-                    c_lineColor += 1
-                    c_lineWidth += 1
-                if T1B:
-                    T1 = title + T1A + str(round(i, T1I)) + T1B
-                else:
-                    T1 = title + T1A + str(round(i, T1I))
-                if F1B:
-                    F1 = title + F1A + str(round(i, F1I)) + F1B
-                else:
-                    F1 = title + F1A + str(round(i, F1I))
-
-                ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale("log")
-                # ax1.set_yscale("log")
-                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__labelFont_size)
-                ax1.set_ylabel(yLabel, fontsize=self.__labelFont_size)
-                ax1.set_xlim(self.__mobilityDiamLimits[0], self.__mobilityDiamLimits[1])
-
-                ax1.set_title(T1, fontsize=self.__plotTitle_Size)
-                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
-                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), loc='center left', fontsize='large')
-                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + "\MAC_MSC", FileName=F1, Extension="jpg")
-                plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
-                plt.clf()
-                plt.close()
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def PlotMACMSCIntermediate(self, clName, tlName, yLabel):
-        try:
-            if self.__rhoEff100nmCTE == True:
-                self.PlotMACMSCCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                    column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-            if self.__DmCTE == True:
-                self.PlotMACMSCCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                    column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
-
-            if self.__sigmaMobCTE == True:
-                self.PlotMACMSCCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                    A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                    column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
 
     def PlotMACMSC(self):
         try:
+            folderName = 'MACs_MSCs'
             ######################## MAC RDG
-            clName = 'MAC_RDG'
-            tlName = "MAC for RDG-FA"
-            self.PlotMACMSCIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelMAC)
+            columnName = 'MAC_RDG'
+            titleName = "MAC for RDG-FA"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelMAC)
             ######################## MSC RDG
-            clName = 'MSC_RDG'
-            tlName = "MSC for RDG-FA"
-            self.PlotMACMSCIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelMSC)
+            columnName = 'MSC_RDG'
+            titleName = "MSC for RDG-FA"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelMSC)
             ######################## MAC TMatrix
-            clName = 'MAC_TMatrix'
-            tlName = "MAC for TMatrix"
-            self.PlotMACMSCIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelMAC)
+            columnName = 'MAC_TMatrix'
+            titleName = "MAC for TMatrix"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelMAC)
             ######################## MSC TMatrix
-            clName = 'MSC_TMatrix'
-            tlName = "MSC for TMatrix"
-            self.PlotMACMSCIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelMSC)
+            columnName = 'MSC_TMatrix'
+            titleName = "MSC for TMatrix"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelMSC)
 
 
 
@@ -888,94 +877,19 @@ class GraphTools:
     ###################################
     ###################################
     ###################################
-    def PlotSSACore(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, yLabel, T1B=None, F1B=None):
-        try:
-            alphaMainLine = self.__alphaMainLine
-
-            for i in A1.unique():
-
-                fig, ax1 = plt.subplots()
-
-                c_lineColor = 0
-                c_lineWidth = 0
-
-                for j in A2.unique():
-
-                    fileNames = self.MainDF[(A1Name == i) & (A2Name == j)].AA_FileName
-
-                    c_lineStyle = 0
-                    c_markerStyle = 0
-
-                    for index, item in fileNames.iteritems():
-                        if item in self.full_data_src_dict:
-                            df = self.full_data_src_dict[item]
-                            ax1.plot(df['dm'], df[column], label=self.full_data_label_dict[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine, marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-
-                        c_lineStyle += 1
-                        c_markerStyle += 1
-
-                    c_lineColor += 1
-                    c_lineWidth += 1
-                if T1B:
-                    T1 = title + T1A + str(round(i, T1I)) + T1B
-                else:
-                    T1 = title + T1A + str(round(i, T1I))
-                if F1B:
-                    F1 = title + F1A + str(round(i, F1I)) + F1B
-                else:
-                    F1 = title + F1A + str(round(i, F1I))
-
-                ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale("log")
-                # ax1.set_yscale("log")
-                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__labelFont_size)
-                ax1.set_ylabel(yLabel, fontsize=self.__labelFont_size)
-                ax1.set_xlim(self.__mobilityDiamLimits[0], self.__mobilityDiamLimits[1])
-
-                ax1.set_title(T1, fontsize=self.__plotTitle_Size)
-                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
-                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), loc='center left', fontsize='large')
-                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + "\SSAs", FileName=F1, Extension="jpg")
-                plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
-                plt.clf()
-                plt.close()
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def PlotSSAIntermediate(self, clName, tlName, yLabel):
-        try:
-            if self.__rhoEff100nmCTE == True:
-                self.PlotSSACore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                 column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-            if self.__DmCTE == True:
-                self.PlotSSACore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                 column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
-
-            if self.__sigmaMobCTE == True:
-                self.PlotSSACore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                 A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                 column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
 
     def PlotSSA(self):
         try:
+            folderName = 'SSAs'
             ######################## SSA TMatrix
-            clName = 'SSA_TMatrix'
-            tlName = "SSA for TMatrix"
-            self.PlotSSAIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelSSA)
+            columnName = 'SSA_TMatrix'
+            titleName = "SSA for TMatrix"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelSSA)
 
             ######################## SSA RDG
-            clName = 'SSA_RDG'
-            tlName = "SSA for RDG-FA"
-            self.PlotSSAIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelSSA)
+            columnName = 'SSA_RDG'
+            titleName = "SSA for RDG-FA"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelSSA)
 
 
 
@@ -987,109 +901,26 @@ class GraphTools:
     ###################################
     ###################################
     ###################################
-    def PlotErrorAndRatioCore(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, yLabel, T1B=None, F1B=None):
-        try:
-            alphaMainLine = self.__alphaMainLine
-
-            for i in A1.unique():
-
-                fig, ax1 = plt.subplots()
-
-                c_lineColor = 0
-                c_lineWidth = 0
-
-                for j in A2.unique():
-
-                    fileNames = self.MainDF[(A1Name == i) & (A2Name == j)].AA_FileName
-
-                    c_lineStyle = 0
-                    c_markerStyle = 0
-
-                    for index, item in fileNames.iteritems():
-                        if item in self.full_data_src_dict:
-                            df = self.full_data_src_dict[item]
-                            ax1.plot(df['dm'], df[column], label=self.full_data_label_dict[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine, marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-
-                        c_lineStyle += 1
-                        c_markerStyle += 1
-
-                    c_lineColor += 1
-                    c_lineWidth += 1
-                if T1B:
-                    T1 = title + T1A + str(round(i, T1I)) + T1B
-                else:
-                    T1 = title + T1A + str(round(i, T1I))
-                if F1B:
-                    F1 = title + F1A + str(round(i, F1I)) + F1B
-                else:
-                    F1 = title + F1A + str(round(i, F1I))
-
-                ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale("log")
-                # ax1.set_yscale("log")
-                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__labelFont_size)
-                ax1.set_ylabel(yLabel, fontsize=self.__labelFont_size)
-                ax1.set_xlim(self.__mobilityDiamLimits[0], self.__mobilityDiamLimits[1])
-
-                ax1.set_title(T1, fontsize=self.__plotTitle_Size)
-                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
-                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), loc='center left', fontsize='large')
-                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + "\ErrorAndRatio", FileName=F1, Extension="jpg")
-                plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
-                plt.clf()
-                plt.close()
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def PlotErrorAndRatioIntermediate(self, clName, tlName, yLabel):
-        try:
-            if self.__rhoEff100nmCTE == True:
-                self.PlotErrorAndRatioCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                           column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-            if self.__DmCTE == True:
-                self.PlotErrorAndRatioCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
-
-            if self.__sigmaMobCTE == True:
-                self.PlotErrorAndRatioCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                           A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                           column=clName, yLabel=yLabel, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
 
     def PlotErrorAndRatio(self):
         try:
+            folderName = 'ErrorsAndRatios'
             ######################## Absorption Percentage Error
-            clName = 'RealPercentErrorABS'
-            tlName = "Percentage Error for TMatrix and RDG-FA Absorption Cross Section"
-            self.PlotErrorAndRatioIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelErrorAndRatio1)
-            ######################## Absorption Absolute Percentage Error
-            # clName = 'AbsolutePercentErrorABS'
-            # tlName = "Absolute Percentage Error in TMatrix and RDG-FA Absorption Cross Section"
-            # self.PlotErrorAndRatioIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelErrorAndRatio1)
+            columnName = 'RealPercentErrorABS'
+            titleName = "Percentage Error for TMatrix and RDG-FA Absorption Cross Section"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio1)
             ######################## Absorption Ratio
-            clName = 'RatioABS'
-            tlName = "TMatrix and RDG-FA Absorption Cross Section Ratio"
-            self.PlotErrorAndRatioIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelErrorAndRatio2)
+            columnName = 'RatioABS'
+            titleName = "TMatrix and RDG-FA Absorption Cross Section Ratio"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio2)
             ######################## Scattering Percentage Error
-            clName = 'RealPercentErrorSCA'
-            tlName = "Percentage Error for TMatrix and RDG-FA Scattering Cross Section"
-            self.PlotErrorAndRatioIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelErrorAndRatio1)
-            ######################## Scattering Absolute Percentage Error
-            # clName = 'AbsolutePercentErrorSCA'
-            # tlName = "Absolute Percentage Error in TMatrix and RDG-FA Scattering Cross Section"
-            # self.PlotErrorAndRatioIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelErrorAndRatio1)
+            columnName = 'RealPercentErrorSCA'
+            titleName = "Percentage Error for TMatrix and RDG-FA Scattering Cross Section"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio1)
             ######################## Scattering Ratio
-            clName = 'RatioSCA'
-            tlName = "TMatrix and RDG-FA Scattering Cross Section Ratio"
-            self.PlotErrorAndRatioIntermediate(clName=clName, tlName=tlName, yLabel=self.__yLabelErrorAndRatio2)
+            columnName = 'RatioSCA'
+            titleName = "TMatrix and RDG-FA Scattering Cross Section Ratio"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio2)
 
 
         except Exception as e:
@@ -1100,35 +931,60 @@ class GraphTools:
     ###################################
     ###################################
     ###################################
-    def PlotCrossSectionsCore(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, T1B=None, F1B=None):
+
+    def PlotCrossSections(self):
+        try:
+            folderName = 'OpticalCrossSections'
+            ######################## Absorption RDG
+            columnName = 'ABS_RDG'
+            titleName = "RDG-FA Absorption Cross Section"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='log', y_label=self.__yLabelPlotCrossSections)
+            ######################## Scattering RDG
+            columnName = 'SCA_RDG'
+            titleName = "RDG-FA Scattering Cross Section"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='log', y_label=self.__yLabelPlotCrossSections)
+            ######################## Absorption TMatrix
+            columnName = 'ABS_TMatrix'
+            titleName = "TMatrix Absorption Cross Section"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='log', y_label=self.__yLabelPlotCrossSections)
+            ######################## Scattering TMatrix
+            columnName = 'SCA_TMatrix'
+            titleName = "TMatrix Scattering Cross Section"
+            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='log', y_label=self.__yLabelPlotCrossSections)
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    ###################################
+    ###################################
+    ###################################
+    ###################################
+    def PlotRevolving(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, folderName, y_label, T1B=None, F1B=None, x_ax='log', y_ax='log'):
         try:
             alphaMainLine = self.__alphaMainLine
 
             for i in A1.unique():
-
                 fig, ax1 = plt.subplots()
-
                 c_lineColor = 0
                 c_lineWidth = 0
-
                 for j in A2.unique():
-
-                    fileNames = self.MainDF[(A1Name == i) & (A2Name == j)].AA_FileName
-
+                    fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
                     c_lineStyle = 0
                     c_markerStyle = 0
-
                     for index, item in fileNames.iteritems():
-                        if item in self.full_data_src_dict:
-                            df = self.full_data_src_dict[item]
-                            ax1.plot(df['dm'], df[column], label=self.full_data_label_dict[item], color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine, marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-
+                        if item in self.dictFullData:
+                            df = self.dictFullData[item]
+                            ax1.plot(df['dm'], df[column], label=self.dictFullDataLabel[item],
+                                     color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
+                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine,
+                                     marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
                         c_lineStyle += 1
                         c_markerStyle += 1
 
                     c_lineColor += 1
                     c_lineWidth += 1
+
                 if T1B:
                     T1 = title + T1A + str(round(i, T1I)) + T1B
                 else:
@@ -1139,17 +995,21 @@ class GraphTools:
                     F1 = title + F1A + str(round(i, F1I))
 
                 ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale("log")
-                ax1.set_yscale("log")
-                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__labelFont_size)
-                ax1.set_ylabel(self.__yLabelPlotCrossSections, fontsize=self.__labelFont_size)
-                ax1.set_xlim(self.__mobilityDiamLimits[0], self.__mobilityDiamLimits[1])
+                ax1.set_xscale(x_ax)
+                ax1.set_yscale(y_ax)
+                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__xLabelFontSize)
+                ax1.set_ylabel(y_label, fontsize=self.__yLabelFontSize)
+                ax1.set_xlim(self.__xAxisLimits1[0], self.__xAxisLimits1[1])
 
-                ax1.set_title(T1, fontsize=self.__plotTitle_Size)
+                ax1.set_title(T1, fontsize=self.__plotTitleFontSize)
                 ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
                 ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), loc='center left', fontsize='large')
-                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + "\CrossSections", FileName=F1, Extension="jpg")
+                ax1.tick_params(axis='x', which='major', labelsize=self.__xMajorTickLabelFontSize)
+                ax1.tick_params(axis='x', which='minor', labelsize=self.__xMinorTickLabelFontSize)
+                ax1.tick_params(axis='y', which='major', labelsize=self.__yMajorTickLabelFontSize)
+                ax1.tick_params(axis='y', which='minor', labelsize=self.__yMinorTickLabelFontSize)
+                ax1.legend(bbox_to_anchor=(1.00, 0.5), markerscale=self.__legendMarkerScale, loc='center left', fontsize='large')
+                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + f"\{folderName}", FileName=F1, Extension="jpg")
                 plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
                 plt.clf()
                 plt.close()
@@ -1158,48 +1018,114 @@ class GraphTools:
             logging.exception(e)
             raise
 
-    def PlotCrossSectionsIntermediate(self, clName, tlName):
+    def PlotSetting(self, columnlName, titleName, folderName, y_ax, y_label):
         try:
             if self.__rhoEff100nmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.rhoEff100nmSeries, A1Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER, A2=self.DmSeries, A2Name=self.MainDF.AGG_EFF_DM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
+                self.PlotRevolving(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
+                                   A2=self.ser_Dm, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
+                                   column=columnlName, title=titleName, folderName=folderName,
+                                   y_ax=y_ax, y_label=y_label,
+                                   T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1,
+                                   T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
 
             if self.__DmCTE == True:
-                self.PlotCrossSectionsCore(A1=self.DmSeries, A1Name=self.MainDF.AGG_EFF_DM_CENTER, A2=self.sigmaMobSeries, A2Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$D_m=$", T1I=2, F1A=" for " + "Dm=", F1I=2)
+                self.PlotRevolving(A1=self.ser_Dm, A1Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
+                                   A2=self.ser_SigmaMob, A2Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
+                                   column=columnlName, title=titleName, folderName=folderName,
+                                   y_ax=y_ax, y_label=y_label,
+                                   T1A=" for " + "$D_m=$", T1I=2,
+                                   F1A=" for " + "Dm=", F1I=2)
 
-            if self.__sigmaMobCTE == True:
-                self.PlotCrossSectionsCore(A1=self.sigmaMobSeries, A1Name=self.MainDF.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER, A2=self.rhoEff100nmSeries,
-                                           A2Name=self.MainDF.AGG_EFF_RHO_100NM_CENTER,
-                                           column=clName, title=tlName, T1A=" for " + "$\sigma_p|d_m=$", T1I=2, F1A=" for " + "sigma_p=", F1I=2)
+            if self.__sigmaEachMobCTE == True:
+                self.PlotRevolving(A1=self.ser_SigmaMob, A1Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
+                                   A2=self.ser_rhoEff100nm, A2Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
+                                   column=columnlName, title=titleName, folderName=folderName,
+                                   y_ax=y_ax, y_label=y_label,
+                                   T1A=" for " + "$\sigma_p|d_m=$", T1I=2,
+                                   F1A=" for " + "sigma_p=", F1I=2)
 
         except Exception as e:
             logging.exception(e)
             raise
 
-    def PlotCrossSections(self):
+    ###################################
+    ###################################
+    ###################################
+    ###################################
+
+    def PlotRevolvingBarTotal(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, folderName, y_label, T1B=None, F1B=None, x_ax='log', y_ax='log'):
         try:
-            ######################## Absorption RDG
-            clName = 'ABS_RDG'
-            tlName = "RDG-FA Absorption Cross Section"
-            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
-            ######################## Scattering RDG
-            clName = 'SCA_RDG'
-            tlName = "RDG-FA Scattering Cross Section"
-            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
-            ######################## Absorption TMatrix
-            clName = 'ABS_TMatrix'
-            tlName = "TMatrix Absorption Cross Section"
-            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
-            ######################## Scattering TMatrix
-            clName = 'SCA_TMatrix'
-            tlName = "TMatrix Scattering Cross Section"
-            self.PlotCrossSectionsIntermediate(clName=clName, tlName=tlName)
+            alphaMainLine = self.__alphaMainLine
+            fig, ax1 = plt.subplots(3, 3)
+            for i in A1.unique():
+
+                c_lineColor = 0
+                c_lineWidth = 0
+                for j in A2.unique():
+                    fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
+                    c_lineStyle = 0
+                    c_markerStyle = 0
+                    for index, item in fileNames.iteritems():
+                        if item in self.dictFullData:
+                            df = self.dictFullData[item]
+                            ax1.plot(df['dm'], df[column], label=self.dictFullDataLabel[item],
+                                     color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
+                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine,
+                                     marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
+                        c_lineStyle += 1
+                        c_markerStyle += 1
+
+                    c_lineColor += 1
+                    c_lineWidth += 1
+
+                if T1B:
+                    T1 = title + T1A + str(round(i, T1I)) + T1B
+                else:
+                    T1 = title + T1A + str(round(i, T1I))
+                if F1B:
+                    F1 = title + F1A + str(round(i, F1I)) + F1B
+                else:
+                    F1 = title + F1A + str(round(i, F1I))
+
+                ax1.grid(True, which='both', axis="both", alpha=0.5)
+                ax1.set_xscale(x_ax)
+                ax1.set_yscale(y_ax)
+                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__xLabelFontSize)
+                ax1.set_ylabel(y_label, fontsize=self.__yLabelFontSize)
+                ax1.set_xlim(self.__xAxisLimits1[0], self.__xAxisLimits1[1])
+
+                ax1.set_title(T1, fontsize=self.__plotTitleFontSize)
+                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
+                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
+                ax1.tick_params(axis='x', which='major', labelsize=self.__xMajorTickLabelFontSize)
+                ax1.tick_params(axis='x', which='minor', labelsize=self.__xMinorTickLabelFontSize)
+                ax1.tick_params(axis='y', which='major', labelsize=self.__yMajorTickLabelFontSize)
+                ax1.tick_params(axis='y', which='minor', labelsize=self.__yMinorTickLabelFontSize)
+                ax1.legend(bbox_to_anchor=(1.00, 0.5), markerscale=self.__legendMarkerScale, loc='center left', fontsize='large')
+                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + f"\{folderName}", FileName=F1, Extension="jpg")
+                plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
+                plt.clf()
+                plt.close()
 
         except Exception as e:
             logging.exception(e)
             raise
 
+    def PlotSettingTotal(self, columnlName, titleName, folderName, y_ax, y_label):
+        try:
+
+            self.PlotRevolvingBarTotal(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
+                                       A2=self.ser_Dm, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
+                                       column=columnlName, title=titleName, folderName=folderName,
+                                       y_ax=y_ax, y_label=y_label,
+                                       T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1,
+                                       T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
+
+
+
+        except Exception as e:
+            logging.exception(e)
+            raise
     ###################################
     ###################################
     ###################################
