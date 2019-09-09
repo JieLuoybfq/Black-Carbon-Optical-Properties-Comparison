@@ -30,11 +30,11 @@ class GraphTools:
             #################################################
             #################################################
             ################################################# Main Graphs
-            self.__CRSGraphs = False
-            self.__ErrorAndRatioGraphs = False
-            self.__MACMSCGraphs = False
-            self.__SSAGraphs = False
-            self.__dpMedianGraphs = False
+            self.__CRSGraphs = True
+            self.__ErrorAndRatioGraphs = True
+            self.__MACMSCGraphs = True
+            self.__SSAGraphs = True
+            self.__dpMedianGraphs = True
             self.__dmDistibGraphs = True
             #####
             self.__DmCTE = True
@@ -81,6 +81,18 @@ class GraphTools:
             self.__lineWidth = [1.5, 1, 0.5]
             self.__xAxisLimits1 = [49, 960]
             self.__xAxisLimits2 = [49, 960]
+            ###########################################
+            self.__barWidth = 0.34
+            self.__valueFontSizeTotal = 7
+            self.__plotTitleFontSizeTotal = 30
+            self.__xLabelGroupFontSizeTotal = 18
+            self.__xLabelSubplotFontSizeTotal = 24
+            #####
+            self.__yTickFontSizeTotal = 17
+            self.__yLabelSubplotFontSizeTotal = 21
+            #####
+            self.__xLabelCommonFontSizeTotal = 12
+            self.__yLabelCommonFontSizeTotal = 12
 
         except Exception as e:
             logging.exception(e)
@@ -740,17 +752,30 @@ class GraphTools:
                     result['sigma'] = sigma
                     result['median'] = median
                     result['sum'] = sum
-                    result['TotalMassGram'] = totalMassGr
-                    result['ABS_RDG_Total'] = RDG_ABSTotal
-                    result['SCA_RDG_Total'] = RDG_SCATotal
-                    result['ABS_TMatrix_Total'] = TMatrix_ABSTotal
-                    result['SCA_TMatrix_Total'] = TMatrix_SCATotal
-                    result['MAC_RDG_Total'] = RDG_ABSTotal * (10 ** (-12)) / totalMassGr
-                    result['MSC_RDG_Total'] = RDG_SCATotal * (10 ** (-12)) / totalMassGr
-                    result['MAC_TMatrix_Total'] = TMatrix_ABSTotal * (10 ** (-12)) / totalMassGr
-                    result['MSC_TMatrix_Total'] = TMatrix_SCATotal * (10 ** (-12)) / totalMassGr
-                    result['SSA_RDG_Total'] = RDG_SCATotal / (RDG_SCATotal + RDG_ABSTotal)
-                    result['SSA_TMatrix_Total'] = TMatrix_SCATotal / (TMatrix_SCATotal + TMatrix_ABSTotal)
+                    if sum > 0.90:
+                        result['TotalMassGram'] = totalMassGr
+                        result['ABS_RDG_Total'] = RDG_ABSTotal
+                        result['SCA_RDG_Total'] = RDG_SCATotal
+                        result['ABS_TMatrix_Total'] = TMatrix_ABSTotal
+                        result['SCA_TMatrix_Total'] = TMatrix_SCATotal
+                        result['MAC_RDG_Total'] = RDG_ABSTotal * (10 ** (-12)) / totalMassGr
+                        result['MSC_RDG_Total'] = RDG_SCATotal * (10 ** (-12)) / totalMassGr
+                        result['MAC_TMatrix_Total'] = TMatrix_ABSTotal * (10 ** (-12)) / totalMassGr
+                        result['MSC_TMatrix_Total'] = TMatrix_SCATotal * (10 ** (-12)) / totalMassGr
+                        result['SSA_RDG_Total'] = RDG_SCATotal / (RDG_SCATotal + RDG_ABSTotal)
+                        result['SSA_TMatrix_Total'] = TMatrix_SCATotal / (TMatrix_SCATotal + TMatrix_ABSTotal)
+                    else:
+                        result['TotalMassGram'] = np.nan
+                        result['ABS_RDG_Total'] = np.nan
+                        result['SCA_RDG_Total'] = np.nan
+                        result['ABS_TMatrix_Total'] = np.nan
+                        result['SCA_TMatrix_Total'] = np.nan
+                        result['MAC_RDG_Total'] = np.nan
+                        result['MSC_RDG_Total'] = np.nan
+                        result['MAC_TMatrix_Total'] = np.nan
+                        result['MSC_TMatrix_Total'] = np.nan
+                        result['SSA_RDG_Total'] = np.nan
+                        result['SSA_TMatrix_Total'] = np.nan
                     df.loc[len(df)] = result
 
             self.dictTotalOpticalProp[name] = df
@@ -794,7 +819,7 @@ class GraphTools:
             if self.__dpMedianGraphs:
                 self.PlotdpMedian()
             if self.__dmDistibGraphs:
-                pass
+                self.PlotTotalGraphs()
 
         except Exception as e:
             logging.exception(e)
@@ -808,14 +833,72 @@ class GraphTools:
     def PlotTotalGraphs(self):
         try:
             folderName = 'TotalGraphs'
-            ######################## MAC RDG
-            columnName = 'dp_median'
-            titleName = "Primary Median Diameter for each Mobility Diameter"
-            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabel_dpMedian)
-            ######################## MSC RDG
-            columnName = 'NumberOfCalcs'
-            titleName = "Number of Calculations for each Mobility Diameter"
-            self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelCalcNumber)
+            ######################## ABS Cross Section
+            columnName1 = 'ABS_RDG_Total'
+            columnDetail1 = 'RDG-FA'
+            columnName2 = 'ABS_TMatrix_Total'
+            columnDetail2 = 'T-matrix'
+            titleName = "Total Absorption Cross Section"
+            titleAppend = " in µm" + "$^{}$".format(2)
+            self.PlotSettingTotal(colName1=columnName1, colDetail1=columnDetail1,
+                                  colName2=columnName2, colDetail2=columnDetail2,
+                                  titleName=titleName, titleA=titleAppend,
+                                  shareY='all', folderName=folderName,
+                                  yScale='linear', yLabel=self.__yLabelPlotCrossSections,
+                                  showValue=True, valueFormat='{:.2E}', yAxisFormat='%1.1e')
+            ######################## SCA Cross Section
+            columnName1 = 'SCA_RDG_Total'
+            columnDetail1 = 'RDG-FA'
+            columnName2 = 'SCA_TMatrix_Total'
+            columnDetail2 = 'T-matrix'
+            titleName = "Total Scattering Cross Section"
+            titleAppend = " in µm" + "$^{}$".format(2)
+            self.PlotSettingTotal(colName1=columnName1, colDetail1=columnDetail1,
+                                  colName2=columnName2, colDetail2=columnDetail2,
+                                  titleName=titleName, titleA=titleAppend,
+                                  shareY='all', folderName=folderName,
+                                  yScale='linear', yLabel=self.__yLabelPlotCrossSections,
+                                  showValue=True, valueFormat='{:.2E}', yAxisFormat='%1.1e')
+            ######################## MAC
+            columnName1 = 'MAC_RDG_Total'
+            columnDetail1 = 'RDG-FA'
+            columnName2 = 'MAC_TMatrix_Total'
+            columnDetail2 = 'T-matrix'
+            titleName = "Mass-absorption Coefficient (MAC)"
+            titleAppend = " in m$^2$/g"
+            self.PlotSettingTotal(colName1=columnName1, colDetail1=columnDetail1,
+                                  colName2=columnName2, colDetail2=columnDetail2,
+                                  titleName=titleName, titleA=titleAppend,
+                                  shareY='all', folderName=folderName,
+                                  yScale='linear', yLabel=self.__yLabelPlotCrossSections,
+                                  showValue=True, valueFormat='{:.2f}', yAxisFormat='%1.2f')
+            ######################## MSC
+            columnName1 = 'MSC_RDG_Total'
+            columnDetail1 = 'RDG-FA'
+            columnName2 = 'MSC_TMatrix_Total'
+            columnDetail2 = 'T-matrix'
+            titleName = "Mass-scattering Coefficient (MSC)"
+            titleAppend = " in m$^2$/g"
+            self.PlotSettingTotal(colName1=columnName1, colDetail1=columnDetail1,
+                                  colName2=columnName2, colDetail2=columnDetail2,
+                                  titleName=titleName, titleA=titleAppend,
+                                  shareY='all', folderName=folderName,
+                                  yScale='linear', yLabel=self.__yLabelPlotCrossSections,
+                                  showValue=True, valueFormat='{:.2f}', yAxisFormat='%1.2f')
+            ######################## SSA
+            columnName1 = 'SSA_RDG_Total'
+            columnDetail1 = 'RDG-FA'
+            columnName2 = 'SSA_TMatrix_Total'
+            columnDetail2 = 'T-matrix'
+            titleName = "Single-scattering Albedo"
+            titleAppend = ""
+            self.PlotSettingTotal(colName1=columnName1, colDetail1=columnDetail1,
+                                  colName2=columnName2, colDetail2=columnDetail2,
+                                  titleName=titleName, titleA=titleAppend,
+                                  shareY='all', folderName=folderName,
+                                  yScale='linear', yLabel=self.__yLabelPlotCrossSections,
+                                  showValue=True, valueFormat='{:.2f}', yAxisFormat='%1.2f')
+
 
         except Exception as e:
             logging.exception(e)
@@ -860,11 +943,11 @@ class GraphTools:
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelMSC)
             ######################## MAC TMatrix
             columnName = 'MAC_TMatrix'
-            titleName = "MAC for TMatrix"
+            titleName = "MAC for T-matrix"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelMAC)
             ######################## MSC TMatrix
             columnName = 'MSC_TMatrix'
-            titleName = "MSC for TMatrix"
+            titleName = "MSC for T-matrix"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelMSC)
 
 
@@ -883,7 +966,7 @@ class GraphTools:
             folderName = 'SSAs'
             ######################## SSA TMatrix
             columnName = 'SSA_TMatrix'
-            titleName = "SSA for TMatrix"
+            titleName = "SSA for T-matrix"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelSSA)
 
             ######################## SSA RDG
@@ -907,19 +990,19 @@ class GraphTools:
             folderName = 'ErrorsAndRatios'
             ######################## Absorption Percentage Error
             columnName = 'RealPercentErrorABS'
-            titleName = "Percentage Error for TMatrix and RDG-FA Absorption Cross Section"
+            titleName = "Percentage Error Between T-matrix and RDG-FA Absorption Cross Section"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio1)
             ######################## Absorption Ratio
             columnName = 'RatioABS'
-            titleName = "TMatrix and RDG-FA Absorption Cross Section Ratio"
+            titleName = "T-matrix and RDG-FA Absorption Cross Section Ratio"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio2)
             ######################## Scattering Percentage Error
             columnName = 'RealPercentErrorSCA'
-            titleName = "Percentage Error for TMatrix and RDG-FA Scattering Cross Section"
+            titleName = "Percentage Error Between T-matrix and RDG-FA Scattering Cross Section"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio1)
             ######################## Scattering Ratio
             columnName = 'RatioSCA'
-            titleName = "TMatrix and RDG-FA Scattering Cross Section Ratio"
+            titleName = "T-matrix and RDG-FA Scattering Cross Section Ratio"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='linear', y_label=self.__yLabelErrorAndRatio2)
 
 
@@ -945,11 +1028,11 @@ class GraphTools:
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='log', y_label=self.__yLabelPlotCrossSections)
             ######################## Absorption TMatrix
             columnName = 'ABS_TMatrix'
-            titleName = "TMatrix Absorption Cross Section"
+            titleName = "T-matrix Absorption Cross Section"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='log', y_label=self.__yLabelPlotCrossSections)
             ######################## Scattering TMatrix
             columnName = 'SCA_TMatrix'
-            titleName = "TMatrix Scattering Cross Section"
+            titleName = "T-matrix Scattering Cross Section"
             self.PlotSetting(columnlName=columnName, titleName=titleName, folderName=folderName, y_ax='log', y_label=self.__yLabelPlotCrossSections)
 
         except Exception as e:
@@ -1053,79 +1136,115 @@ class GraphTools:
     ###################################
     ###################################
 
-    def PlotRevolvingBarTotal(self, A1, A1Name, A2, A2Name, T1A, T1I, F1A, F1I, title, column, folderName, y_label, T1B=None, F1B=None, x_ax='log', y_ax='log'):
+    def PlotRevolvingBarTotal(self, A1, A1Name, A2, A2Name, column1, column1T,
+                              column2, column2T, title, titleAppend,
+                              folderName, yCommonLabel,
+                              shareY, yAxisFormat,
+                              sigma, median,
+                              showValue=True, valueFormat='{:.2E}', yScale='log'):
         try:
-            alphaMainLine = self.__alphaMainLine
-            fig, ax1 = plt.subplots(3, 3)
-            for i in A1.unique():
 
-                c_lineColor = 0
-                c_lineWidth = 0
+            fig, ax1 = plt.subplots(nrows=len(A1.unique()), ncols=len(A2.unique()), sharex=True, sharey=shareY, figsize=(12, 12))
+
+            def autoLabel(self, rects, row, col, format='{:.2E}', xPos='center'):
+
+                ha = {'center': 'center', 'right': 'left', 'left': 'right'}
+                offset = {'center': 0, 'right': 1, 'left': -1}
+
+                for rect in rects:
+                    height = rect.get_height()
+                    ax1[row, col].annotate(format.format(height),
+                                           xy=(rect.get_x() + rect.get_width() / 2, height),
+                                           xytext=(offset[xPos] * 3, 3),  # use 3 points offset
+                                           textcoords="offset points",  # in both directions
+                                           ha=ha[xPos], va='bottom',
+                                           fontsize=self.__valueFontSizeTotal)
+
+            rowCount = 0
+            for i in A1.unique():
+                colCount = 0
                 for j in A2.unique():
                     fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
-                    c_lineStyle = 0
-                    c_markerStyle = 0
+
+                    indexBarPlot = np.arange(3)
+
+                    RDG_Height = []
+                    TMatrix_Height = []
+
                     for index, item in fileNames.iteritems():
                         if item in self.dictFullData:
-                            df = self.dictFullData[item]
-                            ax1.plot(df['dm'], df[column], label=self.dictFullDataLabel[item],
-                                     color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine,
-                                     marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-                        c_lineStyle += 1
-                        c_markerStyle += 1
+                            df = self.dictTotalOpticalProp[item]
+                            selectedRow = df.loc[(df['sigma'] == sigma) & (df['median'] == median)]
+                            if (len(selectedRow[column1]) != 1) or (len(selectedRow[column2]) != 1):
+                                raise
+                            else:
+                                for c1 in selectedRow[column1]:
+                                    for c2 in selectedRow[column2]:
+                                        RDG_Height.append(c1)
+                                        TMatrix_Height.append(c2)
 
-                    c_lineColor += 1
-                    c_lineWidth += 1
+                    AXES_A = ax1[rowCount, colCount].bar(indexBarPlot - self.__barWidth / 2, RDG_Height, color='red', width=self.__barWidth, edgecolor='white', label=column1T)
+                    AXES_B = ax1[rowCount, colCount].bar(indexBarPlot + self.__barWidth / 2, TMatrix_Height, color='blue', width=self.__barWidth, edgecolor='white', label=column2T)
 
-                if T1B:
-                    T1 = title + T1A + str(round(i, T1I)) + T1B
-                else:
-                    T1 = title + T1A + str(round(i, T1I))
-                if F1B:
-                    F1 = title + F1A + str(round(i, F1I)) + F1B
-                else:
-                    F1 = title + F1A + str(round(i, F1I))
+                    if showValue:
+                        autoLabel(self, rects=AXES_A, row=rowCount, col=colCount, format=valueFormat)
+                        autoLabel(self, rects=AXES_B, row=rowCount, col=colCount, format=valueFormat)
 
-                ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale(x_ax)
-                ax1.set_yscale(y_ax)
-                ax1.set_xlabel(self.__xLabelPlotCrossSections, fontsize=self.__xLabelFontSize)
-                ax1.set_ylabel(y_label, fontsize=self.__yLabelFontSize)
-                ax1.set_xlim(self.__xAxisLimits1[0], self.__xAxisLimits1[1])
+                    ax1[rowCount, colCount].set_xticks(indexBarPlot)
+                    ax1[rowCount, colCount].set_xticklabels(("$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)), fontsize=self.__xLabelGroupFontSizeTotal)
+                    ax1[rowCount, colCount].grid(True, which='both', axis="y", alpha=0.5)
+                    ax1[rowCount, colCount].set_yscale(yScale)
+                    ax1[rowCount, colCount].yaxis.set_tick_params(labelsize=self.__yTickFontSizeTotal)
+                    ax1[rowCount, colCount].yaxis.set_major_formatter(FormatStrFormatter(yAxisFormat))
+                    ax1[rowCount, colCount].yaxis.set_minor_formatter(FormatStrFormatter(yAxisFormat))
 
-                ax1.set_title(T1, fontsize=self.__plotTitleFontSize)
-                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
-                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.tick_params(axis='x', which='major', labelsize=self.__xMajorTickLabelFontSize)
-                ax1.tick_params(axis='x', which='minor', labelsize=self.__xMinorTickLabelFontSize)
-                ax1.tick_params(axis='y', which='major', labelsize=self.__yMajorTickLabelFontSize)
-                ax1.tick_params(axis='y', which='minor', labelsize=self.__yMinorTickLabelFontSize)
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), markerscale=self.__legendMarkerScale, loc='center left', fontsize='large')
-                Address = GF.getAddressTo(FolderName=self.__folderNameGraph + f"\{folderName}", FileName=F1, Extension="jpg")
-                plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
-                plt.clf()
-                plt.close()
+                    if colCount == 0:
+                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelSubplotFontSizeTotal)
+
+                    if rowCount == (len(A1.unique()) - 1):
+                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelSubplotFontSizeTotal)
+
+                    colCount += 1
+                rowCount += 1
+            FF = f"{title} for median={median}-sigma={sigma}"
+            FT = title + titleAppend + " for " + "$d_{m,g}=$" + str(round(median)) + " nm " + "and " + "$\sigma_g=$" + str(round(sigma, 2))
+            Address = GF.getAddressTo(FolderName=self.__folderNameGraph + f"\{folderName}", FileName=FF, Extension="jpg")
+
+            fig.tight_layout()
+            fig.subplots_adjust(top=0.93, wspace=0.005, hspace=0.005)
+            fig.suptitle(FT, fontsize=self.__plotTitleFontSizeTotal)
+
+            # fig.text(0.5, -0.01, 'common X', ha='center',fontsize=self.__xLabelFontSizeTotal)
+            # fig.text(-0.01, 0.5, y_label, va='center', rotation='vertical',fontsize=self.__yLabelFontSizeTotal)
+
+            plt.legend(bbox_to_anchor=(1.05, 1.7), fontsize=25, loc='lower left', borderaxespad=0.)
+            plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
+            plt.clf()
+            plt.close()
 
         except Exception as e:
             logging.exception(e)
             raise
 
-    def PlotSettingTotal(self, columnlName, titleName, folderName, y_ax, y_label):
+    def PlotSettingTotal(self, colName1, colDetail1, colName2, colDetail2, titleName, titleA, shareY, folderName, yScale, yLabel, showValue, valueFormat, yAxisFormat):
         try:
-
-            self.PlotRevolvingBarTotal(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
-                                       A2=self.ser_Dm, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
-                                       column=columnlName, title=titleName, folderName=folderName,
-                                       y_ax=y_ax, y_label=y_label,
-                                       T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1,
-                                       T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
-
-
+            for sigma in self.__dmSigmaLogN:
+                for median in self.__dmMedianLogN:
+                    self.PlotRevolvingBarTotal(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
+                                               A2=self.ser_SigmaMob, A2Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
+                                               column1=colName1, column1T=colDetail1,
+                                               column2=colName2, column2T=colDetail2,
+                                               title=titleName, titleAppend=titleA,
+                                               folderName=folderName,
+                                               yScale=yScale, yCommonLabel=yLabel, yAxisFormat=yAxisFormat,
+                                               shareY=shareY,
+                                               sigma=sigma, median=median,
+                                               showValue=showValue, valueFormat=valueFormat)
 
         except Exception as e:
             logging.exception(e)
             raise
+
     ###################################
     ###################################
     ###################################
