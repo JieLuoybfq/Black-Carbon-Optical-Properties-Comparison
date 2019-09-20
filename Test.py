@@ -1,40 +1,80 @@
-'''
-TMatrix_Table_Input_Headers1 = ['Df', 'kf', 'R_RI', 'I_RI', 'WaveL', 'dp', 'Np', 'Version']
-TMatrix_Table_Output_Headers1 = ['TMatrix_ABS_CRS', 'TMatrix_SCA_CRS', 'MLink']
-Array1 = [[2.3, 1.2, 1.6, 0.6, 860, 33, 50, 0.1], [2.4, 1.2, 1.6, 0.6, 860, 33, 50, 0.1], [2.6, 1.2, 1.6, 0.6, 860, 33, 50, 0.1]]
-Array2 = [[0.056, 0.666, 20], [0.053, 0.666, 21], [0.051, 0.666, 22]]
-DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name, NameArray=TMatrix_Table_Input_Headers1, Array=Array1)
-DB.insertArrayIntoTable(INFO=DB_Info, TableName=TMatrix_Table_Name + "_out", NameArray=TMatrix_Table_Output_Headers1, Array=Array2)
-DB.showAllTablesInDBSummary(DB_Info)
-'''
-'''
-    TMatrix_Main_Input_Array.append([2.3, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    TMatrix_Main_Input_Array.append([2.4, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    TMatrix_Main_Input_Array.append([2.6, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    TMatrix_Main_Input_Array.append([2.1, 1.2, 1.6, 0.6, 860, 33, 50, 0.1])
-    '''
-import DBManagement
-import matplotlib.pyplot as plt
-
-S1 = DBManagement.MySQLManagement()
-
-def corrdot(*args, **kwargs):
-    corr_r = args[0].corr(args[1], 'pearson')
-    corr_text = f"{corr_r:2.2f}".replace("0.", ".")
-    ax = plt.gca()
-    ax.set_axis_off()
-    marker_size = abs(corr_r) * 10000
-    ax.scatter([.5], [.5], marker_size, [corr_r], alpha=0.6, cmap="coolwarm",
-               vmin=-1, vmax=1, transform=ax.transAxes)
-    font_size = abs(corr_r) * 40 + 5
-    ax.annotate(corr_text, [.5, .5, ], xycoords="axes fraction",
-                ha='center', va='center', fontsize=font_size)
+import os
+from pathlib import Path
+from ConfigParserM import logging
+import subprocess
+from matplotlib import pyplot as plt
 
 
-sns.set(style='white', font_scale=1.6)
-iris = sns.load_dataset('iris')
-g = sns.PairGrid(iris, aspect=1.4, diag_sharey=False)
-g.map_lower(sns.regplot, ci=False, line_kws={'color': 'black'})
-g.map_diag(sns.distplot, kde_kws={'color': 'black'})
-g.map_upper(corrdot)
-plt.show()
+class SVG_WMF_Plotting:
+
+    def __init__(self):
+        self.__folderNameGraph = 'Graphs'
+        self.__WMF_SVGSaving = True
+        self.__inkScapePath = "C://Program Files//inkscape//inkscape.exe"
+        self.__figureDPI = 500
+
+    def getRootDirectory(self):
+        try:
+            return Path(os.path.dirname(os.path.realpath('__file__')))
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def getAddressTo(self, Main=None, FolderName=None, FileName=None, Extension=None):
+        try:
+            if Main is None:
+                Main = self.getRootDirectory()
+            if FolderName:
+                Path1 = Path(Main) / Path(FolderName)
+            else:
+                Path1 = Path(Main)
+
+            if not os.path.exists(Path1):
+                os.makedirs(Path1)
+            if FileName:
+                if Extension:
+                    File_Address = Path1 / Path(FileName + "." + Extension)
+                else:
+                    File_Address = Path1 / Path(FileName)
+            else:
+                File_Address = Path1
+            return File_Address
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def TestPlot(self):
+        try:
+
+            fig, ax1 = plt.subplots()
+            x = [1, 2]
+            y = [1, 2]
+            F1 = 'test'
+            ax1.plot(x, y)
+            self.SaveAndClosePlot(folderName=self.__folderNameGraph, fileName=F1)
+
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def SaveAndClosePlot(self, folderName, fileName):
+        try:
+            Address = self.getAddressTo(FolderName=self.__folderNameGraph + f"\{folderName}", FileName=fileName, Extension="jpg")
+            plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
+
+            if self.__WMF_SVGSaving:
+                Address = self.getAddressTo(FolderName=self.__folderNameGraph + f"\{folderName}", FileName=fileName, Extension="svg")
+                plt.savefig(Address, format='svg', dpi=self.__figureDPI, bbox_inches='tight')
+                # add removing SVG if needed
+
+                AddressWMF = self.getAddressTo(FolderName=self.__folderNameGraph + f"\{folderName}", FileName=fileName, Extension="wmf")
+                subprocess.call([self.__inkScapePath, str(Address.resolve()), '--export-wmf', str(AddressWMF.resolve())])
+
+            plt.clf()
+            plt.close()
+        except Exception as e:
+            logging.exception(e)
+            raise
