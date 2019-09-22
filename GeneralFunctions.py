@@ -1,6 +1,6 @@
 # Keyhan Babaee, https://github.com/KeyhanB
-# V1.2
-# July 2019
+# V1.3
+# Sep 2019
 import configparser
 import csv
 import datetime
