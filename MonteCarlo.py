@@ -1,4 +1,4 @@
-from ConfigParserModule import logging
+from ConfigReaderModule import logging
 import numpy as np
 from decimal import Decimal
 

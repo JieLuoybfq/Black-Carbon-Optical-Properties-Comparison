@@ -2,8 +2,8 @@
 # Using Fortran Code from: C. Liu, X. Xu, Y. Yin, M. Schnaiter, Y. L. Yung, 2018: Black carbon aggregate: A database for optical properties
 Version = 0.2
 # Aug 2019
-import ConfigParserModule as CP
-from ConfigParserModule import logging
+import ConfigReaderModule as CP
+from ConfigReaderModule import logging
 import RDG_TMatrixCalculator as K02
 
 if __name__ == "__main__":

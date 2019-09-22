@@ -1,8 +1,8 @@
 # Graphing using existing data
 Version = 0.1
 # Aug 2019
-import ConfigParserModule as CP
-from ConfigParserModule import logging
+import ConfigReaderModule as CP
+from ConfigReaderModule import logging
 import ComparisonGraphModule as GM
 
 if __name__ == "__main__":

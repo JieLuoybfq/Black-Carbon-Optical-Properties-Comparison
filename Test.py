@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from ConfigParserModule import logging
+from ConfigReaderModule import logging
 import subprocess
 from matplotlib import pyplot as plt
 

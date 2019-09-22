@@ -1,4 +1,4 @@
-from ConfigParserModule import logging
+from ConfigReaderModule import logging
 import GeneralFunctions as GF
 import numpy as np
 from matplotlib import rcParams

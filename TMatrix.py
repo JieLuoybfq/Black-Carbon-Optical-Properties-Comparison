@@ -2,7 +2,7 @@
 # V1.2
 # Aug 2019
 import AppFunctions as FN
-from ConfigParserModule import logging
+from ConfigReaderModule import logging
 from scipy.interpolate import griddata
 import GeneralFunctions as GF
 from math import pi

@@ -1,6 +1,6 @@
-import ConfigParserModule as CP
+import ConfigReaderModule as CP
 import DBMethods as DB
-from ConfigParserModule import logging
+from ConfigReaderModule import logging
 import GeneralFunctions as GF
 
 if __name__ == "__main__":

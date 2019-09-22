@@ -8,7 +8,7 @@ import glob
 import os
 from pathlib import Path
 from dateutil.parser import parse
-from ConfigParserModule import logging
+from ConfigReaderModule import logging
 
 
 ####### List of Functions (updated Sep 21,2019)

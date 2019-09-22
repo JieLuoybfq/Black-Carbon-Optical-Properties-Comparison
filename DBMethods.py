@@ -2,7 +2,7 @@
 # V1.1
 # July 2019
 import mysql.connector
-from ConfigParserModule import logging
+from ConfigReaderModule import logging
 from mysql.connector import errorcode
 import os
 import pandas

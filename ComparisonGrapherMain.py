@@ -1,8 +1,8 @@
 # Graphing  Figures for T-matrix and RDG-FA comparison using simulated data
 Version = 0.2
 # Sep 2019
-import ConfigParserModule as CPM
-from ConfigParserModule import logging
+import ConfigReaderModule as CPM
+from ConfigReaderModule import logging
 import ComparisonGraphModule as CGM
 
 if __name__ == "__main__":
