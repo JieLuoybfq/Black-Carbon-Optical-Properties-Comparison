@@ -1,7 +1,7 @@
 # Keyhan Babaee, https://github.com/KeyhanB
 # V1.2
 # Aug 2019
-from ConfigParserM import logging
+from ConfigParserModule import logging
 from math import *
 import numpy as np
 import AppFunctions as FN

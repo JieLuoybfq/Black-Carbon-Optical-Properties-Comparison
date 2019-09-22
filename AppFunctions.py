@@ -1,5 +1,5 @@
 import DBMethods as DB
-from ConfigParserM import logging
+from ConfigParserModule import logging
 import GeneralFunctions as GF
 from decimal import Decimal
 import numpy as np

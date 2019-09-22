@@ -1,4 +1,4 @@
-from ConfigParserM import logging
+from ConfigParserModule import logging
 import AppFunctions as FN
 
 

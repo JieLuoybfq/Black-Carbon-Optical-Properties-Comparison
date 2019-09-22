@@ -10,7 +10,7 @@ from pathlib import Path
 
 from dateutil.parser import parse
 
-from ConfigParserM import logging
+from ConfigParserModule import logging
 
 
 def writeFile(Address, String, Mode='w'):

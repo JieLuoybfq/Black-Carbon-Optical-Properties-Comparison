@@ -3,7 +3,7 @@
 # Aug 2019
 import mysql.connector
 from mysql.connector import Error as SQLError
-from ConfigParserM import logging
+from ConfigParserModule import logging
 import os
 import pandas as pd
 

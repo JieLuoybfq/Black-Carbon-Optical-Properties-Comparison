@@ -1,4 +1,4 @@
-from ConfigParserM import logging
+from ConfigParserModule import logging
 import GeneralFunctions as GF
 import numpy as np
 from matplotlib import rcParams
@@ -348,6 +348,7 @@ class GraphTools:
                                                               Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
 
                 ######################################################
+
                 arrAgg_Aerodynamic_Diameter_Random = getRandomFromArr(Array=arrAgg_Aerodynamic_Diameter, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
                 arrAgg_Eff_Dm_Random = getRandomFromArr(Array=arrAgg_Eff_Dm, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
                 arrAgg_Eff_Rho_100nm_Random = getRandomFromArr(Array=arrAgg_Eff_Rho_100nm, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
@@ -356,6 +357,7 @@ class GraphTools:
                 arrPAX_Absorption_Coefficient_Random = getRandomFromArr(Array=arrPAX_Absorption_Coefficient, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
                 arrPAX_Scattering_Coefficient_Random = getRandomFromArr(Array=arrPAX_Scattering_Coefficient, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
                 arrCPC_Number_Density_Random = getRandomFromArr(Array=arrCPC_Number_Density, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+
                 ####################### Calculation
                 arrMonteCarloViscosity = calcMonteCarlo_Viscosity(Length=AGG_Info['MONTECARLO_RANDOM_SIZE'], Temperature=arrAir_Temperature_Random,
                                                                   Pressure=arrAir_Pressure_Random)
@@ -501,8 +503,8 @@ class GraphTools:
                 ax1.grid(True, which='both', axis="both", alpha=0.5)
                 ax1.set_xscale("log")
                 # ax1.set_yscale("log")
-                ax1.set_xlabel(self.__xLabelMobDiameter, fontsize=self.__labelFont_size)
-                ax1.set_ylabel(yLabel, fontsize=self.__labelFont_size)
+                ax1.set_xlabel(self.__xLabelMobDiameter, fontsize=self.__xLabelGeneralFontSize)
+                ax1.set_ylabel(yLabel, fontsize=self.__yLabelGeneralFontSize)
                 ax1.set_xlim(self.__xAxisLimitsComp[0], self.__xAxisLimitsComp[1])
 
                 ax1.set_title(T1, fontsize=self.__plotTitleGeneralFontSize)
@@ -609,8 +611,8 @@ class GraphTools:
                 ax1.grid(True, which='both', axis="both", alpha=0.5)
                 ax1.set_xscale("log")
                 ax1.set_yscale("log")
-                ax1.set_xlabel(self.__xLabelMobDiameter, fontsize=self.__labelFont_size)
-                ax1.set_ylabel(self.__yLabelPlotCrossSections, fontsize=self.__labelFont_size)
+                ax1.set_xlabel(self.__xLabelMobDiameter, fontsize=self.__xLabelGeneralFontSize)
+                ax1.set_ylabel(self.__yLabelPlotCrossSections, fontsize=self.__yLabelGeneralFontSize)
                 ax1.set_xlim(self.__xAxisLimitsComp[0], self.__xAxisLimitsComp[1])
 
                 ax1.set_title(T1, fontsize=self.__plotTitleGeneralFontSize)

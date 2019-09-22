@@ -5,7 +5,7 @@ import numpy as np
 from math import pi
 from math import sin
 from math import cos
-from ConfigParserM import logging
+from ConfigParserModule import logging
 from decimal import Decimal
 
 

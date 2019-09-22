@@ -2,8 +2,8 @@
 # Using Fortran Code from: C. Liu, X. Xu, Y. Yin, M. Schnaiter, Y. L. Yung, 2018: Black carbon aggregate: A database for optical properties
 Version = 0.2
 # Aug 2019
-import ConfigParserM as CP
-from ConfigParserM import logging
+import ConfigParserModule as CP
+from ConfigParserModule import logging
 import RDG_TMatrixCalculator as K02
 
 if __name__ == "__main__":
@@ -14,6 +14,7 @@ if __name__ == "__main__":
     AGG_Info = CP.readConfigToDict(SectionName="AggregateDetails", ConvertParseTo='float', hasComment=True)
     logging.info("config retrieved.")
     ##############################################
+    '''
     arr = [{'AGG_EFF_RHO_100NM_CENTER': 450, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1, 'AGG_EFF_DM_CENTER': 2.2},
            {'AGG_EFF_RHO_100NM_CENTER': 450, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.4, 'AGG_EFF_DM_CENTER': 2.2},
            {'AGG_EFF_RHO_100NM_CENTER': 450, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.8, 'AGG_EFF_DM_CENTER': 2.2},
@@ -42,6 +43,10 @@ if __name__ == "__main__":
            {'AGG_EFF_RHO_100NM_CENTER': 650, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.4, 'AGG_EFF_DM_CENTER': 2.8},
            {'AGG_EFF_RHO_100NM_CENTER': 650, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.8, 'AGG_EFF_DM_CENTER': 2.8},
            ]
+    '''
+    arr = [{'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1, 'AGG_EFF_DM_CENTER': 2.56},
+           {'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.4, 'AGG_EFF_DM_CENTER': 2.56},
+           {'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.8, 'AGG_EFF_DM_CENTER': 2.56}]
     for i in arr:
         for key in i:
             AGG_Info[key] = i[key]
