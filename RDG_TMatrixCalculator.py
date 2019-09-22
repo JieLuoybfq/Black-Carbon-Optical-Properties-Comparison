@@ -19,7 +19,7 @@ class KeyhanV1:
     def __init__(self, inputDict):
         try:
             ######################################################################################
-            time_now = GF.getDateandTimeUTCNow()
+            time_now = GF.GetDateAndTimeUTCNow()
             temp = {}
             temp['AA_FileName'] = f"TR_{time_now}.csv"
             temp['AA_Plot'] = 1

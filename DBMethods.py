@@ -472,17 +472,17 @@ def dumpTableSetCSV(INFO, TableName, AddressMain, DBName=None):
         mySQLDB = connectDB(INFO, DBName)
         query = "SELECT * FROM " + str(TableName)
 
-        A1 = GF.getAddressTo(AddressMain, "CSV", FileName=str(TableName) + "_" + GF.getDateandTimeUTC(), Extension="csv")
+        A1 = GF.GetAddressTo(AddressMain, "CSV", fileName=str(TableName) + "_" + GF.getDateandTimeUTC(), extension="csv")
         results = pandas.read_sql_query(query, mySQLDB)
         results.to_csv(A1, index=False)
 
         query = "SELECT * FROM " + str(TableName) + "_Out"
-        A1 = GF.getAddressTo(AddressMain, "CSV", FileName=str(TableName) + "_Out" + "_" + GF.getDateandTimeUTC(), Extension="csv")
+        A1 = GF.GetAddressTo(AddressMain, "CSV", fileName=str(TableName) + "_Out" + "_" + GF.getDateandTimeUTC(), extension="csv")
         results = pandas.read_sql_query(query, mySQLDB)
         results.to_csv(A1, index=False)
 
         query = "SELECT * FROM " + str(TableName) + "_Shadow"
-        A1 = GF.getAddressTo(AddressMain, "CSV", FileName=str(TableName) + "_Shadow" + "_" + GF.getDateandTimeUTC(), Extension="csv")
+        A1 = GF.GetAddressTo(AddressMain, "CSV", fileName=str(TableName) + "_Shadow" + "_" + GF.getDateandTimeUTC(), extension="csv")
         results = pandas.read_sql_query(query, mySQLDB)
         results.to_csv(A1, index=False)
 

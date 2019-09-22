@@ -59,7 +59,7 @@ def uniqueEntry(Array):
         col = len(Array[0])
         ranges = []
         for k in range(col):
-            ranges.append(uniqueList(GF.selectColumnsList(ColumnIndex=[k], List=Array)))
+            ranges.append(uniqueList(GF.SelectColumnsList(columnIndex=[k], list=Array)))
 
         return ranges
     except Exception as e:

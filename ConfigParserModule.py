@@ -9,14 +9,14 @@ import GeneralFunctions as GF
 def readLogConfig():
     try:
 
-        appDirectory = GF.getRootDirectory()
-        file_Address_Private_Config = GF.getAddressTo(Main=appDirectory, FolderName="Config", FileName="Private", Extension="cnf")
-        file_Address_Public_Config = GF.getAddressTo(Main=appDirectory, FolderName="Config", FileName="Public", Extension="cnf")
+        appDirectory = GF.GetRootDirectory()
+        file_Address_Private_Config = GF.GetAddressTo(main=appDirectory, folderName="Config", fileName="Private", extension="cnf")
+        file_Address_Public_Config = GF.GetAddressTo(main=appDirectory, folderName="Config", fileName="Public", extension="cnf")
 
-        if GF.isFileExist(file_Address_Private_Config):
+        if GF.IsFileExist(file_Address_Private_Config):
             readLoggerConfig(file_Address_Private_Config)
 
-        elif GF.isFileExist(file_Address_Public_Config):
+        elif GF.IsFileExist(file_Address_Public_Config):
             readLoggerConfig(file_Address_Public_Config)
 
         else:
@@ -30,14 +30,14 @@ def readLogConfig():
 def readConfigToDict(SectionName, ConvertParseTo='string', hasComment=False):
     try:
 
-        appDirectory = GF.getRootDirectory()
-        file_Address_Private_Config = GF.getAddressTo(Main=appDirectory, FolderName="Config", FileName="Private", Extension="cnf")
-        file_Address_Public_Config = GF.getAddressTo(Main=appDirectory, FolderName="Config", FileName="Public", Extension="cnf")
+        appDirectory = GF.GetRootDirectory()
+        file_Address_Private_Config = GF.GetAddressTo(main=appDirectory, folderName="Config", fileName="Private", extension="cnf")
+        file_Address_Public_Config = GF.GetAddressTo(main=appDirectory, folderName="Config", fileName="Public", extension="cnf")
 
-        if GF.isFileExist(file_Address_Private_Config):
+        if GF.IsFileExist(file_Address_Private_Config):
             cnf = readDatabaseRaw(Address=file_Address_Private_Config, SectionName=SectionName, hasComment=hasComment)
 
-        elif GF.isFileExist(file_Address_Public_Config):
+        elif GF.IsFileExist(file_Address_Public_Config):
             cnf = readDatabaseRaw(Address=file_Address_Public_Config, SectionName=SectionName, hasComment=hasComment)
 
         else:

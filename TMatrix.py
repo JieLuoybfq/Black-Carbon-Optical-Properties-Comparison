@@ -20,10 +20,10 @@ class TMatrixCalculation:
             TMatrix_DB_Main_TableName = 'Raw_V1'
             DB = MySQLManagement(DBInfo)
             TMatrix_DB_Main_Column_Name, TMatrix_DB_Main_Data_Full = DB.ReadAllRowsfromTable(TableName=TMatrix_DB_Main_TableName)
-            self.__TMatrix_DB_Main_Column_Name = GF.selectColumnsList(ColumnIndex=[1, 2, 3, 4, 5], List=TMatrix_DB_Main_Column_Name, Dimension=1)
-            self.__TMatrix_DB_Main_SCT_Coeff_Full = GF.selectColumnsList(ColumnIndex=[7], List=TMatrix_DB_Main_Data_Full)
-            self.__TMatrix_DB_Main_ABS_Coeff_Full = GF.selectColumnsList(ColumnIndex=[8], List=TMatrix_DB_Main_Data_Full)
-            self.__TMatrix_DB_Main_Data_Full = GF.selectColumnsList(ColumnIndex=[1, 2, 3, 4, 5], List=TMatrix_DB_Main_Data_Full)
+            self.__TMatrix_DB_Main_Column_Name = GF.SelectColumnsList(columnIndex=[1, 2, 3, 4, 5], list=TMatrix_DB_Main_Column_Name, dimension=1)
+            self.__TMatrix_DB_Main_SCT_Coeff_Full = GF.SelectColumnsList(columnIndex=[7], list=TMatrix_DB_Main_Data_Full)
+            self.__TMatrix_DB_Main_ABS_Coeff_Full = GF.SelectColumnsList(columnIndex=[8], list=TMatrix_DB_Main_Data_Full)
+            self.__TMatrix_DB_Main_Data_Full = GF.SelectColumnsList(columnIndex=[1, 2, 3, 4, 5], list=TMatrix_DB_Main_Data_Full)
             self.__TMatrix_DB_Main_Unique_Values = FN.uniqueEntry(self.__TMatrix_DB_Main_Data_Full)
 
         except Exception as e:
@@ -34,7 +34,7 @@ class TMatrixCalculation:
         try:
             logging.info("T-Matrix calculation started.")
             division = thread
-            TMatrix_Planned_Input_Chopped = GF.divideArray(NumberofDivisions=division, List=TMatrix_Planned_Input)
+            TMatrix_Planned_Input_Chopped = GF.DivideArray(numberOfDivisions=division, List=TMatrix_Planned_Input)
             func = partial(self.TMatrixInterpolator, self.__TMatrix_DB_Main_Data_Full, self.__TMatrix_DB_Main_Unique_Values, self.__TMatrix_DB_Main_ABS_Coeff_Full,
                            self.__TMatrix_DB_Main_SCT_Coeff_Full)
             arrInTMatrix = []
@@ -71,8 +71,8 @@ class TMatrixCalculation:
             for i in range(len(refinedInput)):
                 input = refinedInput[i][:]
                 XXX, index = FN.getToleratedArray(Array=FullMainDB, Input=input, Tolerance=Tolerance, uniques=MainDBUniques)
-                ABS_Coeff_Full = GF.selectColumnsList(index, ABS_MainDB, Dimension=1)
-                SCA_Coeff_Full = GF.selectColumnsList(index, SCA_MainDB, Dimension=1)
+                ABS_Coeff_Full = GF.SelectColumnsList(index, ABS_MainDB, dimension=1)
+                SCA_Coeff_Full = GF.SelectColumnsList(index, SCA_MainDB, dimension=1)
                 ABS_Interpolated = griddata(XXX, ABS_Coeff_Full, input, rescale=True)
                 SCA_Interpolated = griddata(XXX, SCA_Coeff_Full, input, rescale=True)
                 ABS_CS.append(Decimal(ABS_Interpolated[0]) * Area[i])

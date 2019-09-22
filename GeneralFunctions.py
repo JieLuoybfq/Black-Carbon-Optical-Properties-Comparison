@@ -7,16 +7,38 @@ import datetime
 import glob
 import os
 from pathlib import Path
-
 from dateutil.parser import parse
-
 from ConfigParserModule import logging
 
 
-def writeFile(Address, String, Mode='w'):
+####### List of Functions (updated Sep 21,2019)
+# - WriteFile(address, string, mode='w')
+# - RunFile(address)
+# - ReadFile(fileAddress)
+# - FilterListFromNONE(list)
+# - CSV_To2DList(address)
+# - DAT_To2DList(address, getRidOfNone=True)
+# - FindLatestFile(folderAddressDictionary, dateTimeFormat='%Y-%m-%dT%H%M%S%z')
+# - SaveDictionaryAsConfig(address, dictionary, sectionName, mode='w')
+# - ReportDictionary(dictionary)
+# - ChangeColumnOf2D(list, columnNumber, changeTo)
+# - ChangeArrayType(list, columnNumber, changeTo)
+# - SelectColumnsList(columnIndex, list, dimension=2)
+# - DivideArray(numberOfDivisions, List)
+# - GetFilesNameAddressInFolder(folderAddress, extension=None)
+# - ReportVariable(name, value)
+# - IsDate(string, fuzzy=False)
+# - GetDateAndTimeUTCNow()
+# - GetAddressTo(main=None, folderName=None, fileName=None, extension=None)
+# - GetVarName(obj, namespace)
+# - GetRootDirectory()
+# - IsFileExist(address)
+#######
+
+def WriteFile(address, string, mode='w'):
     try:
-        f = open(Address, Mode)
-        f.write(String)
+        f = open(address, mode)
+        f.write(string)
         f.close()
 
     except Exception as e:
@@ -24,21 +46,21 @@ def writeFile(Address, String, Mode='w'):
         raise
 
 
-def runFile(Address):
+def RunFile(address):
     try:
         # I changed the Fortran code so it can be used here.
         # p1 = subprocess.Popen([str(Address.resolve())])
-        os.system(str(Address.resolve()))
+        os.system(str(address.resolve()))
 
     except Exception as e:
         logging.exception(e)
         raise
 
 
-def readFile(FileAddress):
+def ReadFile(fileAddress):
     try:
 
-        A = open(FileAddress).read()
+        A = open(fileAddress).read()
         return A
 
     except Exception as e:
@@ -46,20 +68,20 @@ def readFile(FileAddress):
         raise
 
 
-def filterListFromNONE(List):
+def FilterListFromNONE(list):
     try:
 
-        return list(filter(None, List))
+        return list(filter(None, list))
 
     except Exception as e:
         logging.exception(e)
         raise
 
 
-def CSV_To2DList(Address):
+def CSV_To2DList(address):
     try:
         List2D = []
-        with open(Address) as csvFile:
+        with open(address) as csvFile:
             readCSV = csv.reader(csvFile, delimiter=',')
             for row in readCSV:
                 List2D.append(row)
@@ -70,14 +92,14 @@ def CSV_To2DList(Address):
         raise
 
 
-def DAT_To2DList(Address, getridofNone=True):
+def DAT_To2DList(address, getRidOfNone=True):
     try:
         List2D = []
-        with open(Address) as datFile:
+        with open(address) as datFile:
             readDAT = csv.reader(datFile, delimiter=' ')
             for row in readDAT:
-                if getridofNone:
-                    List2D.append(filterListFromNONE(row))
+                if getRidOfNone:
+                    List2D.append(FilterListFromNONE(row))
                 else:
                     List2D.append(row)
         return List2D
@@ -87,32 +109,32 @@ def DAT_To2DList(Address, getridofNone=True):
         raise
 
 
-def findLatestFile(FolderAddressDictionary, DateTimeFormat='%Y-%m-%dT%H%M%S%z'):
+def FindLatestFile(folderAddressDictionary, dateTimeFormat='%Y-%m-%dT%H%M%S%z'):
     try:
         dT = {}
 
-        for key in FolderAddressDictionary:
-            if isDate(key):
-                dT[key] = datetime.datetime.strptime(key, DateTimeFormat)
+        for key in folderAddressDictionary:
+            if IsDate(key):
+                dT[key] = datetime.datetime.strptime(key, dateTimeFormat)
 
         C = max(dT, key=dT.get)
 
-        return FolderAddressDictionary[C]
+        return folderAddressDictionary[C]
 
     except Exception as e:
         logging.exception(e)
         raise
 
 
-def saveDictionaryAsConfig(Address, Dictionary, SectionName, mode='w'):
+def SaveDictionaryAsConfig(address, dictionary, sectionName, mode='w'):
     try:
         parser = configparser.ConfigParser()
         parser.optionxform = str
-        parser.add_section(str(SectionName))
-        for key in Dictionary.keys():
-            parser.set(str(SectionName), key, str(Dictionary[key]))
+        parser.add_section(str(sectionName))
+        for key in dictionary.keys():
+            parser.set(str(sectionName), key, str(dictionary[key]))
 
-        with open(Address, mode) as f:
+        with open(address, mode) as f:
             parser.write(f)
 
     except Exception as e:
@@ -120,62 +142,62 @@ def saveDictionaryAsConfig(Address, Dictionary, SectionName, mode='w'):
         raise
 
 
-def reportDictionary(Dictionary):
+def ReportDictionary(dictionary):
     try:
 
-        for key in Dictionary.keys():
-            logging.info(f'{key}: {Dictionary[key]}')
-            print(f'{key}: {Dictionary[key]}')
+        for key in dictionary.keys():
+            logging.info(f'{key}: {dictionary[key]}')
+            print(f'{key}: {dictionary[key]}')
 
     except Exception as e:
         logging.exception(e)
         raise
 
 
-def changeColumnOf2D(List, ColumnNumber, ChangeTo):
+def ChangeColumnOf2D(list, columnNumber, changeTo):
     try:
 
-        rows = len(List)
+        rows = len(list)
         for i in range(rows):
-            List[i][ColumnNumber] = ChangeTo
+            list[i][columnNumber] = changeTo
 
-        return List
+        return list
 
     except Exception as e:
         logging.exception(e)
         raise
 
 
-def changeArrayType(List, ColumnNumber, ChangeTo):
+def ChangeArrayType(list, columnNumber, changeTo):
     try:
 
-        rows = len(List)
+        rows = len(list)
         for i in range(rows):
-            List[i][ColumnNumber] = ChangeTo
+            list[i][columnNumber] = changeTo
 
-        return List
+        return list
 
     except Exception as e:
         logging.exception(e)
         raise
 
 
-def selectColumnsList(ColumnIndex, List, Dimension=2):
+def SelectColumnsList(columnIndex, list, dimension=2):
     try:
         B = []
-        if Dimension == 1:
-            for i in ColumnIndex:
-                B.append(List[i])
+        if dimension == 1:
+            for i in columnIndex:
+                B.append(list[i])
 
-        elif Dimension == 2:
-            for i in range(len(List)):
+        elif dimension == 2:
+            for i in range(len(list)):
                 A = []
-                if len(ColumnIndex) == 1:
-                    for j in ColumnIndex:
-                        B.append(List[i][j])
+                if len(columnIndex) == 1:
+                    for j in columnIndex:
+                        B.append(list[i][j])
                 else:
-                    for j in ColumnIndex:
-                        A.append(List[i][j])
+                    for j in columnIndex:
+                        A.append(list[i][j])
                     B.append(A)
 
         return B
@@ -185,13 +207,13 @@ def selectColumnsList(ColumnIndex, List, Dimension=2):
         raise
 
 
-def divideArray(NumberofDivisions, List):
+def DivideArray(numberOfDivisions, List):
     try:
         B = []
         Counter = 0
         rows = len(List)
-        Section = int(rows / NumberofDivisions)
-        for i in range(NumberofDivisions - 1):
+        Section = int(rows / numberOfDivisions)
+        for i in range(numberOfDivisions - 1):
             C = []
             for j in range(Section):
                 C.append(List[Counter])
@@ -212,16 +234,16 @@ def divideArray(NumberofDivisions, List):
         raise
 
 
-def getFilesNameAddressinFolder(FolderAddress, Extension=None):
+def GetFilesNameAddressInFolder(folderAddress, extension=None):
     try:
-        if Extension:
-            S = str(FolderAddress.resolve()) + "\\*." + str(Extension)
+        if extension:
+            S = str(folderAddress.resolve()) + "\\*." + str(extension)
         else:
-            S = str(FolderAddress.resolve()) + "\\*.*"
+            S = str(folderAddress.resolve()) + "\\*.*"
         dict = {}
         for file in glob.glob(S):
-            if Extension:
-                Name = os.path.basename(file).replace("." + Extension, "")
+            if extension:
+                Name = os.path.basename(file).replace("." + extension, "")
             else:
                 Name = os.path.basename(file)[:-3]
             dict[Name] = Path(file)
@@ -233,18 +255,18 @@ def getFilesNameAddressinFolder(FolderAddress, Extension=None):
         raise
 
 
-def reportVariable(Name, Value):
+def ReportVariable(name, value):
     try:
 
-        logging.info(f'{Name}: {Value}')
-        print(f'{Name}: {Value}')
+        logging.info(f'{name}: {value}')
+        print(f'{name}: {value}')
 
     except Exception as e:
         logging.exception(e)
         raise
 
 
-def isDate(string, fuzzy=False):
+def IsDate(string, fuzzy=False):
     try:
 
         try:
@@ -260,7 +282,7 @@ def isDate(string, fuzzy=False):
         raise
 
 
-def getDateandTimeUTCNow():
+def GetDateAndTimeUTCNow():
     try:
 
         return str(datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat("T", "seconds")).replace(":", "")
@@ -271,22 +293,22 @@ def getDateandTimeUTCNow():
         raise
 
 
-def getAddressTo(Main=None, FolderName=None, FileName=None, Extension=None):
+def GetAddressTo(main=None, folderName=None, fileName=None, extension=None):
     try:
-        if Main is None:
-            Main = getRootDirectory()
-        if FolderName:
-            Path1 = Path(Main) / Path(FolderName)
+        if main is None:
+            main = GetRootDirectory()
+        if folderName:
+            Path1 = Path(main) / Path(folderName)
         else:
-            Path1 = Path(Main)
+            Path1 = Path(main)
 
         if not os.path.exists(Path1):
             os.makedirs(Path1)
-        if FileName:
-            if Extension:
-                File_Address = Path1 / Path(FileName + "." + Extension)
+        if fileName:
+            if extension:
+                File_Address = Path1 / Path(fileName + "." + extension)
             else:
-                File_Address = Path1 / Path(FileName)
+                File_Address = Path1 / Path(fileName)
         else:
             File_Address = Path1
         return File_Address
@@ -296,7 +318,7 @@ def getAddressTo(Main=None, FolderName=None, FileName=None, Extension=None):
         raise
 
 
-def getVarName(obj, namespace):
+def GetVarName(obj, namespace):
     try:
         A = [name for name in namespace if namespace[name] is obj]
         return A[0]
@@ -306,8 +328,7 @@ def getVarName(obj, namespace):
         raise
 
 
-
-def getRootDirectory():
+def GetRootDirectory():
     try:
         return Path(os.path.dirname(os.path.realpath('__file__')))
 
@@ -316,9 +337,9 @@ def getRootDirectory():
         raise
 
 
-def isFileExist(Address):
+def IsFileExist(address):
     try:
-        return os.path.isfile(Address)
+        return os.path.isfile(address)
 
     except Exception as e:
         logging.exception(e)
