@@ -6,7 +6,7 @@ import logging
 import GeneralFunctions as GF
 
 
-def readLogConfig():
+def ReadLogConfig():
     try:
 
         appDirectory = GF.GetRootDirectory()
@@ -14,10 +14,10 @@ def readLogConfig():
         file_Address_Public_Config = GF.GetAddressTo(main=appDirectory, folderName="Config", fileName="Public", extension="cnf")
 
         if GF.IsFileExist(file_Address_Private_Config):
-            readLoggerConfig(file_Address_Private_Config)
+            ReadLoggerConfig(file_Address_Private_Config)
 
         elif GF.IsFileExist(file_Address_Public_Config):
-            readLoggerConfig(file_Address_Public_Config)
+            ReadLoggerConfig(file_Address_Public_Config)
 
         else:
             raise Exception("Couldn't find config file")
@@ -27,7 +27,7 @@ def readLogConfig():
         raise
 
 
-def readConfigToDict(SectionName, ConvertParseTo='string', hasComment=False):
+def ReadConfigToDict(sectionName, convertParseTo='string', hasComment=False):
     try:
 
         appDirectory = GF.GetRootDirectory()
@@ -35,20 +35,20 @@ def readConfigToDict(SectionName, ConvertParseTo='string', hasComment=False):
         file_Address_Public_Config = GF.GetAddressTo(main=appDirectory, folderName="Config", fileName="Public", extension="cnf")
 
         if GF.IsFileExist(file_Address_Private_Config):
-            cnf = readDatabaseRaw(Address=file_Address_Private_Config, SectionName=SectionName, hasComment=hasComment)
+            cnf = ReadDatabaseRaw(address=file_Address_Private_Config, sectionName=sectionName, hasComment=hasComment)
 
         elif GF.IsFileExist(file_Address_Public_Config):
-            cnf = readDatabaseRaw(Address=file_Address_Public_Config, SectionName=SectionName, hasComment=hasComment)
+            cnf = ReadDatabaseRaw(address=file_Address_Public_Config, sectionName=sectionName, hasComment=hasComment)
 
         else:
             raise Exception("Couldn't find config file")
 
         dict = {}
-        if ConvertParseTo == 'string':
+        if convertParseTo == 'string':
             for key, val in cnf.items():
                 dict[key] = str(val)
 
-        elif ConvertParseTo == 'float':
+        elif convertParseTo == 'float':
             for key, val in cnf.items():
                 dict[key] = float(val)
 
@@ -59,20 +59,20 @@ def readConfigToDict(SectionName, ConvertParseTo='string', hasComment=False):
         raise
 
 
-def readDatabaseRaw(Address, SectionName, hasComment=False):
+def ReadDatabaseRaw(address, sectionName, hasComment=False):
     try:
 
         if hasComment:
             config = configparser.ConfigParser(inline_comment_prefixes="#")
             config.optionxform = str
-            config.read(Address)
+            config.read(address)
         else:
             config = configparser.RawConfigParser()
             config.optionxform = str
-            config.read(Address)
+            config.read(address)
 
         sectionDictionary = {}
-        for key, val in config.items(str(SectionName)):
+        for key, val in config.items(str(sectionName)):
             sectionDictionary[key] = val
 
         return sectionDictionary
@@ -82,11 +82,11 @@ def readDatabaseRaw(Address, SectionName, hasComment=False):
         raise
 
 
-def readLoggerConfig(Address):
+def ReadLoggerConfig(address):
     try:
         config = configparser.RawConfigParser()
         config.optionxform = str
-        config.read(Address)
+        config.read(address)
         logFormat = config.get('LoggingInfo', 'format')
         logDate = config.get('LoggingInfo', 'datefmt')
         logFileName = config.get('LoggingInfo', 'filename')

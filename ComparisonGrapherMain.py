@@ -6,9 +6,9 @@ from ConfigParserModule import logging
 import ComparisonGraphModule as CGM
 
 if __name__ == "__main__":
-    CPM.readLogConfig()
+    CPM.ReadLogConfig()
     logging.info("Graph App Started.")
-    FF_Info = CPM.readConfigToDict(SectionName="FilesFoldersInfo")
+    FF_Info = CPM.ReadConfigToDict(sectionName="FilesFoldersInfo")
     logging.info("config retrieved.")
     ##############################################
     C1 = CGM.GraphTools(FolderInfo=FF_Info)

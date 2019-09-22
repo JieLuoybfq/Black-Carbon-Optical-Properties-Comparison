@@ -7,11 +7,11 @@ from ConfigParserModule import logging
 import RDG_TMatrixCalculator as K02
 
 if __name__ == "__main__":
-    CP.readLogConfig()
+    CP.ReadLogConfig()
     logging.info("App Started.")
-    DB_Info = CP.readConfigToDict(SectionName="DatabaseInfo")
-    FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
-    AGG_Info = CP.readConfigToDict(SectionName="AggregateDetails", ConvertParseTo='float', hasComment=True)
+    DB_Info = CP.ReadConfigToDict(sectionName="DatabaseInfo")
+    FF_Info = CP.ReadConfigToDict(sectionName="FilesFoldersInfo")
+    AGG_Info = CP.ReadConfigToDict(sectionName="AggregateDetails", convertParseTo='float', hasComment=True)
     logging.info("config retrieved.")
     ##############################################
     '''

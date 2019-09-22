@@ -6,10 +6,10 @@ from ConfigParserModule import logging
 import ComparisonGraphModule as GM
 
 if __name__ == "__main__":
-    CP.readLogConfig()
+    CP.ReadLogConfig()
     logging.info("App Started.")
-    FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
-    AGG_Info = CP.readConfigToDict(SectionName="AggregateDetails", ConvertParseTo='float', hasComment=True)
+    FF_Info = CP.ReadConfigToDict(sectionName="FilesFoldersInfo")
+    AGG_Info = CP.ReadConfigToDict(sectionName="AggregateDetails", convertParseTo='float', hasComment=True)
     logging.info("config retrieved.")
     ##############################################
     G1 = GM.GraphTools(FolderInfo=FF_Info)

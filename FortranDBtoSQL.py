@@ -4,9 +4,9 @@ from ConfigParserModule import logging
 import GeneralFunctions as GF
 
 if __name__ == "__main__":
-    CP.readLogConfig()
-    DB_Info = CP.readConfigToDict(SectionName="DatabaseInfo")
-    FF_Info = CP.readConfigToDict(SectionName="FilesFoldersInfo")
+    CP.ReadLogConfig()
+    DB_Info = CP.ReadConfigToDict(sectionName="DatabaseInfo")
+    FF_Info = CP.ReadConfigToDict(sectionName="FilesFoldersInfo")
     logging.info("Import Started!")
     appDirectory = GF.GetRootDirectory()
     ##############################################################################
