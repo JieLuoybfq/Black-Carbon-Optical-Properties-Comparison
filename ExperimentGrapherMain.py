@@ -12,7 +12,7 @@ if __name__ == "__main__":
     AGG_Info = CP.ReadConfigToDict(sectionName="AggregateDetails", convertParseTo='float', hasComment=True)
     logging.info("config retrieved.")
     ##############################################
-    G1 = GM.GraphTools(FolderInfo=FF_Info)
+    G1 = GM.GraphTools(folderInfo=FF_Info)
     G1.Experiment_RDG_TMatrixComparisonGraphs(AGG_Info=AGG_Info)
     ################################################################################################################
     logging.info("App finished.")
