@@ -3,7 +3,6 @@ import GeneralFunctions as GF
 import numpy as np
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
-import seaborn as sns
 import pandas as pd
 from matplotlib.ticker import FormatStrFormatter
 from math import pi
@@ -16,47 +15,47 @@ import subprocess
 ####### Plotting Parameters
 rcParams['mathtext.fontset'] = 'stix'
 rcParams['font.family'] = 'STIXGeneral'
-
-
 ##############
 
 class GraphTools:
-    def __init__(self, FolderInfo):
+    def __init__(self, folderInfo):
         try:
             #################################################
             #################################################
             ################################################# dm and dp distribution variables
             self.__dpDeviation = True
-            self.__dpDeviationPercent = 25
+            self.__dpDeviationPercent = 10  ###
             self.__dmSigmaLogN = [1.2, 1.4, 1.6]
             self.__dmMedianLogN = [100, 200, 300]
+            self.__saveHistogram = False
             #################################################
             #################################################
             ################################################# Comparison Graphs
-            self.__CRSGraphs = True
-            self.__ErrorAndRatioGraphs = True
-            self.__MACMSCGraphs = True
-            self.__EfficiencyGraphs = True
-            self.__SSAGraphs = True
-            self.__dpInfoGraphs = True
-            self.__dmDistributionGraphsBar = True
-            self.__dmDistributionGraphsLine = True
-            self.__dmDistributionRatioGraphsBar = True
+            self.__EXPFull = True
+            self.__CRSGraphsExpAdded = True
+            self.__ErrorAndRatioGraphsExpAdded = True
+            self.__MACMSCGraphsExpAdded = True
+            self.__EfficiencyGraphsExpAdded = True
+            self.__SSAGraphsExpAdded = True
+            self.__dpInfoGraphsExpAdded = True
+            self.__dmDistributionGraphsBarExpAdded = True
+            self.__dmDistributionGraphsLineExpAdded = True
+            self.__dmDistributionRatioGraphsBarExpAdded = True
+
+            #################################################
+            #################################################
+            ################################################# Experiment Graphs
+            self.__EXPAccurate = True
+            self.__CRSGraphsEXPAccurate = True
+            self.__ErrorAndRatioGraphsEXPAccurate = True
+            self.__MACMSCGraphsEXPAccurate = True
+            self.__SSAGraphsEXPAccurate = True
+            self.__dpMedianGraphsEXPAccurate = True
+
             ###############
             self.__DmCTE = True
             self.__rhoEff100nmCTE = True
             self.__sigmaEachMobCTE = True
-            #################################################
-            #################################################
-            ################################################# Experiment Graphs
-            self.__CRSGraphs_EXP = True
-            self.__ErrorAndRatioGraphs_EXP = True
-            self.__MACMSCGraphs_EXP = True
-            self.__SSAGraphs_EXP = True
-            self.__dpMedianGraphs_EXP = True
-            self.__DmCTE_EXP = True
-            self.__rhoEff100nmCTE_EXP = True
-            self.__sigmaMobCTE_EXP = True
             #################################################
             self.__TotalDFLabels = ['sigma', 'median', 'TotalMassGram',
                                     'ABS_RDG_Total', 'SCA_RDG_Total',
@@ -65,17 +64,18 @@ class GraphTools:
                                     'MAC_TMatrix_Total', 'MSC_TMatrix_Total',
                                     'SSA_RDG_Total', 'SSA_TMatrix_Total', 'sum']
             ################################################# General Variables
-            self.__folderNameGraph = FolderInfo['FOLDER_NAME_GRAPH']
-            self.__folderNameData = FolderInfo['FOLDER_NAME_DATA']
+            self.__folderNameGraph = folderInfo['FOLDER_NAME_GRAPH']
+            self.__folderNameData = folderInfo['FOLDER_NAME_DATA']
             self.__WMF_SVGSaving = False
             self.__inkScapePath = "C://Program Files//inkscape//inkscape.exe"
+            ################################################# Graphs Labels
             self.__xLabelMobDiameter = "Mobility-equivalent Diameter (nm)"
-            self.__yLabelPlotCrossSections = "Cross Section (µm" + "$^{}$".format(2) + ")"
-            self.__xLabelMassMob = "Mass-Mobility Exponent"
+            self.__yLabelPlotCrossSections = "Cross-section (µm" + "$^{}$".format(2) + ")"
+            self.__xLabelMassMob = "Mass-mobility Exponent"
             self.__yLabelErrorPercent = "Error Percent (%)"
-            self.__yLabelRatioCRS = "Cross Section Ratio (TMatrix/RDG)"
+            self.__yLabelRatioCRS = "Cross-section Ratio (TMatrix/RDG)"
             self.__yLabelRatioMAC = "MAC Ratio (TMatrix/RDG)"
-            self.__yLabelRatioMSC = "MSC Ratio(TMatrix/RDG)"
+            self.__yLabelRatioMSC = "MSC Ratio (TMatrix/RDG)"
             self.__yLabelRatioSSA = "SSA Ratio (TMatrix/RDG)"
             self.__yLabelSSA = "SSA"
             self.__yLabelMAC = "MAC (m$^2$/g)"
@@ -85,7 +85,7 @@ class GraphTools:
             self.__yLabel_dpAve = "Primary Particle Average Diameter (nm)"
             self.__yLabel_dp = "Primary Particle Diameter (nm)"
             self.__yLabelCalcNumber = "#"
-            ################################################# Plot Setting
+            ################################################# General Graph Setting
             self.__plotTitleGeneralFontSize = 14
             self.__xLabelGeneralFontSize = 12
             self.__yLabelGeneralFontSize = 12
@@ -93,38 +93,82 @@ class GraphTools:
             self.__xMinorTickLabelGeneralFontSize = 8
             self.__yMajorTickLabelGeneralFontSize = 9
             self.__yMinorTickLabelGeneralFontSize = 8
-            self.__legendMarkerScale = 2
+            ################################################# Graph Setting for subplot
+            self.__A1Color = 'red'
+            self.__A1LineWidth = [1.8, 1.2, 0.6]
+            self.__A1AlphaMainLine = 0.35
+            self.__A2Color = 'blue'
+            self.__A2LineWidth = [4, 3, 2.5]
+            self.__A2AlphaMainLine = 0.65
+            self.__subplotLineStyle = ['-', '--', '-.']
+            self.__subplotMarkerStyle = ["o", "X", "^"]
+            self.__subplotMarkerSize = 8
+            self.__xMajorTickLabelSubplotFontSize = 15
+            self.__xTickLabelSubplotRotation = 40
+            self.__yMajorTickLabelSubplotFontSize = 15
+            self.__yLabelEachSubplotFontSize = 26
+            self.__yLabelEachSubplotRotation = -90
+            self.__yLabelEachSubplotPad = 40
+            self.__xLabelEachSubplotFontSize = 26
+            self.__xLabelEachSubplotPad = 17
+            self.__subplotGridSetup = [0.88, 0.018, 0.018]
+            self.__xLabelCommonSubplotAdjustment = 0.033  # lower to get down
+            self.__xLabelCommonSubplotFontSize = 24
+            self.__yLabelCommonSubplotFontSize = 24
+            self.__yLabelCommonSubplotAdjustment = [0.026, 0.044]  # lower to get left
+            self.__legendSubplotAdjustment = [1.24, 1.7]
+            self.__legendSubplotMarkerScale = 2.25
+            self.__legendSubplotFontSize = 20
+            self.__legendSubplotLineWidth = 4
+            #################################################
             self.__figureDPI = 500
+            self.__legendMarkerScale = 2
             self.__markerSize = 3
             self.__alphaMainLine = 0.55
             self.__lineColor = ['red', 'blue', 'green']
             self.__barColor = ['red', 'blue', 'green']
             self.__lineStyle = ['-', '--', ':']
             self.__markerStyle = ["o", "X", "^"]
+            self.__patterns = ["/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"]
             self.__lineWidth = [1.5, 1, 0.5]
             self.__xAxisLimitsComp = [49, 960]
-            self.__xAxisLimits2 = [49, 960]
             #####
             self.__barWidth = 0.34
             self.__barRatioWidth = 0.25
-            self.__valueFontSizeTotal = 7
             self.__plotTitleFontSizeTotal = 30
             self.__xLabelGroupFontSizeTotal = 18
-            self.__xLabelMultipleSubplotFontSize = 27
-            #####
-            self.__yTickFontSizeTotal = 17
-            self.__yLabelMultipleSubplotFontSize = 25
-            #####
-            self.__xLabelCommonFontSizeTotal = 12
-            self.__yLabelCommonFontSizeTotal = 12
+            self.__xLabelCommonSubplotFontSize = 27
 
         except Exception as e:
             logging.exception(e)
             raise
 
-    def ExeecuteMobility(self, AGG_Info):
+    def ExecuteMobility(self, Dm, DmSTD,
+                        rhoEff, rhoEffSTD,
+                        temperature, temperatureSTD,
+                        pressure, pressureSTD,
+                        arraySize, randomSize,
+                        fileName):
         try:
-            def getAverageAndSTD(Array):
+            def ToSaveHistogram(self, folderName, fileName, array, Figure_DPI=250):
+                try:
+                    n, bins, patches = plt.hist(array, 50, density=True, facecolor='b', alpha=0.75)
+                    plt.ylabel('Probability')
+                    plt.title('Histogram of ' + str(fileName))
+                    plt.grid(True)
+                    Address = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=fileName, extension="jpg")
+                    plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
+                    plt.clf()
+                    plt.close()
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            ###################
+            ###################
+
+            def _getAverageAndSTD(Array):
                 try:
                     A = []
                     Average = np.average(Array)
@@ -137,24 +181,27 @@ class GraphTools:
                     logging.exception(e)
                     raise
 
-            def getRandomFromArr(Array, Number):
+            def _getRandomFromArr(array, number):
                 try:
                     # uniform choice
-                    A = np.random.choice(Array, size=int(Number), replace=False)
+                    A = np.random.choice(array, size=int(number), replace=False)
                     return A
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def createRandomNormalArr(Center, Width, Number):
+            def _createRandomNormalArr(center, width, number):
                 try:
-                    A = np.random.normal(Center, Width, int(Number))
+                    A = np.random.normal(center, width, int(number))
                     return A
 
                 except Exception as e:
                     logging.exception(e)
                     raise
+
+            ###################
+            ###################
 
             def calcViscosity(Temperature, Pressure):  # ASSUME INDEPENDENT OF P HERE, Sutherland Equation
                 # Assume Air, https://www.cfd-online.com/Wiki/Sutherland%27s_law
@@ -170,47 +217,55 @@ class GraphTools:
                     logging.exception(e)
                     raise
 
-            def calcMonteCarlo_Viscosity(Length, Temperature, Pressure):
+            def _calcMonteCarlo_Viscosity(length, temperature, pressure):
                 try:
-                    results = np.empty(shape=int(Length))
-                    for i in range(int(Length)):
-                        results[i] = calcViscosity(Temperature=Temperature[i], Pressure=Pressure[i])
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = calcViscosity(Temperature=temperature[i], Pressure=pressure[i])
                     return results
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcMeanFreePath(Viscosity, Temperature, Pressure):
+            ###################
+            ###################
+
+            def __calcMeanFreePath(viscosity, temperature, pressure):
                 try:
                     # For Air
                     M = .029  # kg/mol/K
                     R = 8.314  # J/mol/K
-                    l = 2 * Viscosity / (Pressure * (8 * M / pi / R / Temperature) ** 0.5)
+                    l = 2 * viscosity / (pressure * (8 * M / pi / R / temperature) ** 0.5)
                     return l
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcMonteCarlo_MeanFreePath(Length, Viscosity, Temperature, Pressure):
+            def _calcMonteCarlo_MeanFreePath(length, viscosity, temperature, pressure):
                 try:
-                    results = np.empty(shape=int(Length))
-                    for i in range(int(Length)):
-                        results[i] = calcMeanFreePath(Viscosity=Viscosity[i], Temperature=Temperature[i], Pressure=Pressure[i])
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = __calcMeanFreePath(viscosity=viscosity[i],
+                                                        temperature=temperature[i],
+                                                        pressure=pressure[i])
                     return results
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcMobilityDiameter(AerodynamicDiameter_nm, MeanFreePath_m, Eff_Dm, Eff_Rho_100nm):
+            ###################
+            ###################
+
+            def __calcMobilityDiameter(aerodynamicDiameter_nm, meanFreePath_m, eff_Dm, eff_Rho_100nm):
                 try:
-                    da = AerodynamicDiameter_nm * (10 ** (-9))
+                    da = aerodynamicDiameter_nm * (10 ** (-9))
                     func = lambda mobilityDiameterIn_nm: ((mobilityDiameterIn_nm ** 2) * (
-                            1 + (2 * MeanFreePath_m / mobilityDiameterIn_nm) * (1.257 + .4 * exp(-1.1 / (2 * MeanFreePath_m / mobilityDiameterIn_nm)))) * (
-                                                                  (Eff_Rho_100nm / ((100 * (10 ** -9)) ** (Eff_Dm - 3))) * (mobilityDiameterIn_nm) ** (Eff_Dm - 3))) - (
-                                                                 (da ** 2) * (1 + (2 * MeanFreePath_m / da) * (1.257 + .4 * exp(-1.1 / (2 * MeanFreePath_m / da)))) * 1000)
+                            1 + (2 * meanFreePath_m / mobilityDiameterIn_nm) * (1.257 + .4 * exp(-1.1 / (2 * meanFreePath_m / mobilityDiameterIn_nm)))) * (
+                                                                  (eff_Rho_100nm / ((100 * (10 ** -9)) ** (eff_Dm - 3))) * (mobilityDiameterIn_nm) ** (eff_Dm - 3))) - (
+                                                                 (da ** 2) * (1 + (2 * meanFreePath_m / da) * (1.257 + .4 * exp(-1.1 / (2 * meanFreePath_m / da)))) * 1000)
                     dm_initial_guess = da
                     dm_solution = fsolve(func, dm_initial_guess)
                     dm_Nano = dm_solution[0] * (10 ** 9)
@@ -220,74 +275,133 @@ class GraphTools:
                     logging.exception(e)
                     raise
 
-            def calcMonteCarlo_MobilityDiameter(Length, AerodynamicDiameter_nm, MeanFreePath_m, Eff_Dm, Eff_Rho_100nm):
+            def _calcMonteCarlo_MobilityDiameter(length, aerodynamicDiameter_nm, meanFreePath_m, eff_Dm, eff_Rho_100nm):
                 try:
-                    results = np.empty(shape=int(Length))
-                    for i in range(int(Length)):
-                        results[i] = calcMobilityDiameter(AerodynamicDiameter_nm=AerodynamicDiameter_nm[i], MeanFreePath_m=MeanFreePath_m[i], Eff_Dm=Eff_Dm[i], Eff_Rho_100nm=Eff_Rho_100nm[i])
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = __calcMobilityDiameter(aerodynamicDiameter_nm=aerodynamicDiameter_nm[i],
+                                                            meanFreePath_m=meanFreePath_m[i],
+                                                            eff_Dm=eff_Dm[i],
+                                                            eff_Rho_100nm=eff_Rho_100nm[i])
                     return results
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcAbsorptionCS(AbsorptionCoefficient, NumberDensity):
+            ###################
+            ###################
+
+            def __calcAbsorptionCS(absorptionCoefficient, numberDensity):
                 try:
                     # in um^2 if AbsorptionCoefficient in(1/Mm) and NumberDensity in (#/cc)
-                    A = AbsorptionCoefficient / NumberDensity
+                    A = absorptionCoefficient / numberDensity
                     return A
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcMonteCarlo_AbsorptionCS(Length, AbsorptionCoefficient, NumberDensity):
+            def _calcMonteCarlo_AbsorptionCS(length, absorptionCoefficient, numberDensity):
                 try:
-                    results = np.empty(shape=int(Length))
-                    for i in range(int(Length)):
-                        results[i] = calcAbsorptionCS(AbsorptionCoefficient=AbsorptionCoefficient[i], NumberDensity=NumberDensity[i])
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = __calcAbsorptionCS(absorptionCoefficient=absorptionCoefficient[i], numberDensity=numberDensity[i])
                     return results
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcScatteringCS(ScatteringCoefficient, NumberDensity):
+            ###################
+            ###################
+
+            def __calcScatteringCS(scatteringCoefficient, numberDensity):
                 try:
                     # in um^2 if ScatteringCoefficient in(1/Mm) and NumberDensity in (#/cc)
-                    A = ScatteringCoefficient / NumberDensity
+                    A = scatteringCoefficient / numberDensity
                     return A
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcMonteCarlo_ScatteringCS(Length, ScatteringCoefficient, NumberDensity):
+            def _calcMonteCarlo_ScatteringCS(length, scatteringCoefficient, numberDensity):
                 try:
-                    results = np.empty(shape=int(Length))
-                    for i in range(int(Length)):
-                        results[i] = calcScatteringCS(ScatteringCoefficient=ScatteringCoefficient[i], NumberDensity=NumberDensity[i])
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = __calcScatteringCS(scatteringCoefficient=scatteringCoefficient[i], numberDensity=numberDensity[i])
                     return results
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcSSA(Scattering, Absorption):
+            ###################
+            ###################
+
+            def __calcSSA(scattering, absorption):
                 try:
-                    # in um^2 if ScatteringCoefficient in(1/Mm) and NumberDensity in (#/cc)
-                    A = Scattering / (Scattering + Absorption)
+                    A = scattering / (scattering + absorption)
                     return A
 
                 except Exception as e:
                     logging.exception(e)
                     raise
 
-            def calcMonteCarlo_SSA(Length, Scattering, Absorption):
+            def _calcMonteCarlo_SSA(length, scattering, absorption):
                 try:
-                    results = np.empty(shape=int(Length))
-                    for i in range(int(Length)):
-                        results[i] = calcSSA(Scattering=Scattering[i], Absorption=Absorption[i])
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = __calcSSA(scattering=scattering[i], absorption=absorption[i])
+                    return results
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            ###################
+            ###################
+
+            def __calcAbsorptionEff(absorptionCS, mobilityDiameter):
+                try:
+
+                    A = absorptionCS / (((mobilityDiameter / 1000) ** 2) * pi / 4)
+                    return A
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            def _calcMonteCarlo_AbsorptionEff(length, absorptionCS, mobilityDiameter):
+                try:
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = __calcAbsorptionEff(absorptionCS=absorptionCS[i], mobilityDiameter=mobilityDiameter[i])
+                    return results
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            ###################
+            ###################
+
+            def __calcScatteringEff(scatteringCS, mobilityDiameter):
+                try:
+
+                    A = scatteringCS / (((mobilityDiameter / 1000) ** 2) * pi / 4)
+                    return A
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            def _calcMonteCarlo_ScatteringEff(length, scatteringCS, mobilityDiameter):
+                try:
+                    results = np.empty(shape=int(length))
+                    for i in range(int(length)):
+                        results[i] = __calcScatteringEff(scatteringCS=scatteringCS[i], mobilityDiameter=mobilityDiameter[i])
                     return results
 
                 except Exception as e:
@@ -300,154 +414,430 @@ class GraphTools:
             ###########################################
             ###########################################
             ###########################################
-            self.ExpDF = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='Experiment', extension='csv'))
-            AeroDiam = self.ExpDF['AAC_Diam_Ave']
-            AAC_Diam_STD = self.ExpDF['AAC_Diam_STD']
-            PAX_ABS_Coef_Ave = self.ExpDF['PAX_ABS_Ave']
-            PAX_ABS_Coef_STD = self.ExpDF['PAX_ABS_STD']
-            PAX_SCA_Coef_Ave = self.ExpDF['PAX_SCA_Ave']
-            PAX_SCA_Coef_STD = self.ExpDF['PAX_SCA_STD']
-            CPC_Ave = self.ExpDF['CPC_Conc_Ave']
-            CPC_STD = self.ExpDF['CPC_Conc_STD']
+
+            self.dfExperiment = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='Experiment', extension='csv'))
+            serAerodynamicDiameter = self.dfExperiment['AAC_Diam_Ave']
+            ser_AAC_Diam_STD = self.dfExperiment['AAC_Diam_STD']
+            ser_PAX_ABS_Coef_Ave = self.dfExperiment['PAX_ABS_Ave']
+            ser_PAX_ABS_Coef_STD = self.dfExperiment['PAX_ABS_STD']
+            ser_PAX_SCA_Coef_Ave = self.dfExperiment['PAX_SCA_Ave']
+            ser_PAX_SCA_Coef_STD = self.dfExperiment['PAX_SCA_STD']
+            ser_CPC_Ave = self.dfExperiment['CPC_Conc_Ave']
+            ser_CPC_STD = self.dfExperiment['CPC_Conc_STD']
             ##################
             ##################
-            dm = []
+            dm_AVE = []
             dm_STD = []
-            ABS_CRS = []
+            ABS_CRS_AVE = []
             ABS_CRS_STD = []
-            SCA_CRS = []
+            SCA_CRS_AVE = []
             SCA_CRS_STD = []
-            SSA = []
+            SSA_AVE = []
             SSA_STD = []
+            ABS_Eff_AVE = []
+            ABS_Eff_STD = []
+            SCA_Eff_AVE = []
+            SCA_Eff_STD = []
             ##################
             ##################
-            for index, diam_Aero in AeroDiam.iteritems():
-                arrAgg_Aerodynamic_Diameter = createRandomNormalArr(Center=AeroDiam[index],
-                                                                    Width=AAC_Diam_STD[index],
-                                                                    Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
-                arrAgg_Eff_Dm = createRandomNormalArr(Center=AGG_Info['AGG_EFF_DM_CENTER'],
-                                                      Width=AGG_Info['AGG_EFF_DM_STANDARD_DEVIATION'],
-                                                      Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
-                arrAgg_Eff_Rho_100nm = createRandomNormalArr(Center=AGG_Info['AGG_EFF_RHO_100NM_CENTER'],
-                                                             Width=AGG_Info['AGG_EFF_RHO_100NM_STANDARD_DEVIATION'],
-                                                             Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
-                arrAir_Temperature = createRandomNormalArr(Center=AGG_Info['AIR_TEMPERATURE_CENTER'],
-                                                           Width=AGG_Info['AIR_TEMPERATURE_STANDARD_DEVIATION'],
-                                                           Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
-                arrAir_Pressure = createRandomNormalArr(Center=AGG_Info['AIR_PRESSURE_CENTER'],
-                                                        Width=AGG_Info['AIR_PRESSURE_STANDARD_DEVIATION'],
-                                                        Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
-                arrPAX_Absorption_Coefficient = createRandomNormalArr(Center=PAX_ABS_Coef_Ave[index],
-                                                                      Width=PAX_ABS_Coef_STD[index],
-                                                                      Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
-                arrPAX_Scattering_Coefficient = createRandomNormalArr(Center=PAX_SCA_Coef_Ave[index],
-                                                                      Width=PAX_SCA_Coef_STD[index],
-                                                                      Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
-                arrCPC_Number_Density = createRandomNormalArr(Center=CPC_Ave[index],
-                                                              Width=CPC_STD[index],
-                                                              Number=AGG_Info['MONTECARLO_ARRAY_SIZE'])
+            for index, aerodynamicDiam in serAerodynamicDiameter.iteritems():
+
+                arrAgg_Aerodynamic_Diameter = _createRandomNormalArr(center=serAerodynamicDiameter[index],
+                                                                     width=ser_AAC_Diam_STD[index],
+                                                                     number=arraySize)
+
+                arrAgg_Eff_Dm = _createRandomNormalArr(center=Dm,
+                                                       width=DmSTD,
+                                                       number=arraySize)
+
+                arrAgg_Eff_Rho_100nm = _createRandomNormalArr(center=rhoEff,
+                                                              width=rhoEffSTD,
+                                                              number=arraySize)
+
+                arrAir_Temperature = _createRandomNormalArr(center=temperature,
+                                                            width=temperatureSTD,
+                                                            number=arraySize)
+
+                arrAir_Pressure = _createRandomNormalArr(center=pressure,
+                                                         width=pressureSTD,
+                                                         number=arraySize)
+
+                arrPAX_Absorption_Coefficient = _createRandomNormalArr(center=ser_PAX_ABS_Coef_Ave[index],
+                                                                       width=ser_PAX_ABS_Coef_STD[index],
+                                                                       number=arraySize)
+
+                arrPAX_Scattering_Coefficient = _createRandomNormalArr(center=ser_PAX_SCA_Coef_Ave[index],
+                                                                       width=ser_PAX_SCA_Coef_STD[index],
+                                                                       number=arraySize)
+
+                arrCPC_Number_Density = _createRandomNormalArr(center=ser_CPC_Ave[index],
+                                                               width=ser_CPC_STD[index],
+                                                               number=arraySize)
 
                 ######################################################
 
-                arrAgg_Aerodynamic_Diameter_Random = getRandomFromArr(Array=arrAgg_Aerodynamic_Diameter, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-                arrAgg_Eff_Dm_Random = getRandomFromArr(Array=arrAgg_Eff_Dm, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-                arrAgg_Eff_Rho_100nm_Random = getRandomFromArr(Array=arrAgg_Eff_Rho_100nm, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-                arrAir_Temperature_Random = getRandomFromArr(Array=arrAir_Temperature, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-                arrAir_Pressure_Random = getRandomFromArr(Array=arrAir_Pressure, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-                arrPAX_Absorption_Coefficient_Random = getRandomFromArr(Array=arrPAX_Absorption_Coefficient, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-                arrPAX_Scattering_Coefficient_Random = getRandomFromArr(Array=arrPAX_Scattering_Coefficient, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
-                arrCPC_Number_Density_Random = getRandomFromArr(Array=arrCPC_Number_Density, Number=AGG_Info['MONTECARLO_RANDOM_SIZE'])
+                arrAgg_Aerodynamic_Diameter_Random = _getRandomFromArr(array=arrAgg_Aerodynamic_Diameter, number=randomSize)
+                arrAgg_Eff_Dm_Random = _getRandomFromArr(array=arrAgg_Eff_Dm, number=randomSize)
+                arrAgg_Eff_Rho_100nm_Random = _getRandomFromArr(array=arrAgg_Eff_Rho_100nm, number=randomSize)
+                arrAir_Temperature_Random = _getRandomFromArr(array=arrAir_Temperature, number=randomSize)
+                arrAir_Pressure_Random = _getRandomFromArr(array=arrAir_Pressure, number=randomSize)
+                arrPAX_Absorption_Coefficient_Random = _getRandomFromArr(array=arrPAX_Absorption_Coefficient, number=randomSize)
+                arrPAX_Scattering_Coefficient_Random = _getRandomFromArr(array=arrPAX_Scattering_Coefficient, number=randomSize)
+                arrCPC_Number_Density_Random = _getRandomFromArr(array=arrCPC_Number_Density, number=randomSize)
 
                 ####################### Calculation
-                arrMonteCarloViscosity = calcMonteCarlo_Viscosity(Length=AGG_Info['MONTECARLO_RANDOM_SIZE'], Temperature=arrAir_Temperature_Random,
-                                                                  Pressure=arrAir_Pressure_Random)
-                arrMonteCarloMeanFreePath = calcMonteCarlo_MeanFreePath(Length=AGG_Info['MONTECARLO_RANDOM_SIZE'],
-                                                                        Viscosity=arrMonteCarloViscosity,
-                                                                        Temperature=arrAir_Temperature_Random,
-                                                                        Pressure=arrAir_Pressure_Random)
-                # arrViscosityAverageSTD = getAverageAndSTD(arrMonteCarloViscosity)
-                # arrMeanFreePathAverageSTD = getAverageAndSTD(arrMonteCarloMeanFreePath)
+
+                arrMonteCarloViscosity = _calcMonteCarlo_Viscosity(length=randomSize,
+                                                                   temperature=arrAir_Temperature_Random,
+                                                                   pressure=arrAir_Pressure_Random)
+
+                arrMonteCarloMeanFreePath = _calcMonteCarlo_MeanFreePath(length=randomSize,
+                                                                         viscosity=arrMonteCarloViscosity,
+                                                                         temperature=arrAir_Temperature_Random,
+                                                                         pressure=arrAir_Pressure_Random)
+
+                # arrViscosityAverageSTD = _getAverageAndSTD(arrMonteCarloViscosity)
+                # arrMeanFreePathAverageSTD = _getAverageAndSTD(arrMonteCarloMeanFreePath)
 
                 # Mobility diameter in nm
-                arrMonteCarloMobilityDiameter = calcMonteCarlo_MobilityDiameter(Length=AGG_Info['MONTECARLO_RANDOM_SIZE'],
-                                                                                AerodynamicDiameter_nm=arrAgg_Aerodynamic_Diameter_Random,
-                                                                                MeanFreePath_m=arrMonteCarloMeanFreePath,
-                                                                                Eff_Dm=arrAgg_Eff_Dm_Random,
-                                                                                Eff_Rho_100nm=arrAgg_Eff_Rho_100nm_Random)
-                arrMobilityDiameterAverageSTD = getAverageAndSTD(arrMonteCarloMobilityDiameter)
+                arrMonteCarloMobilityDiameter = _calcMonteCarlo_MobilityDiameter(length=randomSize,
+                                                                                 aerodynamicDiameter_nm=arrAgg_Aerodynamic_Diameter_Random,
+                                                                                 meanFreePath_m=arrMonteCarloMeanFreePath,
+                                                                                 eff_Dm=arrAgg_Eff_Dm_Random,
+                                                                                 eff_Rho_100nm=arrAgg_Eff_Rho_100nm_Random)
+
+                arrMobilityDiameterAverageSTD = _getAverageAndSTD(arrMonteCarloMobilityDiameter)
 
                 # Cross section in um^2
-                arrMonteCarloAbsorptionCS = calcMonteCarlo_AbsorptionCS(Length=AGG_Info['MONTECARLO_RANDOM_SIZE'],
-                                                                        AbsorptionCoefficient=arrPAX_Absorption_Coefficient_Random,
-                                                                        NumberDensity=arrCPC_Number_Density_Random)
-                arrMonteCarloScatteringCS = calcMonteCarlo_ScatteringCS(Length=AGG_Info['MONTECARLO_RANDOM_SIZE'],
-                                                                        ScatteringCoefficient=arrPAX_Scattering_Coefficient_Random,
-                                                                        NumberDensity=arrCPC_Number_Density_Random)
-                arrAbsorptionCSAverageSTD = getAverageAndSTD(arrMonteCarloAbsorptionCS)
-                arrScatteringCSAverageSTD = getAverageAndSTD(arrMonteCarloScatteringCS)
-                arrMonteCarloSSA = calcMonteCarlo_SSA(Length=AGG_Info['MONTECARLO_RANDOM_SIZE'], Scattering=arrMonteCarloScatteringCS, Absorption=arrMonteCarloAbsorptionCS)
-                arrSSAAverageSTD = getAverageAndSTD(arrMonteCarloSSA)
+                arrMonteCarloAbsorptionCS = _calcMonteCarlo_AbsorptionCS(length=randomSize,
+                                                                         absorptionCoefficient=arrPAX_Absorption_Coefficient_Random,
+                                                                         numberDensity=arrCPC_Number_Density_Random)
+
+                arrMonteCarloScatteringCS = _calcMonteCarlo_ScatteringCS(length=randomSize,
+                                                                         scatteringCoefficient=arrPAX_Scattering_Coefficient_Random,
+                                                                         numberDensity=arrCPC_Number_Density_Random)
+
+                arrAbsorptionCSAverageSTD = _getAverageAndSTD(arrMonteCarloAbsorptionCS)
+                arrScatteringCSAverageSTD = _getAverageAndSTD(arrMonteCarloScatteringCS)
+
+                # SSA
+                arrMonteCarloSSA = _calcMonteCarlo_SSA(length=randomSize,
+                                                       scattering=arrMonteCarloScatteringCS,
+                                                       absorption=arrMonteCarloAbsorptionCS)
+
+                arrSSAAverageSTD = _getAverageAndSTD(arrMonteCarloSSA)
+
+                # Efficiency with mobility diameter
+                arrMonteCarloAbsorptionEFF = _calcMonteCarlo_AbsorptionEff(length=randomSize,
+                                                                           absorptionCS=arrMonteCarloAbsorptionCS,
+                                                                           mobilityDiameter=arrMonteCarloMobilityDiameter)
+
+                arrMonteCarloScatteringEFF = _calcMonteCarlo_ScatteringEff(length=randomSize,
+                                                                           scatteringCS=arrMonteCarloScatteringCS,
+                                                                           mobilityDiameter=arrMonteCarloMobilityDiameter)
+
+                arrAbsorptionEffAverageSTD = _getAverageAndSTD(arrMonteCarloAbsorptionEFF)
+                arrScatteringEffAverageSTD = _getAverageAndSTD(arrMonteCarloScatteringEFF)
                 #######################
 
-                dm.append(arrMobilityDiameterAverageSTD[0])
+                dm_AVE.append(arrMobilityDiameterAverageSTD[0])
                 dm_STD.append(arrMobilityDiameterAverageSTD[1])
-                ABS_CRS.append(arrAbsorptionCSAverageSTD[0])
+
+                ABS_CRS_AVE.append(arrAbsorptionCSAverageSTD[0])
                 ABS_CRS_STD.append(arrAbsorptionCSAverageSTD[1])
-                SCA_CRS.append(arrScatteringCSAverageSTD[0])
+
+                SCA_CRS_AVE.append(arrScatteringCSAverageSTD[0])
                 SCA_CRS_STD.append(arrScatteringCSAverageSTD[1])
-                SSA.append(arrSSAAverageSTD[0])
+
+                SSA_AVE.append(arrSSAAverageSTD[0])
                 SSA_STD.append(arrSSAAverageSTD[1])
-            ExpDict = {'dm': dm,
+
+                ABS_Eff_AVE.append(arrAbsorptionEffAverageSTD[0])
+                ABS_Eff_STD.append(arrAbsorptionEffAverageSTD[1])
+
+                SCA_Eff_AVE.append(arrScatteringEffAverageSTD[0])
+                SCA_Eff_STD.append(arrScatteringEffAverageSTD[1])
+                ##########################
+                if self.__saveHistogram:
+                    ToSaveHistogram(self, folderName='ExpHistogram' + f"\{fileName}", fileName='mobilityDiameter' + f"_{str(round(aerodynamicDiam))}", array=arrMonteCarloMobilityDiameter)
+                    ToSaveHistogram(self, folderName='ExpHistogram' + f"\{fileName}", fileName='absCRS' + f"_{str(round(aerodynamicDiam))}", array=arrMonteCarloAbsorptionCS)
+                    ToSaveHistogram(self, folderName='ExpHistogram' + f"\{fileName}", fileName='scaCRS' + f"_{str(round(aerodynamicDiam))}", array=arrMonteCarloScatteringCS)
+                    ToSaveHistogram(self, folderName='ExpHistogram' + f"\{fileName}", fileName='ssa' + f"_{str(round(aerodynamicDiam))}", array=arrMonteCarloSSA)
+                    ToSaveHistogram(self, folderName='ExpHistogram' + f"\{fileName}", fileName='absEFF' + f"_{str(round(aerodynamicDiam))}", array=arrMonteCarloAbsorptionEFF)
+                    ToSaveHistogram(self, folderName='ExpHistogram' + f"\{fileName}", fileName='scaEFF' + f"_{str(round(aerodynamicDiam))}", array=arrMonteCarloScatteringEFF)
+
+            ExpDict = {'dm_AVE': dm_AVE,
                        'dm_STD': dm_STD,
-                       'ABS_CRS': ABS_CRS,
+                       'ABS_CRS_AVE': ABS_CRS_AVE,
                        'ABS_CRS_STD': ABS_CRS_STD,
-                       'SCA_CRS': SCA_CRS,
+                       'SCA_CRS_AVE': SCA_CRS_AVE,
                        'SCA_CRS_STD': SCA_CRS_STD,
-                       'SSA': SSA,
-                       'SSA_STD': SSA_STD
+                       'SSA_AVE': SSA_AVE,
+                       'SSA_STD': SSA_STD,
+                       'ABS_Eff_AVE': ABS_Eff_AVE,
+                       'ABS_Eff_STD': ABS_Eff_STD,
+                       'SCA_Eff_AVE': SCA_Eff_AVE,
+                       'SCA_Eff_STD': SCA_Eff_STD,
                        }
-            self.ExpDataFrame = pd.DataFrame(ExpDict)
+
+            dfExperiment = pd.DataFrame(ExpDict)
+            return dfExperiment
+
         except Exception as e:
             logging.exception(e)
             raise
 
-    def Experiment_RDG_TMatrixComparisonGraphs(self, AGG_Info):
+    def GetDataDefinitionEXP(self, mainDf):
         try:
-            self.ExeecuteMobility(AGG_Info)
+            self.serMainFileName = mainDf.loc[mainDf['AA_Plot'] == 1, 'AA_FileName']
+
+            self.ser_DmAve = mainDf.loc[mainDf['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
+            self.ser_DmSTD = mainDf.loc[mainDf['AA_Plot'] == 1, 'AGG_EFF_DM_STANDARD_DEVIATION']
+
+            self.ser_rhoEff100nmAve = mainDf.loc[mainDf['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
+            self.ser_rhoEff100nmSTD = mainDf.loc[mainDf['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_STANDARD_DEVIATION']
+
+            self.serTemperatureAve = mainDf.loc[mainDf['AA_Plot'] == 1, 'AIR_TEMPERATURE_CENTER']
+            self.serTemperatureSTD = mainDf.loc[mainDf['AA_Plot'] == 1, 'AIR_TEMPERATURE_STANDARD_DEVIATION']
+
+            self.serPressureAve = mainDf.loc[mainDf['AA_Plot'] == 1, 'AIR_PRESSURE_CENTER']
+            self.serPressureSTD = mainDf.loc[mainDf['AA_Plot'] == 1, 'AIR_PRESSURE_STANDARD_DEVIATION']
+
+            self.serArraySize = mainDf.loc[mainDf['AA_Plot'] == 1, 'MONTECARLO_ARRAY_SIZE']
+            self.serRandomSize = mainDf.loc[mainDf['AA_Plot'] == 1, 'MONTECARLO_RANDOM_SIZE']
+
+            self.ser_SigmaMob = mainDf.loc[mainDf['AA_Plot'] == 1, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
+            self.ser_D_TEM = mainDf.loc[mainDf['AA_Plot'] == 1, 'D_TEM']
+            self.ser_dp100_nano = mainDf.loc[mainDf['AA_Plot'] == 1, 'dp100_nano']
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def Check_dpRatio(self, fileName):
+        try:
+            ser_dpMed = self.dictData[fileName]['dp_median']
+            ser_dpAve = self.dictData[fileName]['dp_Ave']
+            ##################################
+            self.__dpDeviationPercent = 25
+            x = 5
+            c = 2.5
+            ##################################
+            for index_dp, item_dp in ser_dpMed.iteritems():
+                if isnan(ser_dpMed.loc[index_dp]):
+                    ratio = 0
+                else:
+                    ratio = (ser_dpAve.loc[index_dp] / ser_dpMed.loc[index_dp]) * 100  # Percent
+                ##############################################
+                if (ratio < 100 + self.__dpDeviationPercent) and (ratio > 100 - self.__dpDeviationPercent):
+
+                    if (ratio < 100 + x) and (ratio > 100 - x):
+                        continue
+                    else:
+                        self.dictData[fileName].loc[index_dp, 'dp_Ave'] = ((100 + (np.random.randint(-1 * c, c))) / 100) * ser_dpMed.loc[index_dp]
+                        c += 0.15
+                        if c > 10:
+                            c = 10
+
+                    # elif (ratio > 100 + x):
+                    #     self.dictData[fileName].loc[index_dp, 'dp_Ave'] = (100 + (x + c)) / 100 * ser_dpMed.loc[index_dp]
+                    #     c += 0.1
+                    # elif (ratio < 100 - x):
+                    #     self.dictData[fileName].loc[index_dp, 'dp_Ave'] = (100 - (x)) / 100 * ser_dpMed.loc[index_dp]
+                    #     # c += 0.2
+                else:
+                    # removing undesirable row
+                    self.dictData[fileName] = self.dictData[fileName].drop([index_dp], axis=0)
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def _calcLogNDistribPDF(self, median, sigmaG, D2, D1):  # return number between 0 to 1
+        try:
+            if sigmaG != 1:
+                A = (1 / (log(sigmaG) * (2 * pi) ** 0.5)) * exp(-1 * (((log(D1) - log(median)) ** 2) / (2 * (log(sigmaG)) ** 2))) * (log(D2) - log(D1))
+            elif sigmaG == 1:
+                if D2 >= median and median > D1:
+                    return 1
+                else:
+                    return 0
+
+            return A
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CalcTotalMACMSC(self, dataFrame, fileName):
+        try:
+
+            df = pd.DataFrame(columns=self.__TotalDFLabels)
+
+            for sigma in self.__dmSigmaLogN:
+                for median in self.__dmMedianLogN:
+
+                    result = {}
+                    sum = 0
+                    ser_dm = dataFrame['dm']
+                    length = len(ser_dm)
+                    serAggMass_gr = dataFrame['Agg_Mass_gr']
+                    serRDG_ABS = dataFrame['ABS_RDG']
+                    serRDG_SCA = dataFrame['SCA_RDG']
+                    serTMatrix_ABS = dataFrame['ABS_TMatrix']
+                    serTMatrix_SCA = dataFrame['SCA_TMatrix']
+                    totalMass_gr, RDG_ABSTotal, RDG_SCATotal, TMatrix_ABSTotal, TMatrix_SCATotal = 0, 0, 0, 0, 0
+
+                    for index, dm in ser_dm.iteritems():
+
+                        if index == length - 1:
+                            break
+
+                        chance = self._calcLogNDistribPDF(median=median, sigmaG=sigma, D2=ser_dm.loc[index + 1], D1=ser_dm.loc[index])
+
+                        totalMass_gr += chance * serAggMass_gr.loc[index]
+                        RDG_ABSTotal += chance * serRDG_ABS.loc[index]
+                        RDG_SCATotal += chance * serRDG_SCA.loc[index]
+                        TMatrix_ABSTotal += chance * serTMatrix_ABS.loc[index]
+                        TMatrix_SCATotal += chance * serTMatrix_SCA.loc[index]
+                        sum += chance
+
+                    result['sigma'] = sigma
+                    result['median'] = median
+                    result['sum'] = sum
+
+                    if sum >= 0.90:
+                        result['TotalMassGram'] = totalMass_gr
+                        result['ABS_RDG_Total'] = RDG_ABSTotal  # in um2
+                        result['SCA_RDG_Total'] = RDG_SCATotal  # in um2
+                        result['ABS_TMatrix_Total'] = TMatrix_ABSTotal  # in um2
+                        result['SCA_TMatrix_Total'] = TMatrix_SCATotal  # in um2
+                        result['MAC_RDG_Total'] = RDG_ABSTotal * (10 ** (-12)) / totalMass_gr  # in m2/g
+                        result['MSC_RDG_Total'] = RDG_SCATotal * (10 ** (-12)) / totalMass_gr  # in m2/g
+                        result['MAC_TMatrix_Total'] = TMatrix_ABSTotal * (10 ** (-12)) / totalMass_gr  # in m2/g
+                        result['MSC_TMatrix_Total'] = TMatrix_SCATotal * (10 ** (-12)) / totalMass_gr  # in m2/g
+                        result['SSA_RDG_Total'] = RDG_SCATotal / (RDG_SCATotal + RDG_ABSTotal)
+                        result['SSA_TMatrix_Total'] = TMatrix_SCATotal / (TMatrix_SCATotal + TMatrix_ABSTotal)
+
+                    else:
+                        result['TotalMassGram'] = np.nan
+                        result['ABS_RDG_Total'] = np.nan
+                        result['SCA_RDG_Total'] = np.nan
+                        result['ABS_TMatrix_Total'] = np.nan
+                        result['SCA_TMatrix_Total'] = np.nan
+                        result['MAC_RDG_Total'] = np.nan
+                        result['MSC_RDG_Total'] = np.nan
+                        result['MAC_TMatrix_Total'] = np.nan
+                        result['MSC_TMatrix_Total'] = np.nan
+                        result['SSA_RDG_Total'] = np.nan
+                        result['SSA_TMatrix_Total'] = np.nan
+
+                    df.loc[len(df)] = result
+
+            self.dictTotalOpticalProp[fileName] = df
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CalcEfficiency(self, fileName):
+        try:
+
+            self.dictData[fileName]['ABS_RDG_Eff'] = self.dictData[fileName]['ABS_RDG'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
+            self.dictData[fileName]['SCA_RDG_Eff'] = self.dictData[fileName]['SCA_RDG'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
+            self.dictData[fileName]['ABS_TMatrix_Eff'] = self.dictData[fileName]['ABS_TMatrix'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
+            self.dictData[fileName]['SCA_TMatrix_Eff'] = self.dictData[fileName]['SCA_TMatrix'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def GetDataLabel(self, fileName, index):
+        try:
+            self.dictDataLabel[fileName] = "$D_m=$" + str(round(self.ser_DmAve.loc[index], 2)) + ", " + \
+                                           "$\\rho_{eff,100}$=" + str(round(self.ser_rhoEff100nmAve.loc[index], 1)) + ", " + \
+                                           "$\sigma_p|d_m=$" + str(round(self.ser_SigmaMob.loc[index], 2)) + ", " + \
+                                           "$D_{TEM}=$" + str(abs(round(self.ser_D_TEM.loc[index], 2))) + ", " + \
+                                           "$d_{p,100}=$" + str(round(self.ser_dp100_nano.loc[index], 1))
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def Experiment_RDG_TMatrixComparisonGraphs(self):
+        try:
+            if self.__EXPAccurate:
+
+                self.dfMainInfoAcu = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beaconACU', extension='csv'))
+                self.dictData = {}
+                self.dictDataLabel = {}
+                self.dictTotalOpticalProp = {}
+                self.dfEXP = {}
+                self.GetDataDefinitionEXP(mainDf=self.dfMainInfoAcu)
+
+                for index, fileN in self.serMainFileName.iteritems():
+                    self.dfEXP[fileN] = self.ExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
+                                                             rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
+                                                             temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
+                                                             pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
+                                                             arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
+                                                             fileName=fileN)
+
+                    self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
+                    self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
+
+                    if self.__dpDeviation:
+                        self.Check_dpRatio(fileName=fileN)
+
+                    self.CalcTotalMACMSC(self.dictData[fileN], fileN)
+
+                    self.CalcEfficiency(fileName=fileN)
+
+                    self.GetDataLabel(fileName=fileN, index=index)
+
+                if self.__CRSGraphsEXPAccurate:
+                    pass
+                if self.__ErrorAndRatioGraphsEXPAccurate:
+                    pass
+                if self.__SSAGraphsEXPAccurate:
+                    pass
+                if self.__MACMSCGraphsEXPAccurate:
+                    pass
+                if self.__dpMedianGraphsEXPAccurate:
+                    pass
+
             ###########################################
             ###########################################
             ###########################################
+            ###########################################
+            if self.__EXPFull:
+                self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beacon', extension='csv'))
+                self.dictData = {}
+                self.dictDataLabel = {}
+                self.dictTotalOpticalProp = {}
+                self.dfEXP = {}
 
-            self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beacon', extension='csv'))
-            self.dictData = {}
-            self.dictDataLabel = {}
-            self.serMainFileName = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AA_FileName']
-            self.ser_Dm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
-            self.ser_rhoEff100nm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
-            self.ser_SigmaMob = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
-            self.ser_D_TEM = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'D_TEM']
-            self.ser_dp100_nano = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'dp100_nano']
+                self.GetDataDefinitionEXP(mainDf=self.dfMainInfo)
 
-            for index, item in self.serMainFileName.iteritems():
-                self.dictData[item] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=item))
-                self.dictData[item] = self.dictData[item].replace(0, np.nan)
-                self.dictDataLabel[item] = "$D_m=$" + str(round(self.ser_Dm.loc[index], 2)) + ", " + "$\\rho_{eff,100}$=" + str(round(self.ser_rhoEff100nm.loc[index], 1)) \
-                                           + ", " + "$\sigma_p|d_m=$" + str(round(self.ser_SigmaMob.loc[index], 2)) + ", " + "$D_{TEM}=$" + str(round(self.ser_D_TEM.loc[index], 2)) \
-                                           + ", " + "$d_{p,100}=$" + str(round(self.ser_dp100_nano.loc[index], 1))
+                for index, fileN in self.serMainFileName.iteritems():
+                    self.dfEXP[fileN] = self.ExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
+                                                             rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
+                                                             temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
+                                                             pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
+                                                             arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
+                                                             fileName=fileN)
 
-            if self.__CRSGraphs_EXP:
-                self.PlotCrossSections_EXP()
-            if self.__ErrorAndRatioGraphs_EXP:
-                pass
-                # self.PlotErrorAndRatio_EXP()
-            if self.__SSAGraphs_EXP:
-                self.PlotSSA_EXP()
-            if self.__MACMSCGraphs_EXP:
-                pass
-                # self.PlotMACMSC_EXP()
-            if self.__dpMedianGraphs_EXP:
-                pass
-                # self.PlotdpMedian_EXP()
+                    self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
+                    self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
+
+                    if self.__dpDeviation:
+                        self.Check_dpRatio(fileName=fileN)
+
+                    self.CalcTotalMACMSC(self.dictData[fileN], fileN)
+
+                    self.CalcEfficiency(fileName=fileN)
+
+                    self.GetDataLabel(fileName=fileN, index=index)
 
         except Exception as e:
             logging.exception(e)
@@ -630,7 +1020,7 @@ class GraphTools:
 
     def PlotCrossSectionsIntermediate_EXP(self, clName, tlName, mean, STD):
         try:
-            if self.__rhoEff100nmCTE_EXP == True:
+            if self.__rhoEff100nmCTE_EXPAccurate == True:
                 self.PlotCrossSectionsCore_EXP(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER, A2=self.ser_Dm, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
                                                column=clName, mean=mean, STD=STD, title=tlName, T1A=" for " + "$\\rho_{eff,100}$= ", T1I=1, T1B=" kg/m$^3$", F1A=" for " + "rho_eff=", F1I=0)
 
@@ -684,227 +1074,6 @@ class GraphTools:
     ##########################################################################################
     ##########################################################################################
     ##########################################################################################
-    def GetDataDefinition(self):
-        try:
-            self.serMainFileName = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AA_FileName']
-            self.ser_Dm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_DM_CENTER']
-            self.ser_rhoEff100nm = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_EFF_RHO_100NM_CENTER']
-            self.ser_SigmaMob = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
-            self.ser_D_TEM = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'D_TEM']
-            self.ser_dp100_nano = self.dfMainInfo.loc[self.dfMainInfo['AA_Plot'] == 1, 'dp100_nano']
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def GetDataLabel(self, fileName, index):
-        try:
-            self.dictDataLabel[fileName] = "$D_m=$" + str(round(self.ser_Dm.loc[index], 2)) + ", " + \
-                                           "$\\rho_{eff,100}$=" + str(round(self.ser_rhoEff100nm.loc[index], 1)) + ", " + \
-                                           "$\sigma_p|d_m=$" + str(round(self.ser_SigmaMob.loc[index], 2)) + ", " + \
-                                           "$D_{TEM}=$" + str(abs(round(self.ser_D_TEM.loc[index], 2))) + ", " + \
-                                           "$d_{p,100}=$" + str(round(self.ser_dp100_nano.loc[index], 1))
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def Check_dpRatio(self, fileName):
-        try:
-            ser_dpMed = self.dictData[fileName]['dp_median']
-            ser_dpAve = self.dictData[fileName]['dp_Ave']
-            x = 5
-            c = 2.5
-            for index_dp, item_dp in ser_dpMed.iteritems():
-                if isnan(ser_dpMed.loc[index_dp]):
-                    ratio = 0
-                else:
-                    ratio = (ser_dpAve.loc[index_dp] / ser_dpMed.loc[index_dp]) * 100  # Percent
-                ##############################################
-                if (ratio < 100 + self.__dpDeviationPercent) and (ratio > 100 - self.__dpDeviationPercent):
-
-                    if (ratio < 100 + x) and (ratio > 100 - x):
-                        continue
-                    else:
-                        self.dictData[fileName].loc[index_dp, 'dp_Ave'] = ((100 + (np.random.randint(-1 * c, c))) / 100) * ser_dpMed.loc[index_dp]
-                        c += 0.15
-                        if c > 10:
-                            c = 10
-
-                    # elif (ratio > 100 + x):
-                    #     self.dictData[fileName].loc[index_dp, 'dp_Ave'] = (100 + (x + c)) / 100 * ser_dpMed.loc[index_dp]
-                    #     c += 0.1
-                    # elif (ratio < 100 - x):
-                    #     self.dictData[fileName].loc[index_dp, 'dp_Ave'] = (100 - (x)) / 100 * ser_dpMed.loc[index_dp]
-                    #     # c += 0.2
-                else:
-                    # removing undesirable row
-                    self.dictData[fileName] = self.dictData[fileName].drop([index_dp], axis=0)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def _calcLogNDistribPDF(self, median, sigmaG, D2, D1):  # return number between 0 to 1
-        try:
-            if sigmaG != 1:
-                A = (1 / (log(sigmaG) * (2 * pi) ** 0.5)) * exp(-1 * (((log(D1) - log(median)) ** 2) / (2 * (log(sigmaG)) ** 2))) * (log(D2) - log(D1))
-            elif sigmaG == 1:
-                if D2 >= median and median > D1:
-                    return 1
-                else:
-                    return 0
-
-            return A
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def CalcTotalMACMSC(self, dataFrame, fileName):
-        try:
-
-            df = pd.DataFrame(columns=self.__TotalDFLabels)
-
-            for sigma in self.__dmSigmaLogN:
-                for median in self.__dmMedianLogN:
-
-                    result = {}
-                    sum = 0
-                    ser_dm = dataFrame['dm']
-                    length = len(ser_dm)
-                    serAggMass_gr = dataFrame['Agg_Mass_gr']
-                    serRDG_ABS = dataFrame['ABS_RDG']
-                    serRDG_SCA = dataFrame['SCA_RDG']
-                    serTMatrix_ABS = dataFrame['ABS_TMatrix']
-                    serTMatrix_SCA = dataFrame['SCA_TMatrix']
-                    totalMass_gr, RDG_ABSTotal, RDG_SCATotal, TMatrix_ABSTotal, TMatrix_SCATotal = 0, 0, 0, 0, 0
-
-                    for index, dm in ser_dm.iteritems():
-
-                        if index == length - 1:
-                            break
-
-                        chance = self._calcLogNDistribPDF(median=median, sigmaG=sigma, D2=ser_dm.loc[index + 1], D1=ser_dm.loc[index])
-
-                        totalMass_gr += chance * serAggMass_gr.loc[index]
-                        RDG_ABSTotal += chance * serRDG_ABS.loc[index]
-                        RDG_SCATotal += chance * serRDG_SCA.loc[index]
-                        TMatrix_ABSTotal += chance * serTMatrix_ABS.loc[index]
-                        TMatrix_SCATotal += chance * serTMatrix_SCA.loc[index]
-                        sum += chance
-
-                    result['sigma'] = sigma
-                    result['median'] = median
-                    result['sum'] = sum
-
-                    if sum >= 0.90:
-                        result['TotalMassGram'] = totalMass_gr
-                        result['ABS_RDG_Total'] = RDG_ABSTotal  # in um2
-                        result['SCA_RDG_Total'] = RDG_SCATotal  # in um2
-                        result['ABS_TMatrix_Total'] = TMatrix_ABSTotal  # in um2
-                        result['SCA_TMatrix_Total'] = TMatrix_SCATotal  # in um2
-                        result['MAC_RDG_Total'] = RDG_ABSTotal * (10 ** (-12)) / totalMass_gr  # in m2/g
-                        result['MSC_RDG_Total'] = RDG_SCATotal * (10 ** (-12)) / totalMass_gr  # in m2/g
-                        result['MAC_TMatrix_Total'] = TMatrix_ABSTotal * (10 ** (-12)) / totalMass_gr  # in m2/g
-                        result['MSC_TMatrix_Total'] = TMatrix_SCATotal * (10 ** (-12)) / totalMass_gr  # in m2/g
-                        result['SSA_RDG_Total'] = RDG_SCATotal / (RDG_SCATotal + RDG_ABSTotal)
-                        result['SSA_TMatrix_Total'] = TMatrix_SCATotal / (TMatrix_SCATotal + TMatrix_ABSTotal)
-
-                    else:
-                        result['TotalMassGram'] = np.nan
-                        result['ABS_RDG_Total'] = np.nan
-                        result['SCA_RDG_Total'] = np.nan
-                        result['ABS_TMatrix_Total'] = np.nan
-                        result['SCA_TMatrix_Total'] = np.nan
-                        result['MAC_RDG_Total'] = np.nan
-                        result['MSC_RDG_Total'] = np.nan
-                        result['MAC_TMatrix_Total'] = np.nan
-                        result['MSC_TMatrix_Total'] = np.nan
-                        result['SSA_RDG_Total'] = np.nan
-                        result['SSA_TMatrix_Total'] = np.nan
-
-                    df.loc[len(df)] = result
-
-            self.dictTotalOpticalProp[fileName] = df
-
-
-
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def CalcEfficiency(self, fileName):
-        try:
-
-            self.dictData[fileName]['ABS_RDG_Eff'] = self.dictData[fileName]['ABS_RDG'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
-            self.dictData[fileName]['SCA_RDG_Eff'] = self.dictData[fileName]['SCA_RDG'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
-            self.dictData[fileName]['ABS_TMatrix_Eff'] = self.dictData[fileName]['ABS_TMatrix'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
-            self.dictData[fileName]['SCA_TMatrix_Eff'] = self.dictData[fileName]['SCA_TMatrix'] / (((self.dictData[fileName]['dm'] / 1000) ** 2) * pi / 4)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def RDG_TMatrixComparisonGraphs(self):
-        try:
-            self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beacon', extension='csv'))
-            self.dictData = {}
-            self.dictDataLabel = {}
-            self.dictTotalOpticalProp = {}
-
-            self.GetDataDefinition()
-
-            for index, fileN in self.serMainFileName.iteritems():
-
-                self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
-                self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
-
-                if self.__dpDeviation:
-                    self.Check_dpRatio(fileName=fileN)
-
-                self.CalcTotalMACMSC(self.dictData[fileN], fileN)
-
-                self.CalcEfficiency(fileName=fileN)
-
-                self.GetDataLabel(fileName=fileN, index=index)
-
-            if self.__CRSGraphs:
-                self.PlotCrossSections()
-
-            if self.__ErrorAndRatioGraphs:
-                self.PlotErrorAndRatio()
-
-            if self.__SSAGraphs:
-                self.PlotSSA()
-
-            if self.__MACMSCGraphs:
-                self.PlotMACMSC()
-
-            if self.__EfficiencyGraphs:
-                self.PlotEff()
-
-            if self.__dpInfoGraphs:
-                self.PlotdpInfo()
-
-            if self.__dmDistributionGraphsBar:
-                self.PlotTotalGraphsBar()
-
-            if self.__dmDistributionGraphsLine:
-                self.PlotTotalGraphsLine()
-
-            if self.__dmDistributionRatioGraphsBar:
-                self.PlotTotalRatioGraphsBar()
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ###################################
-    ###################################
-    ###################################
-    ###################################
 
     def PlotTotalRatioGraphsBar(self):
         try:
@@ -914,7 +1083,7 @@ class GraphTools:
             columnDetail1 = 'RDG-FA'
             columnName2 = 'ABS_TMatrix_Total'
             columnDetail2 = 'T-matrix'
-            titleName = "T-matrix and RDG-FA Absorption Cross Section Ratio"
+            titleName = "T-matrix and RDG-FA Absorption Cross-section Ratio"
             titleAppend = ""
             self.PlotSettingTotalRatio(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
@@ -927,7 +1096,7 @@ class GraphTools:
             columnDetail1 = 'RDG-FA'
             columnName2 = 'SCA_TMatrix_Total'
             columnDetail2 = 'T-matrix'
-            titleName = "T-matrix and RDG-FA Scattering Cross Section Ratio"
+            titleName = "T-matrix and RDG-FA Scattering Cross-section Ratio"
             titleAppend = ""
             self.PlotSettingTotalRatio(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
@@ -993,8 +1162,8 @@ class GraphTools:
             columnDetail1 = 'RDG-FA'
             columnName2 = 'ABS_TMatrix'
             columnDetail2 = 'T-matrix'
-            titleName = "Absorption Cross Section"
-            titleAppend = " in µm" + "$^{}$".format(2) + " Vs. Mobility-equivalent Diameter"
+            titleName = "Absorption Cross-section"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1006,8 +1175,8 @@ class GraphTools:
             columnDetail1 = 'RDG-FA'
             columnName2 = 'SCA_TMatrix'
             columnDetail2 = 'T-matrix'
-            titleName = "Scattering Cross Section"
-            titleAppend = " in µm" + "$^{}$".format(2) + " Vs. Mobility-equivalent Diameter"
+            titleName = "Scattering Cross-section"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1020,7 +1189,7 @@ class GraphTools:
             columnName2 = 'MAC_TMatrix'
             columnDetail2 = 'T-matrix'
             titleName = "Mass-absorption Coefficient (MAC)"
-            titleAppend = " in m$^2$/g" + " Vs. Mobility-equivalent Diameter"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1033,7 +1202,7 @@ class GraphTools:
             columnName2 = 'MSC_TMatrix'
             columnDetail2 = 'T-matrix'
             titleName = "Mass-scattering Coefficient (MSC)"
-            titleAppend = " in m$^2$/g" + " Vs. Mobility-equivalent Diameter"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1045,8 +1214,8 @@ class GraphTools:
             columnDetail1 = 'RDG-FA'
             columnName2 = 'SSA_TMatrix'
             columnDetail2 = 'T-matrix'
-            titleName = "Single-scattering Albedo"
-            titleAppend = "" + " Vs. Mobility-equivalent Diameter"
+            titleName = "Single-scattering Albedo (SSA)"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1059,7 +1228,7 @@ class GraphTools:
             columnName2 = 'RatioSCA'
             columnDetail2 = 'SCA Ratio'
             titleName = "T-matrix and RDG-FA Cross Section Ratio"
-            titleAppend = "" + " Vs. Mobility-equivalent Diameter"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1072,7 +1241,7 @@ class GraphTools:
             columnName2 = 'dp_Ave'
             columnDetail2 = 'Primary Particle Average Diameter'
             titleName = "Primary Particle Median and Average Diameter"
-            titleAppend = "" + " Vs. Mobility-equivalent Diameter"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1085,7 +1254,7 @@ class GraphTools:
             columnName2 = 'ABS_TMatrix_Eff'
             columnDetail2 = 'T-matrix'
             titleName = "T-matrix and RDG-FA Absorption Efficiency"
-            titleAppend = "" + " Vs. Mobility-equivalent Diameter"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1098,7 +1267,7 @@ class GraphTools:
             columnName2 = 'SCA_TMatrix_Eff'
             columnDetail2 = 'T-matrix'
             titleName = "T-matrix and RDG-FA Scattering Efficiency"
-            titleAppend = "" + " Vs. Mobility-equivalent Diameter"
+            titleAppend = " Vs. Mobility-equivalent Diameter"
             self.PlotSettingTotalLines(colName1=columnName1, colDetail1=columnDetail1,
                                        colName2=columnName2, colDetail2=columnDetail2,
                                        titleName=titleName, titleA=titleAppend,
@@ -1126,8 +1295,8 @@ class GraphTools:
             columnDetail1 = 'RDG-FA'
             columnName2 = 'ABS_TMatrix_Total'
             columnDetail2 = 'T-matrix'
-            titleName = "Total Absorption Cross Section"
-            titleAppend = " in µm" + "$^{}$".format(2)
+            titleName = "Total Absorption Cross-section"
+            titleAppend = ""
             self.PlotSettingTotalBars(colName1=columnName1, colDetail1=columnDetail1,
                                       colName2=columnName2, colDetail2=columnDetail2,
                                       titleName=titleName, titleA=titleAppend,
@@ -1139,8 +1308,8 @@ class GraphTools:
             columnDetail1 = 'RDG-FA'
             columnName2 = 'SCA_TMatrix_Total'
             columnDetail2 = 'T-matrix'
-            titleName = "Total Scattering Cross Section"
-            titleAppend = " in µm" + "$^{}$".format(2)
+            titleName = "Total Scattering Cross-section"
+            titleAppend = ""
             self.PlotSettingTotalBars(colName1=columnName1, colDetail1=columnDetail1,
                                       colName2=columnName2, colDetail2=columnDetail2,
                                       titleName=titleName, titleA=titleAppend,
@@ -1153,7 +1322,7 @@ class GraphTools:
             columnName2 = 'MAC_TMatrix_Total'
             columnDetail2 = 'T-matrix'
             titleName = "Mass-absorption Coefficient (MAC)"
-            titleAppend = " in m$^2$/g"
+            titleAppend = ""
             self.PlotSettingTotalBars(colName1=columnName1, colDetail1=columnDetail1,
                                       colName2=columnName2, colDetail2=columnDetail2,
                                       titleName=titleName, titleA=titleAppend,
@@ -1166,7 +1335,7 @@ class GraphTools:
             columnName2 = 'MSC_TMatrix_Total'
             columnDetail2 = 'T-matrix'
             titleName = "Mass-scattering Coefficient (MSC)"
-            titleAppend = " in m$^2$/g"
+            titleAppend = ""
             self.PlotSettingTotalBars(colName1=columnName1, colDetail1=columnDetail1,
                                       colName2=columnName2, colDetail2=columnDetail2,
                                       titleName=titleName, titleA=titleAppend,
@@ -1313,19 +1482,19 @@ class GraphTools:
             folderName = 'ErrorsAndRatios'
             ######################## Absorption Percentage Error
             columnName = 'RealPercentErrorABS'
-            titleName = "Percentage Error Between T-matrix and RDG-FA Absorption Cross Section"
+            titleName = "Percentage Error Between T-matrix and RDG-FA Absorption Cross-section"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='linear', yLabel=self.__yLabelErrorPercent)
             ######################## Absorption Ratio
             columnName = 'RatioABS'
-            titleName = "T-matrix and RDG-FA Absorption Cross Section Ratio"
+            titleName = "T-matrix and RDG-FA Absorption Cross-section Ratio"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='linear', yLabel=self.__yLabelRatioCRS)
             ######################## Scattering Percentage Error
             columnName = 'RealPercentErrorSCA'
-            titleName = "Percentage Error Between T-matrix and RDG-FA Scattering Cross Section"
+            titleName = "Percentage Error Between T-matrix and RDG-FA Scattering Cross-section"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='linear', yLabel=self.__yLabelErrorPercent)
             ######################## Scattering Ratio
             columnName = 'RatioSCA'
-            titleName = "T-matrix and RDG-FA Scattering Cross Section Ratio"
+            titleName = "T-matrix and RDG-FA Scattering Cross-section Ratio"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='linear', yLabel=self.__yLabelRatioCRS)
 
 
@@ -1343,19 +1512,19 @@ class GraphTools:
             folderName = 'OpticalCrossSections'
             ######################## Absorption RDG
             columnName = 'ABS_RDG'
-            titleName = "RDG-FA Absorption Cross Section"
+            titleName = "RDG-FA Absorption Cross-section"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='log', yLabel=self.__yLabelPlotCrossSections)
             ######################## Scattering RDG
             columnName = 'SCA_RDG'
-            titleName = "RDG-FA Scattering Cross Section"
+            titleName = "RDG-FA Scattering Cross-section"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='log', yLabel=self.__yLabelPlotCrossSections)
             ######################## Absorption TMatrix
             columnName = 'ABS_TMatrix'
-            titleName = "T-matrix Absorption Cross Section"
+            titleName = "T-matrix Absorption Cross-section"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='log', yLabel=self.__yLabelPlotCrossSections)
             ######################## Scattering TMatrix
             columnName = 'SCA_TMatrix'
-            titleName = "T-matrix Scattering Cross Section"
+            titleName = "T-matrix Scattering Cross-section"
             self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='log', yLabel=self.__yLabelPlotCrossSections)
 
         except Exception as e:
@@ -1520,8 +1689,10 @@ class GraphTools:
                                         RDG_Height.append(c1)
                                         TMatrix_Height.append(c2)
 
-                    AXES_A = ax1[rowCount, colCount].bar(indexBarPlot - self.__barWidth / 2, RDG_Height, color='red', width=self.__barWidth, edgecolor='white', label=column1T)
-                    AXES_B = ax1[rowCount, colCount].bar(indexBarPlot + self.__barWidth / 2, TMatrix_Height, color='blue', width=self.__barWidth, edgecolor='white', label=column2T)
+                    AXES_A = ax1[rowCount, colCount].bar(indexBarPlot - self.__barWidth / 2, RDG_Height, color=self.__A1Color, width=self.__barWidth, edgecolor='white', hatch=self.__patterns[0],
+                                                         label=column1T)
+                    AXES_B = ax1[rowCount, colCount].bar(indexBarPlot + self.__barWidth / 2, TMatrix_Height, color=self.__A2Color, width=self.__barWidth, edgecolor='white', hatch=self.__patterns[4],
+                                                         label=column2T)
 
                     if showValue:
                         autoLabel(self, rects=AXES_A, row=rowCount, col=colCount, format=valueFormat)
@@ -1531,15 +1702,17 @@ class GraphTools:
                     ax1[rowCount, colCount].set_xticklabels(("$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)), fontsize=self.__xLabelGroupFontSizeTotal)
                     ax1[rowCount, colCount].grid(True, which='both', axis="y", alpha=0.5)
                     ax1[rowCount, colCount].set_yscale(yScale)
-                    ax1[rowCount, colCount].yaxis.set_tick_params(labelsize=self.__yMajorTickLabelGeneralFontSize * 1.3)
+                    ax1[rowCount, colCount].yaxis.set_tick_params(labelsize=self.__yMajorTickLabelSubplotFontSize)
                     ax1[rowCount, colCount].yaxis.set_major_formatter(FormatStrFormatter(yAxisFormat))
 
-                    if colCount == 0:
-                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelMultipleSubplotFontSize + 2)
-                        ax1[rowCount, colCount].yaxis.labelpad = 39
-                    if rowCount == (len(A1.unique()) - 1):
-                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelMultipleSubplotFontSize)
-                        ax1[rowCount, colCount].xaxis.labelpad = 34
+                    if colCount == (len(A2.unique()) - 1):
+                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelEachSubplotFontSize, rotation=self.__yLabelEachSubplotRotation)
+                        ax1[rowCount, colCount].yaxis.set_label_position("right")
+                        ax1[rowCount, colCount].yaxis.labelpad = self.__yLabelEachSubplotPad
+                    if rowCount == 0:
+                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelEachSubplotFontSize)
+                        ax1[rowCount, colCount].xaxis.set_label_position("top")
+                        ax1[rowCount, colCount].xaxis.labelpad = self.__xLabelEachSubplotPad
 
                     colCount += 1
                 rowCount += 1
@@ -1547,20 +1720,21 @@ class GraphTools:
             F1 = f"{title} for median={median}-sigma={sigma}"
             T1 = title + titleAppend + " for " + "$d_{m,g}=$" + str(round(median)) + " nm " + "and " + "$\sigma_g=$" + str(round(sigma, 2))
 
-            fig.subplots_adjust(top=0.93, wspace=0.017, hspace=0.018)
-            fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal, x=0.65)
+            fig.subplots_adjust(top=self.__subplotGridSetup[0], wspace=self.__subplotGridSetup[1], hspace=self.__subplotGridSetup[2])
+            fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal)
+
+            fig.text(0.5, self.__xLabelCommonSubplotAdjustment, self.__xLabelMassMob, ha='center', fontsize=self.__xLabelCommonSubplotFontSize)
 
             if 'e' in yAxisFormat:
-                fig.text(0.5, 0.06, self.__xLabelMassMob, ha='center', fontsize=18)
-                fig.text(0.051, 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=18)
+                fig.text(self.__yLabelCommonSubplotAdjustment[0], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
             elif 'f' in yAxisFormat:
-                fig.text(0.5, 0.06, self.__xLabelMassMob, ha='center', fontsize=18)
-                fig.text(0.062, 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=18)
+                fig.text(self.__yLabelCommonSubplotAdjustment[1], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
 
-            leg = plt.legend(bbox_to_anchor=(1.05, 1.7), markerscale=self.__legendMarkerScale * 1.33, fontsize=25, loc='lower left', borderaxespad=0.)
+            leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustment[0], self.__legendSubplotAdjustment[1]), markerscale=self.__legendSubplotMarkerScale, fontsize=self.__legendSubplotFontSize,
+                             loc='lower left', borderaxespad=0.)
             ################# set the lineWidth of each legend object
             for legObj in leg.legendHandles:
-                legObj.set_linewidth(3.0)
+                legObj.set_linewidth(self.__legendSubplotLineWidth)
             #################
             self.SaveAndClosePlot(folderName=folderName, F1=F1)
 
@@ -1628,13 +1802,13 @@ class GraphTools:
                             df = self.dictData[fileN]
 
                             ax1[rowCount, colCount].plot(df['dm'], df[column1], label=column1T + ', ' + Dmlist[DmCount],
-                                                         color='red', linewidth=self.__lineWidth[c_lineWidth] * 1.33,
-                                                         linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine,
-                                                         marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize * 1.30)
+                                                         color=self.__A1Color, linewidth=self.__A1LineWidth[c_lineWidth],
+                                                         linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine,
+                                                         marker=self.__subplotMarkerStyle[c_markerStyle], markersize=self.__subplotMarkerSize)
                             ax1[rowCount, colCount].plot(df['dm'], df[column2], label=column2T + ', ' + Dmlist[DmCount],
-                                                         color='blue', linewidth=self.__lineWidth[c_lineWidth] * 1.33,
-                                                         linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine,
-                                                         marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize * 1.30)
+                                                         color=self.__A2Color, linewidth=self.__A2LineWidth[c_lineWidth],
+                                                         linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A2AlphaMainLine)
+
                             c_lineStyle += 1
                             c_markerStyle += 1
                             c_lineWidth += 1
@@ -1645,37 +1819,40 @@ class GraphTools:
                     ax1[rowCount, colCount].set_yscale(yScale)
                     ax1[rowCount, colCount].xaxis.set_major_formatter(FormatStrFormatter("%i"))
                     ax1[rowCount, colCount].xaxis.set_major_locator(plt.MaxNLocator(6))
-                    ax1[rowCount, colCount].tick_params(axis='x', which='both', labelsize=self.__xMajorTickLabelGeneralFontSize * 1.30, labelrotation=25)
-                    ax1[rowCount, colCount].tick_params(axis='y', which='both', labelsize=self.__yMajorTickLabelGeneralFontSize * 1.30)
+                    ax1[rowCount, colCount].tick_params(axis='x', which='both', labelsize=self.__xMajorTickLabelSubplotFontSize, labelrotation=self.__xTickLabelSubplotRotation)
+                    ax1[rowCount, colCount].tick_params(axis='y', which='both', labelsize=self.__yMajorTickLabelSubplotFontSize)
                     ax1[rowCount, colCount].yaxis.set_major_formatter(FormatStrFormatter(yAxisFormat))
 
-                    if colCount == 0:
-                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelMultipleSubplotFontSize + 2)
-                        ax1[rowCount, colCount].yaxis.labelpad = 39
-
-                    if rowCount == (len(A1.unique()) - 1):
-                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelMultipleSubplotFontSize)
-                        ax1[rowCount, colCount].xaxis.labelpad = 34
+                    if colCount == (len(A2.unique()) - 1):
+                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelEachSubplotFontSize, rotation=self.__yLabelEachSubplotRotation)
+                        ax1[rowCount, colCount].yaxis.set_label_position("right")
+                        ax1[rowCount, colCount].yaxis.labelpad = self.__yLabelEachSubplotPad
+                    if rowCount == 0:
+                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelEachSubplotFontSize)
+                        ax1[rowCount, colCount].xaxis.set_label_position("top")
+                        ax1[rowCount, colCount].xaxis.labelpad = self.__xLabelEachSubplotPad
 
                     colCount += 1
                 rowCount += 1
 
             F1 = f"{title}"
             T1 = title + titleAppend
-            fig.subplots_adjust(top=0.93, wspace=0.017, hspace=0.018)
-            fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal, x=0.65)
+
+            fig.subplots_adjust(top=self.__subplotGridSetup[0], wspace=self.__subplotGridSetup[1], hspace=self.__subplotGridSetup[2])
+            fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal)
+
+            fig.text(0.5, self.__xLabelCommonSubplotAdjustment, self.__xLabelMobDiameter, ha='center', fontsize=self.__xLabelCommonSubplotFontSize)
 
             if 'e' in yAxisFormat:
-                fig.text(0.5, 0.06, self.__xLabelMobDiameter, ha='center', fontsize=18)
-                fig.text(0.051, 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=18)
+                fig.text(self.__yLabelCommonSubplotAdjustment[0], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
             elif 'f' in yAxisFormat:
-                fig.text(0.5, 0.06, self.__xLabelMobDiameter, ha='center', fontsize=18)
-                fig.text(0.062, 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=18)
+                fig.text(self.__yLabelCommonSubplotAdjustment[1], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
 
-            leg = plt.legend(bbox_to_anchor=(1.05, 1.7), markerscale=self.__legendMarkerScale * 1.33, fontsize=25, loc='lower left', borderaxespad=0.)
+            leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustment[0], self.__legendSubplotAdjustment[1]), markerscale=self.__legendSubplotMarkerScale, fontsize=self.__legendSubplotFontSize,
+                             loc='lower left', borderaxespad=0.)
             ################# set the lineWidth of each legend object
             for legObj in leg.legendHandles:
-                legObj.set_linewidth(3.0)
+                legObj.set_linewidth(self.__legendSubplotLineWidth)
             #################
             self.SaveAndClosePlot(folderName=folderName, F1=F1)
 
@@ -1790,9 +1967,11 @@ class GraphTools:
                             A.append("$\sigma_g=$" + str(round(key, 2)))
                         B.append(Ratio[key])
 
-                    AXES_A = ax1[rowCount, colCount].bar(indexBarPlot - self.__barRatioWidth, B[0], color='red', width=self.__barRatioWidth, edgecolor='white', label=A[0])
-                    AXES_B = ax1[rowCount, colCount].bar(indexBarPlot, B[1], color='blue', width=self.__barRatioWidth, edgecolor='white', label=A[1])
-                    AXES_C = ax1[rowCount, colCount].bar(indexBarPlot + self.__barRatioWidth, B[2], color='green', width=self.__barRatioWidth, edgecolor='white', label=A[2])
+                    AXES_A = ax1[rowCount, colCount].bar(indexBarPlot - self.__barRatioWidth, B[0], color=self.__barColor[0], width=self.__barRatioWidth, edgecolor='white', label=A[0],
+                                                         hatch=self.__patterns[0])
+                    AXES_B = ax1[rowCount, colCount].bar(indexBarPlot, B[1], color=self.__barColor[1], width=self.__barRatioWidth, edgecolor='white', label=A[1], hatch=self.__patterns[4])
+                    AXES_C = ax1[rowCount, colCount].bar(indexBarPlot + self.__barRatioWidth, B[2], color=self.__barColor[2], width=self.__barRatioWidth, edgecolor='white', label=A[2],
+                                                         hatch=self.__patterns[5])
                     if showValue:
                         autoLabel(self, rects=AXES_A, row=rowCount, col=colCount, format=valueFormat)
                         autoLabel(self, rects=AXES_B, row=rowCount, col=colCount, format=valueFormat)
@@ -1802,16 +1981,17 @@ class GraphTools:
                     ax1[rowCount, colCount].set_xticklabels(("$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)), fontsize=self.__xLabelGroupFontSizeTotal)
                     ax1[rowCount, colCount].grid(True, which='both', axis="y", alpha=0.5)
                     ax1[rowCount, colCount].set_yscale(yScale)
-                    ax1[rowCount, colCount].yaxis.set_tick_params(labelsize=self.__yMajorTickLabelGeneralFontSize * 1.3)
+                    ax1[rowCount, colCount].yaxis.set_tick_params(labelsize=self.__yMajorTickLabelSubplotFontSize)
                     ax1[rowCount, colCount].yaxis.set_major_formatter(FormatStrFormatter(yAxisFormat))
-                    # ax1[rowCount, colCount].yaxis.set_minor_formatter(FormatStrFormatter(yAxisFormat))
 
-                    if colCount == 0:
-                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelMultipleSubplotFontSize + 2)
-                        ax1[rowCount, colCount].yaxis.labelpad = 39
-                    if rowCount == (len(A1.unique()) - 1):
-                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelMultipleSubplotFontSize)
-                        ax1[rowCount, colCount].xaxis.labelpad = 34
+                    if colCount == (len(A2.unique()) - 1):
+                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelEachSubplotFontSize, rotation=self.__yLabelEachSubplotRotation)
+                        ax1[rowCount, colCount].yaxis.set_label_position("right")
+                        ax1[rowCount, colCount].yaxis.labelpad = self.__yLabelEachSubplotPad
+                    if rowCount == 0:
+                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelEachSubplotFontSize)
+                        ax1[rowCount, colCount].xaxis.set_label_position("top")
+                        ax1[rowCount, colCount].xaxis.labelpad = self.__xLabelEachSubplotPad
 
                     colCount += 1
                 rowCount += 1
@@ -1823,20 +2003,21 @@ class GraphTools:
                 F1 = f"{title} for sigma={sigma}"
                 T1 = title + titleAppend + " for " + "$\sigma_g=$" + str(round(sigma, 2))
 
-            fig.subplots_adjust(top=0.93, wspace=0.017, hspace=0.018)
-            fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal, x=0.65)
+            fig.subplots_adjust(top=self.__subplotGridSetup[0], wspace=self.__subplotGridSetup[1], hspace=self.__subplotGridSetup[2])
+            fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal)
+
+            fig.text(0.5, self.__xLabelCommonSubplotAdjustment, self.__xLabelMassMob, ha='center', fontsize=self.__xLabelCommonSubplotFontSize)
 
             if 'e' in yAxisFormat:
-                fig.text(0.5, 0.06, self.__xLabelMassMob, ha='center', fontsize=18)
-                fig.text(0.051, 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=18)
+                fig.text(self.__yLabelCommonSubplotAdjustment[0], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
             elif 'f' in yAxisFormat:
-                fig.text(0.5, 0.06, self.__xLabelMassMob, ha='center', fontsize=18)
-                fig.text(0.062, 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=18)
+                fig.text(self.__yLabelCommonSubplotAdjustment[1], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
 
-            leg = plt.legend(bbox_to_anchor=(1.05, 1.7), markerscale=self.__legendMarkerScale * 1.33, fontsize=25, loc='lower left', borderaxespad=0.)
+            leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustment[0], self.__legendSubplotAdjustment[1]), markerscale=self.__legendSubplotMarkerScale, fontsize=self.__legendSubplotFontSize,
+                             loc='lower left', borderaxespad=0.)
             ################# set the lineWidth of each legend object
             for legObj in leg.legendHandles:
-                legObj.set_linewidth(3.0)
+                legObj.set_linewidth(self.__legendSubplotLineWidth)
             #################
             self.SaveAndClosePlot(folderName=folderName, F1=F1)
 
@@ -1906,102 +2087,3 @@ class GraphTools:
     ######################################################################
     ######################################################################
     ######################################################################
-
-    def toSaveHistogram(self, Name, Array, Figure_DPI=400):
-        try:
-            Arr = []
-            for i in range(len(Array)):
-                Arr.append(float(Array[i]))
-            n, bins, patches = plt.hist(Arr, 50, density=True, facecolor='b', alpha=0.75)
-            plt.ylabel('Probability')
-            plt.title('Histogram of ' + str(Name))
-            plt.grid(True)
-            # Address = GF.GetAddressTo(Folder, None, Name, "jpg")
-            # plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
-            plt.clf()
-            plt.close()
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def Fig_Plot_Save_Scatterplot_Matrix(self, Address, Dataframe, Figure_DPI=1000):
-        try:
-            sns.set(style='white')
-            g = sns.pairplot(Dataframe)
-            g.map_lower(sns.kdeplot, cmap="GnBu", shade=True)
-            g.map_diag(plt.hist, edgecolor="b")
-            g.map_upper(self.corrDots)
-
-            xlabels, ylabels = [], []
-            for ax in g.axes[-1, :]:
-                xlabel = ax.xaxis.get_label_text()
-                xlabels.append(xlabel)
-            for ax in g.axes[:, 0]:
-                ylabel = ax.yaxis.get_label_text()
-                ylabels.append(ylabel)
-            for i in range(len(xlabels)):
-                for j in range(len(ylabels)):
-                    g.axes[j, i].xaxis.set_label_text(xlabels[i])
-                    g.axes[j, i].yaxis.set_label_text(ylabels[j])
-
-            plt.savefig(Address, format='jpg', dpi=Figure_DPI)
-            plt.clf()
-            plt.close()
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def Fig_Plot_Save_Scatter_X_Linear_Y_Linear(self, Address, X_Array, Y_array, tickLabelStyle='sci', X_Min=None, X_Max=None, Y_Min=None, Y_Max=None, X_Label=None, Y_label=None, Plot_Title=None,
-                                                label_font_size=12, Plot_Title_Size=12, Figure_DPI=1000, alpha_Y=0.3, Marker_Size=3):
-        try:
-
-            fig, ax1 = plt.subplots()
-            plt.ticklabel_format(style=tickLabelStyle, axis='x', scilimits=(0, 0))
-            plt.ticklabel_format(style=tickLabelStyle, axis='y', scilimits=(0, 0))
-
-            if X_Min == None:
-                X_Min = float(min(X_Array))
-                X_Min = X_Min - (abs(X_Min) * 0.2)
-            if X_Max == None:
-                X_Max = float(max(X_Array))
-                X_Max = X_Max + (abs(X_Max) * 0.2)
-            if Y_Min == None:
-                Y_Min = float(min(Y_array))
-                Y_Min = Y_Min - (abs(Y_Min) * 0.2)
-            if Y_Max == None:
-                Y_Max = float(max(Y_array))
-                Y_Max = Y_Max + (abs(Y_Max) * 0.2)
-
-            ax1.scatter(X_Array, Y_array, s=7, alpha=alpha_Y)
-            if X_Label != None:
-                ax1.set_xlabel(X_Label, fontsize=label_font_size)
-            if Y_label != None:
-                ax1.set_ylabel(Y_label, fontsize=label_font_size)
-            ax1.set_xlim(X_Min, X_Max)
-            ax1.set_ylim(Y_Min, Y_Max)
-            ax1.grid(True, which='major', axis="both", alpha=0.5)
-            if Plot_Title != None:
-                plt.title(Plot_Title, fontsize=Plot_Title_Size, y=1.0)
-            plt.savefig(Address, format='jpg', dpi=Figure_DPI, bbox_inches='tight')
-            plt.clf()
-            plt.close()
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def corrDots(self, *args, **kwargs):
-        try:
-            corr_r = args[0].corr(args[1], 'pearson')
-            corr_text = f"{corr_r:2.2f}".replace("0.", ".")
-            ax = plt.gca()
-            ax.set_axis_off()
-            marker_size = abs(corr_r) * 10000
-            ax.scatter([.5], [.5], marker_size, [corr_r], alpha=0.95, cmap="coolwarm", vmin=-1, vmax=1, transform=ax.transAxes)
-            font_size = abs(corr_r) * 40 + 5
-            ax.annotate(corr_text, [.5, .5, ], xycoords="axes fraction", ha='center', va='center', fontsize=font_size)
-
-        except Exception as e:
-            logging.exception(e)
-            raise

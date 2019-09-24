@@ -1,4 +1,4 @@
-# Graphing  Figures for T-matrix and RDG-FA comparison using simulated data
+# Graphing  figures for T-matrix and RDG-FA comparison using simulated data
 Version = 0.2
 # Sep 2019
 import ConfigReaderModule as CRM
