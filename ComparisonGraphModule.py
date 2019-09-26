@@ -122,6 +122,7 @@ class GraphTools:
             self.__lineWidth = [1.5, 1, 0.5]
             self.__xAxisLimitsComp = [49, 960]
             #####
+            self.__valueFontSizeTotal = 7
             self.__barWidth = 0.34
             self.__barRatioWidth = 0.25
             self.__plotTitleFontSizeTotal = 30
@@ -357,7 +358,7 @@ class GraphTools:
 
     def PlotTotalRatioGraphsBar(self):
         try:
-            folderName = 'RatioBarGraphs'
+            folderName = '_RatioBarGraphs'
             ######################## ABS Cross Section
             columnName1 = 'ABS_RDG_Total'
             columnDetail1 = 'RDG-FA'
@@ -436,7 +437,7 @@ class GraphTools:
 
     def PlotTotalGraphsLine(self):
         try:
-            folderName = 'TotalLineGraphs'
+            folderName = '_TotalLineGraphs'
             ######################## ABS Cross Section
             columnName1 = 'ABS_RDG'
             columnDetail1 = 'RDG-FA'
@@ -569,7 +570,7 @@ class GraphTools:
 
     def PlotTotalGraphsBar(self):
         try:
-            folderName = 'TotalBarGraphs'
+            folderName = '_TotalBarGraphs'
             ######################## ABS Cross Section
             columnName1 = 'ABS_RDG_Total'
             columnDetail1 = 'RDG-FA'
@@ -648,7 +649,7 @@ class GraphTools:
 
     def PlotdpInfo(self):
         try:
-            folderName = 'PrimaryParticle'
+            folderName = '_PrimaryParticle'
             ######################## dp median
             columnName = 'dp_median'
             titleName = "Primary Particle Median Diameter for each Mobility Diameter"
@@ -673,7 +674,7 @@ class GraphTools:
 
     def PlotEff(self):
         try:
-            folderName = 'OpticalEfficiency'
+            folderName = '_OpticalEfficiency'
             ######################## ABS RDG
             columnName = 'ABS_RDG_Eff'
             titleName = "Absorption Efficiency for RDG-FA"
@@ -704,7 +705,7 @@ class GraphTools:
 
     def PlotMACMSC(self):
         try:
-            folderName = 'MACs_MSCs'
+            folderName = '_MACs_MSCs'
             ######################## MAC RDG
             columnName = 'MAC_RDG'
             titleName = "MAC for RDG-FA"
@@ -735,7 +736,7 @@ class GraphTools:
 
     def PlotSSA(self):
         try:
-            folderName = 'SSAs'
+            folderName = '_SSAs'
             ######################## SSA TMatrix
             columnName = 'SSA_TMatrix'
             titleName = "SSA for T-matrix"
@@ -759,7 +760,7 @@ class GraphTools:
 
     def PlotErrorAndRatio(self):
         try:
-            folderName = 'ErrorsAndRatios'
+            folderName = '_ErrorsAndRatios'
             ######################## Absorption Percentage Error
             columnName = 'RealPercentErrorABS'
             titleName = "Percentage Error Between T-matrix and RDG-FA Absorption Cross-section"
@@ -789,7 +790,7 @@ class GraphTools:
 
     def PlotCrossSections(self):
         try:
-            folderName = 'OpticalCrossSections'
+            folderName = '_OpticalCrossSections'
             ######################## Absorption RDG
             columnName = 'ABS_RDG'
             titleName = "RDG-FA Absorption Cross-section"

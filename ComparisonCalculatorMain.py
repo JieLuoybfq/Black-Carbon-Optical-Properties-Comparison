@@ -14,7 +14,6 @@ if __name__ == "__main__":
     AGG_Info = CP.ReadConfigToDict(sectionName="AggregateDetails", convertParseTo='float', hasComment=True)
     logging.info("config retrieved.")
     ##############################################
-    '''
     arr = [{'AGG_EFF_RHO_100NM_CENTER': 450, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1, 'AGG_EFF_DM_CENTER': 2.2},
            {'AGG_EFF_RHO_100NM_CENTER': 450, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.4, 'AGG_EFF_DM_CENTER': 2.2},
            {'AGG_EFF_RHO_100NM_CENTER': 450, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.8, 'AGG_EFF_DM_CENTER': 2.2},
@@ -47,6 +46,7 @@ if __name__ == "__main__":
     arr = [{'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1, 'AGG_EFF_DM_CENTER': 2.56},
            {'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.4, 'AGG_EFF_DM_CENTER': 2.56},
            {'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.8, 'AGG_EFF_DM_CENTER': 2.56}]
+    '''
     for i in arr:
         for key in i:
             AGG_Info[key] = i[key]

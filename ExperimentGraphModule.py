@@ -9,8 +9,10 @@ from math import pi
 from math import exp
 from math import isnan
 from math import log
+from math import sqrt
 from scipy.optimize import fsolve
 import subprocess
+from matplotlib import colors
 
 ####### Plotting Parameters
 rcParams['mathtext.fontset'] = 'stix'
@@ -29,16 +31,18 @@ class GraphTools:
             self.__dpDeviationPercent = 10  ###
             self.__dmSigmaLogN = [1.2, 1.4, 1.6]
             self.__dmMedianLogN = [100, 200, 300]
+            self.__biasUncertaintyPercentABS = 9.6
+            self.__biasUncertaintyPercentSCA = 7.0
             self.__saveHistogram = False
             #################################################
             #################################################
             ################################################# Comparison Graphs
             self.__EXPFull = True
 
-            self.__CRSGraphsExpFull = False
-            self.__EfficiencyGraphsExpFull = False
-            self.__SSAGraphsExpFull = False
-            self.__dpMedianGraphsExpFull = False
+            self.__CRSGraphsExpFull = True
+            self.__EfficiencyGraphsExpFull = True
+            self.__SSAGraphsExpFull = True
+            self.__dpMedianGraphsExpFull = True
 
             # self.__dmDistributionGraphsBarExpFull = True
             self.__dmDistributionGraphsLineExpFull = True
@@ -47,7 +51,7 @@ class GraphTools:
             #################################################
             #################################################
             ################################################# Experiment Graphs
-            self.__EXPAccurate = False
+            self.__EXPAccurate = True
 
             self.__CRSGraphsEXPAccurate = True
             self.__EfficiencyGraphsEXPAccurate = True
@@ -97,36 +101,37 @@ class GraphTools:
             self.__yMinorTickLabelGeneralFontSize = 8
             ################################################# Graph Setting for subplot
             self.__A1Color = 'red'
-            self.__A1LineWidth = [1.8, 1.2, 0.6]
-            self.__A1AlphaMainLine = 0.35
+            self.__A1LineWidth = [1.5, 1, 0.5]
+            self.__A1AlphaMainLine = 0.30
             self.__A2Color = 'blue'
-            self.__A2LineWidth = [4, 3, 2.5]
-            self.__A2AlphaMainLine = 0.65
+            self.__A2LineWidth = [2.5, 2, 1.5]
+            self.__A2AlphaMainLine = 0.50
             self.__A3Color = 'black'
-            self.__A3AlphaMainLine = 0.75
+            self.__A3LineWidth = [2.5, 2, 1.5]
+            self.__A3AlphaMainLine = 0.7
             self.__subplotLineStyle = ['-', '--', '-.']
             self.__subplotMarkerStyle = ["o", "X", "^"]
             self.__subplotMarkerSize = 8
-            self.__xMajorTickLabelSubplotFontSize = 15
-            self.__xTickLabelSubplotRotation = 40
-            self.__yMajorTickLabelSubplotFontSize = 15
+            self.__xMajorTickLabelSubplotFontSize = 18
+            self.__xTickLabelSubplotRotation = 45
+            self.__yMajorTickLabelSubplotFontSize = 18
             self.__yLabelEachSubplotFontSize = 26
             self.__yLabelEachSubplotRotation = -90
-            self.__yLabelEachSubplotPad = 40
+            self.__yLabelEachSubplotPad = 42
             self.__xLabelEachSubplotFontSize = 26
             self.__xLabelEachSubplotPad = 17
             self.__subplotGridSetup = [0.88, 0.018, 0.018]
             self.__xLabelCommonSubplotAdjustment = 0.033  # lower to get down
             self.__xLabelCommonSubplotFontSize = 24
             self.__yLabelCommonSubplotFontSize = 24
-            self.__yLabelCommonSubplotAdjustment = [0.026, 0.044]  # lower to get left
-            self.__legendSubplotAdjustment = [1.24, 1.7]
-            self.__legendSubplotMarkerScale = 2.25
+            self.__yLabelCommonSubplotAdjustment = [0.018, 0.044]  # lower to get left
+            self.__legendSubplotAdjustment = [1.25, 1.7]
+            self.__legendSubplotMarkerScale = 3
             self.__legendSubplotFontSize = 20
-            self.__legendSubplotLineWidth = 4
+            self.__legendSubplotLineWidth = 4.5
             #################################################
             self.__figureDPI = 500
-            self.__legendMarkerScale = 2
+            self.__legendMarkerScale = 4
             self.__markerSize = 3
             self.__alphaMainLine = 0.55
             self.__lineColor = ['red', 'blue', 'green']
@@ -151,8 +156,7 @@ class GraphTools:
                         rhoEff, rhoEffSTD,
                         temperature, temperatureSTD,
                         pressure, pressureSTD,
-                        arraySize, randomSize,
-                        fileName):
+                        arraySize, fileName, randomSize=500, ):
         try:
             def ToSaveHistogram(self, folderName, fileName, array, Figure_DPI=250):
                 try:
@@ -493,11 +497,11 @@ class GraphTools:
                                                          number=arraySize)
 
                 arrPAX_Absorption_Coefficient = _createRandomNormalArr(center=ser_PAX_ABS_Coef_Ave[index],
-                                                                       width=ser_PAX_ABS_Coef_STD[index],
+                                                                       width=sqrt(((ser_PAX_ABS_Coef_STD[index]) ** 2) + ((ser_PAX_ABS_Coef_Ave[index] * self.__biasUncertaintyPercentABS / 100) ** 2)),
                                                                        number=arraySize)
 
                 arrPAX_Scattering_Coefficient = _createRandomNormalArr(center=ser_PAX_SCA_Coef_Ave[index],
-                                                                       width=ser_PAX_SCA_Coef_STD[index],
+                                                                       width=sqrt(((ser_PAX_SCA_Coef_STD[index]) ** 2) + ((ser_PAX_SCA_Coef_STD[index] * self.__biasUncertaintyPercentSCA / 100) ** 2)),
                                                                        number=arraySize)
 
                 arrCPC_Number_Density = _createRandomNormalArr(center=ser_CPC_Ave[index],
@@ -569,7 +573,7 @@ class GraphTools:
                 arrAbsorptionEffAverageSTD = _getAverageAndSTD(arrMonteCarloAbsorptionEFF)
                 arrScatteringEffAverageSTD = _getAverageAndSTD(arrMonteCarloScatteringEFF)
                 #######################
-                if arrMobilityDiameterAverageSTD[0] > self.__xAxisLimitsComp[1]:
+                if arrMobilityDiameterAverageSTD[0] > self.__xAxisLimitsComp[1] * 1.2:
                     break
                 #######################
                 aerodynamicDiameter_AVE.append(serAerodynamicDiameter[index])
@@ -869,7 +873,7 @@ class GraphTools:
                                                              arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
                                                              fileName=fileN)
 
-                    self.dfEXP[fileN].to_csv(f"ExperimentResults\ETR_{fileN}.csv", index=False)
+                    self.dfEXP[fileN].to_csv(f"{self.__folderNameGraph}\__ExperimentResults\ETR_{fileN}.csv", index=False)
 
                     self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
                     self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
@@ -914,7 +918,7 @@ class GraphTools:
                                                              arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
                                                              fileName=fileN)
 
-                    self.dfEXP[fileN].to_csv(f"ExperimentResults\ETR_{fileN}.csv", index=False)
+                    self.dfEXP[fileN].to_csv(f"{self.__folderNameGraph}\__ExperimentResults\ETR_{fileN}.csv", index=False)
 
                     self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
                     self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
@@ -1106,7 +1110,7 @@ class GraphTools:
                                           colName2=columnName2, colDetail2=columnDetail2,
                                           titleName=titleName, titleA=titleAppend,
                                           shareY='all', folderName=folderName,
-                                          yScale='linear', yLabel=self.__yLabelSSA,
+                                          yScale='log', yLabel=self.__yLabelSSA,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.2f')
             ######################## Ratio ABS and SCA
@@ -1150,7 +1154,7 @@ class GraphTools:
                                           colName2=columnName2, colDetail2=columnDetail2,
                                           titleName=titleName, titleA=titleAppend,
                                           shareY='all', folderName=folderName,
-                                          yScale='linear', yLabel=self.__yLabelEFF,
+                                          yScale='log', yLabel=self.__yLabelEFF,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.2f')
             ######################## Scattering Eff
@@ -1166,7 +1170,7 @@ class GraphTools:
                                           colName2=columnName2, colDetail2=columnDetail2,
                                           titleName=titleName, titleA=titleAppend,
                                           shareY='all', folderName=folderName,
-                                          yScale='linear', yLabel=self.__yLabelEFF,
+                                          yScale='log', yLabel=self.__yLabelEFF,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.2f')
             A = 33
@@ -1293,25 +1297,25 @@ class GraphTools:
             mean = 'ABS_Eff_AVE'
             STD = 'ABS_Eff_STD'
             titleName = "Absorption Efficiency for RDG-FA"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='linear', yLabel=self.__yLabelEFF)
+            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
             ######################## SCA RDG
             columnName = 'SCA_RDG_Eff'
             mean = 'SCA_Eff_AVE'
             STD = 'SCA_Eff_STD'
             titleName = "Scattering Efficiency for RDG-FA"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='linear', yLabel=self.__yLabelEFF)
+            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
             ######################## ABS TMatrix
             columnName = 'ABS_TMatrix_Eff'
             mean = 'ABS_Eff_AVE'
             STD = 'ABS_Eff_STD'
             titleName = "Absorption Efficiency for T-matrix"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='linear', yLabel=self.__yLabelEFF)
+            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
             ######################## SCA TMatrix
             columnName = 'SCA_TMatrix_Eff'
             mean = 'SCA_Eff_AVE'
             STD = 'SCA_Eff_STD'
             titleName = "Scattering Efficiency for T-matrix"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='linear', yLabel=self.__yLabelEFF)
+            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
 
         except Exception as e:
             logging.exception(e)
@@ -1330,14 +1334,14 @@ class GraphTools:
             mean = 'SSA_AVE'
             STD = 'SSA_STD'
             titleName = "SSA for T-matrix"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='linear', yLabel=self.__yLabelSSA)
+            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelSSA)
 
             ######################## SSA RDG
             columnName = 'SSA_RDG'
             mean = 'SSA_AVE'
             STD = 'SSA_STD'
             titleName = "SSA for RDG-FA"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='linear', yLabel=self.__yLabelSSA)
+            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelSSA)
 
         except Exception as e:
             logging.exception(e)
@@ -1417,9 +1421,10 @@ class GraphTools:
 
                     dm_STD = self.dfEXP[fileN]['dm_STD'] * 2
                     y_STD = self.dfEXP[fileN][STD] * 2
+
                     ax1.errorbar(self.dfEXP[fileN]['dm_AVE'], self.dfEXP[fileN][mean], xerr=dm_STD, yerr=y_STD, label="Experiment, " + self.dictDataLabelEXP[fileN],
-                                 color=self.__lineColor[c_lineColor],
-                                 marker="D", markersize=self.__markerSize, ecolor='black', capsize=4, elinewidth=1.5, markeredgewidth=1.5)
+                                 color=self.get_color(self.__lineColor[c_lineWidth], 'black'), linewidth=self.__A3LineWidth[c_lineWidth],
+                                 alpha=self.__A3AlphaMainLine, marker="D", markersize=self.__markerSize - 1, ecolor='black', capsize=3, elinewidth=1, markeredgewidth=1)
 
                     c_lineColor += 1
                     c_lineWidth += 1
@@ -1736,7 +1741,7 @@ class GraphTools:
 
             fig, ax1 = plt.subplots(nrows=len(A1.unique()), ncols=len(A2.unique()), sharey=shareY, figsize=(12, 12), constrained_layout=True)
 
-            alphaMainLine = self.__alphaMainLine
+            # alphaMainLine = self.__alphaMainLine
             #############################################
             Dmlist = ["$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)]
             #############################################
@@ -1759,18 +1764,20 @@ class GraphTools:
                             df = self.dictData[fileN]
 
                             ax1[rowCount, colCount].plot(df['dm'], df[column1], label=column1T + ', ' + Dmlist[DmCount],
-                                                         color=self.__A1Color, linewidth=self.__A1LineWidth[c_lineWidth],
+                                                         color=self.__lineColor[DmCount], linewidth=self.__A1LineWidth[c_lineWidth],
                                                          linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine,
-                                                         marker=self.__subplotMarkerStyle[c_markerStyle], markersize=self.__subplotMarkerSize)
+                                                         marker=self.__subplotMarkerStyle[c_markerStyle], markersize=self.__subplotMarkerSize / 2)
+
                             ax1[rowCount, colCount].plot(df['dm'], df[column2], label=column2T + ', ' + Dmlist[DmCount],
-                                                         color=self.__A2Color, linewidth=self.__A2LineWidth[c_lineWidth],
+                                                         color=self.__lineColor[DmCount], linewidth=self.__A2LineWidth[c_lineWidth],
                                                          linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A2AlphaMainLine)
 
                             dm_STD = self.dfEXP[fileN]['dm_STD'] * 2
                             y_STD = self.dfEXP[fileN][STD] * 2
                             ax1[rowCount, colCount].errorbar(self.dfEXP[fileN]['dm_AVE'], self.dfEXP[fileN][mean], xerr=dm_STD, yerr=y_STD, label="Experiment, " + Dmlist[DmCount],
-                                                             color=self.__A3Color, linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A3AlphaMainLine,
-                                                             marker="D", markersize=self.__markerSize, ecolor='black', capsize=4, elinewidth=1.5, markeredgewidth=1.5)
+                                                             color=self.get_color(self.__lineColor[c_lineWidth], 'black'), linestyle=self.__subplotLineStyle[c_lineStyle],
+                                                             linewidth=self.__A3LineWidth[c_lineWidth], alpha=self.__A3AlphaMainLine, marker="D", markersize=self.__markerSize - 1, ecolor='black',
+                                                             capsize=3, elinewidth=1, markeredgewidth=1)
 
                             c_lineStyle += 1
                             c_markerStyle += 1
@@ -2051,12 +2058,22 @@ class GraphTools:
             plt.clf()
             plt.close()
 
-
-
         except Exception as e:
             logging.exception(e)
             raise
 
+    def get_color(self, color1, color2):
+        try:
+            colorRGBA1 = colors.to_rgba(color1)
+            colorRGBA2 = colors.to_rgba(color2)
+            alpha = (colorRGBA1[3] + colorRGBA2[3]) / 2
+            red = ((colorRGBA1[0] * colorRGBA1[3]) + (colorRGBA2[0] * colorRGBA2[3])) / (colorRGBA1[3] + colorRGBA2[3])
+            green = ((colorRGBA1[1] * colorRGBA1[3]) + (colorRGBA2[1] * colorRGBA2[3])) / (colorRGBA1[3] + colorRGBA2[3])
+            blue = ((colorRGBA1[2] * colorRGBA1[3]) + (colorRGBA2[2] * colorRGBA2[3])) / (colorRGBA1[3] + colorRGBA2[3])
+            return (red, green, blue, alpha)
+        except Exception as e:
+            logging.exception(e)
+            raise
     ######################################################################
     ######################################################################
     ######################################################################
