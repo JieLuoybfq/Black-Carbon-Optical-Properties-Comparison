@@ -14,6 +14,7 @@ if __name__ == "__main__":
     AGG_Info = CP.ReadConfigToDict(sectionName="AggregateDetails", convertParseTo='float', hasComment=True)
     logging.info("config retrieved.")
     ##############################################
+
     conArr = [{'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1, 'AGG_EFF_DM_CENTER': 2.56},
               {'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.4, 'AGG_EFF_DM_CENTER': 2.56},
               {'AGG_EFF_RHO_100NM_CENTER': 502, 'AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER': 1.8, 'AGG_EFF_DM_CENTER': 2.56},

@@ -104,124 +104,159 @@ class KeyhanV2:
             logging.exception(e)
             raise
 
+    def LogNormalFit(self, x, y):
+        try:
+
+            if len(x) == len(y):
+                Sum1 = 0.0
+                Sum2 = 0.0
+                Sum3 = 0.0
+                Sum4 = 0.0
+                Sum5 = 0.0
+                Cols = len(x)
+                ######### D_G
+                for j in range(Cols):
+                    Sum1 = Sum1 + (y[j] * log(x[j]))
+                    Sum2 = Sum2 + y[j]
+                if Sum2 != 0:
+                    D_G = exp(Sum1 / Sum2)
+                else:
+                    D_G = 0
+                ##################
+
+                ######### Sigma_G
+                for j in range(Cols):
+                    Sum3 = Sum3 + (y[j] * ((log(x[j]) - log(D_G)) ** 2))
+                Sigma_G = exp((Sum3 / (Sum2 - 1)) ** (0.5))
+                ##################
+
+                ######### Total Concentration in (#/cm^3)
+                for j in range(Cols - 1):
+                    Sum4 = Sum4 + (y[j] * (log(x[j + 1], 10) - log(x[j], 10)))
+                Total_Conc = Sum4
+                ##################
+
+                ######### Median Diameter in nm
+                D_Median = 0
+                for j in range(Cols - 1):
+                    Sum5 = Sum5 + (y[j] * (log(x[j + 1], 10) - log(x[j], 10)))
+                    if Sum5 > ((Sum4 / 2)):
+                        D_Median = (x[j - 1] * x[j]) ** 0.5
+                        break
+                result = {'D_G': D_G, 'Sigma_G': Sigma_G, 'Total_Conc': Total_Conc, 'D_Median': D_Median}
+                return result
+
+            else:
+                logging.exception(f"Lognormal fit error: array lengths are not equal {len(x)},{len(y)}")
+            ##################
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
     def CalcRealNpdpDistribution(self, checkedDict):
         try:
-            maindp = []
-            NpAverage = []
+            dpArr = []
+            NpChanceArr = []
             for dm in checkedDict:
                 Np = checkedDict[dm]['Np']
                 dp = checkedDict[dm]['dp']
                 chance = checkedDict[dm]['chance']
                 for i in range(len(dp)):
-                    maindp.append(dp[i])
-                    NpAverage.append(chance[i] * Np[i])
-
-            x = np.array(maindp)
-            indexes = np.argsort(x)
-
-            maindpsorted = []
-            NpAveragesorted = []
-            for i in range(len(maindp)):
-                maindpsorted.append(float(maindp[indexes[i]]))
-                NpAveragesorted.append(float(NpAverage[indexes[i]]))
+                    dpArr.append(dp[i])
+                    NpChanceArr.append(chance[i] * Np[i])
 
             diameter_Nano = []
-            NpAveragesortedV2 = []
-            bound_D_Max = 90
+            NpChanceBinArr = []
+            bound_D_Max = 100
             bound_D_Min = 5
-            total_Number_Bins = 20
+            total_Number_Bins = 43
             D_Ratio = (bound_D_Max / bound_D_Min) ** (1 / (total_Number_Bins - 1))
 
             for i in range(0, total_Number_Bins):
                 d1 = bound_D_Min * (D_Ratio ** i)
                 diameter_Nano.append(round(d1, 3))
-                NpAveragesortedV2.append(0)
+                NpChanceBinArr.append(0)
 
             for i in range(1, len(diameter_Nano)):
-                for p in range(len(maindp)):
-                    if maindp[p] < diameter_Nano[i] and maindp[p] > diameter_Nano[i - 1]:
-                        NpAveragesortedV2[i] = NpAveragesortedV2[i] + float(NpAverage[p])
+                for p in range(len(dpArr)):
+                    if dpArr[p] < diameter_Nano[i] and dpArr[p] > diameter_Nano[i - 1]:
+                        NpChanceBinArr[i] = NpChanceBinArr[i] + float(NpChanceArr[p])
 
-            plt.plot(diameter_Nano, NpAveragesortedV2)
-            plt.show()
+            res = self.LogNormalFit(diameter_Nano, NpChanceBinArr)
+            logging.info(f"Lognormal fit res:___D_G:{res['D_G']}___Sigma_G:{res['Sigma_G']}___Total_Conc:{res['Total_Conc']}___D_Median:{res['D_Median']}")
+            ############################
 
-            Sum1 = 0.0
-            Sum2 = 0.0
-            Sum3 = 0.0
-            Sum4 = 0.0
-            Sum5 = 0.0
-            Cols = len(diameter_Nano)
-            ######### D_G
-            D_G = 0
-            for j in range(Cols):
-                Sum1 = Sum1 + (NpAveragesortedV2[j] * log(diameter_Nano[j]))
-                Sum2 = Sum2 + NpAveragesortedV2[j]
-            if Sum2 != 0:
-                D_G = exp(Sum1 / Sum2)
+            bound_D_Max = res['D_Median'] * (res['Sigma_G'] ** self.__Primary_Sigma_dm_CTE_Bound)
+            bound_D_Min = res['D_Median'] * (res['Sigma_G'] ** (-1 * self.__Primary_Sigma_dm_CTE_Bound))
+            total_Number_Bins = self.__Primary_Sigma_dm_CTE_Nt
+
+            diameter_Nano = []
+            logNormalPDF = []
+
+            A = np.linspace(-1.2, 1.2, total_Number_Bins)
+            B = []
+            for i in A:
+                B.append(float(gmpy2.root(pow(i, 7), 5)))
+
+            x_Down = res['D_Median'] - bound_D_Min
+            x_Up = bound_D_Max - res['D_Median']
+
+            for i in range(len(B)):
+                if B[i] < 0:
+                    diameter_Nano.append(res['D_Median'] - x_Down * abs(B[i]))
+                if B[i] > 0:
+                    diameter_Nano.append(res['D_Median'] + x_Up * abs(B[i]))
+
+            diameter_Nano = sorted(diameter_Nano, key=float)
+            diameter_Nano = gaussian_filter1d(diameter_Nano, 8)
+            diameter_Nano = diameter_Nano.tolist()
+
+            sum = 0
+            if res['Sigma_G'] != 1:
+                for i in range(0, total_Number_Bins):
+                    if i != 0:
+                        l1 = self._calcLogNDistribPDF(res['D_Median'], res['Sigma_G'], diameter_Nano[i], diameter_Nano[i - 1])
+                    else:
+                        l1 = 0
+                    sum += l1
+                    logNormalPDF.append(Decimal(l1))
+
             else:
-                D_G = 0
+                diameter_Nano.append(res['D_Median'])
+                logNormalPDF.append(Decimal(1))
 
-            ##################
+            primaryDiam = diameter_Nano
+            primaryChance = logNormalPDF
+            ################################
+            ################################
+            dictNp = {}
+            for dm in self.arrMobilityDiamNano:
+                arrNp = []
+                dpArr = primaryDiam
+                for dp in dpArr:
+                    arrNp.append(self._calcPPN(dm=dm, dp=dp))
+                dictNp[dm] = arrNp
 
-            ######### Sigma_G
+            ################################
+            ################################
 
-            for j in range(Cols):
-                Sum3 = Sum3 + (NpAveragesortedV2[j] * ((log(diameter_Nano[j]) - log(D_G)) ** 2))
-
-            Sigma_G = exp((Sum3 / (Sum2 - 1)) ** (0.5))
-
-            ##################
-
-            ######### Total Concentration in (#/cm^3)
-            for j in range(Cols - 1):
-                if Particle_Concentration_Raw[i][j] != 0:
-                    Sum4 = Sum4 + Particle_Concentration_Raw[i][j] * (log(Particle_Concentration_Raw[0][j + 1], 10) - log(Particle_Concentration_Raw[0][j], 10))
-            Total_Conc = Sum4
-            ##################
-
-            ######### Median Diameter in nm
-            for j in range(Cols - 1):
-                if Particle_Concentration_Raw[i][j] != 0:
-                    Sum5 = Sum5 + Particle_Concentration_Raw[i][j] * (log(Particle_Concentration_Raw[0][j + 1], 10) - log(Particle_Concentration_Raw[0][j], 10))
-                if Sum5 > ((Sum4 / 2)):
-                    D_Median = (Particle_Concentration_Raw[0][j - 1] * Particle_Concentration_Raw[0][j]) ** 0.5
-                    break
-
-            ##################
-
-            def pdf(x, mu, sigma):
-                """pdf of lognormal distribution"""
-                return (np.exp(-(np.log(x) - mu) ** 2 / (2 * sigma ** 2)) / (x * sigma * np.sqrt(2 * np.pi)))
-
-            mu, sigma = 3., 1.  # actual parameter value
-
-            # data = np.random.lognormal(mu, sigma, size=1000)  # data generation
-            # h = plt.hist(data, bins=30, normed=True)
-
-            # y = h[0]  # frequencies for each bin, this is y value to fit
-            # xs = h[1]  # boundaries for each bin
-            # delta = xs[1] - xs[0]  # width of bins
-            # x = xs[:-1] + delta /  # midpoints of bins, this is x value to fit
-
-            popt, pcov = curve_fit(pdf, diameter_Nano, NpAveragesortedV2)  # data fitting, popt contains the fitted parameters
-            print(popt)
-            # [ 3.13048122  1.01360758]                       fitting results
-
-            fig, ax = plt.subplots()
-            # ax.hist(data, bins=30, normed=True, align='mid', label='Histogram')
-            xr = np.linspace(0, 100, 10000)
-            # yr = pdf(xr, mu, sigma)
-            yf = pdf(xr, *popt)
-            # ax.plot(xr, yr, label="Actual")
-            ax.plot(xr, yf, linestyle='dashed', label="Fitted")
-            # ax.set_xscale('log')
-            ax.legend()
-            plt.show()
-
-            # plt.plot(maindpsorted,NpAveragesorted)
+            for dm in checkedDict:
+                checkedDict[dm]['Np'] = dictNp[dm]
+                checkedDict[dm]['dp'] = primaryDiam
+                checkedDict[dm]['chance'] = primaryChance
+            # fitted = [0]
+            # fittedV2 = [0]
+            # for i in range(1, total_Number_Bins):
+            #    fitted.append(res['Total_Conc'] * self._calcLogNDistribPDF(median=res['D_Median'], sigmaG=res['Sigma_G'], D2=diameter_Nano[i], D1=diameter_Nano[i - 1]))
+            #    fittedV2.append(res['Total_Conc'] * self._calcLogNDistribPDF(median=res['D_G'], sigmaG=res['Sigma_G'], D2=diameter_Nano[i], D1=diameter_Nano[i - 1]))
+            # plt.plot(diameter_Nano, NpChanceBinArr, label="bins")
+            # plt.plot(diameter_Nano, fitted, label="D_Median")
+            # plt.plot(diameter_Nano, fittedV2, label="D_G")
+            # plt.legend()
             # plt.show()
-            j = 3
-
+            dictCheckedNpdp = self.CheckDictWithBoundary(dict=checkedDict)
+            return dictCheckedNpdp
 
 
         except Exception as e:
