@@ -1,6 +1,6 @@
 # Keyhan Babaee, https://github.com/KeyhanB
 # V1.2
-# Aug 2019
+# Oct 2019
 from ConfigReaderModule import logging
 from math import *
 import numpy as np
@@ -13,15 +13,19 @@ import pandas as pd
 import GeneralFunctions as GF
 import gmpy2
 from scipy.ndimage import gaussian_filter1d
+from matplotlib import pyplot as plt
+from scipy.optimize import curve_fit
+import CalculationCore
+import TotalCrossSectionCalculator
 
 
-class KeyhanV1:
+class KeyhanV2:
     def __init__(self, inputDict):
         try:
             ######################################################################################
             time_now = GF.GetDateAndTimeUTCNow()
             temp = {}
-            temp['AA_FileName'] = f"TR_{time_now}.csv"
+            temp['AA_FileName'] = f"{time_now}.csv"
             temp['AA_Plot'] = 1
             self.infoDict = {**temp, **inputDict}
             ######################################################################################
@@ -50,34 +54,23 @@ class KeyhanV1:
             logging.exception(e)
             raise
 
-    def KeyhanV1Calc(self, DB_Info):
+    def KeyhanV2Calc(self, DB_Info):
         try:
             self.arrMobilityDiamNano = self.CalcMobilityDiamBins()
             self.dict_dpMedianNano = self.CalcPrimaryParticleSizeMedianNano()
             self.dict_dpMobDistribNano, self.dict_dpMobDistribChance = self.CalcPrimDiamBinAtEachMob()
             self.dict_NpMobDistrib = self.CalcPrimaryParticleNumber()
+
             dictSuggested = self.CreateDictForEvaluation()
+
             dictChecked = self.CheckDictWithBoundary(dict=dictSuggested)
-            dictConverted = self.ConvertDictToArray(dict=dictChecked)
-            T1 = TMatrixCalculation(DBInfo=DB_Info)
-            R1 = RDGCalculation()
+            dictRealNpdpDistribution = self.CalcRealNpdpDistribution(checkedDict=dictChecked)
 
-            dictInputT1, dictOutputT1, dictInputR1, dictOutputR1 = {}, {}, {}, {}
-            for dm in dictConverted:
-                dictInputT1[dm], dictOutputT1[dm] = T1.TMatrixCalc(TMatrix_Planned_Input=dictConverted[dm])
-                dictInputR1[dm], dictOutputR1[dm] = R1.RDGCalc(RDG_Planned_Input=dictConverted[dm])
-                if dictInputT1[dm] != dictInputR1[dm]:
-                    raise
-                logging.info(f"Calculation for dm:{dm} was finished.")
+            dictConvertedTR = self.ConvertDictToArray(dict=dictChecked)
+            dictConvertedRE = self.ConvertDictToArray(dict=dictRealNpdpDistribution)
 
-            dfResult = self.CalcTotalCrossSection(outTMatrix=dictOutputT1, outRDG=dictOutputR1, checkedDict=dictChecked)
-
-            dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
-            dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
-            # newInfoDf = pd.DataFrame([self.infoDict])
-            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            dfInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            dfResult.to_csv(f"TMatrix_RDG_Result\{self.infoDict['AA_FileName']}", index=False)
+            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedTR, dictChecked=dictChecked, fileAppend="TR")
+            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedRE, dictChecked=dictChecked, fileAppend="RE")
 
         except Exception as e:
             logging.exception(e)
@@ -91,101 +84,146 @@ class KeyhanV1:
     ######################################################################################
     ######################################################################################
 
-    def CalcTotalCrossSection(self, outTMatrix, outRDG, checkedDict):
+    def RDGTMCore(self, DB_Info, dictConverted, dictChecked, fileAppend):
         try:
-            df = pd.DataFrame(columns=['dm', 'ABS_TMatrix', 'SCA_TMatrix', 'ABS_RDG', 'SCA_RDG',
-                                       'NumberOfCalcs', 'dp_median', 'Np_Ave', 'dp_Ave',
-                                       'D_TEM', 'dp_100nm',
-                                       'RealErrorABS', 'RealErrorSCA', 'AbsoluteErrorABS', 'AbsoluteErrorSCA',
-                                       'RealPercentErrorABS', 'AbsolutePercentErrorABS', 'RatioABS',
-                                       'RealPercentErrorSCA', 'AbsolutePercentErrorSCA', 'RatioSCA',
-                                       'SSA_TMatrix', 'SSA_RDG',
-                                       'MAC_TMatrix', 'MSC_TMatrix', 'MAC_RDG', 'MSC_RDG', 'Agg_Mass_gr'])
+            CC = CalculationCore.CalculationCore(infoDict=DB_Info, calcDict=dictConverted)
+            dictOutputT1, dictOutputR1 = CC.Calc()
 
-            for dm in outTMatrix:
+            TCSC = TotalCrossSectionCalculator.TotalCrossSectionCalculator(infoDict=self.infoDict, outTMatrix=dictOutputT1, outRDG=dictOutputR1, checkedDict=dictChecked,
+                                                                           dict_dpMedianNano=self.dict_dpMedianNano)
+            dfResult = TCSC.Calc()
 
-                Np_Ave = 0
-                dp_Ave = 0
-                ABS_TMatrix = 0
-                SCA_TMatrix = 0
-                ABS_RDG = 0
-                SCA_RDG = 0
-                AggregateMass = 0
+            dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
+            dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
+            # newInfoDf = pd.DataFrame([self.infoDict])
+            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            dfInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            dfResult.to_csv(f"TMatrix_RDG_Result\{fileAppend}_{self.infoDict['AA_FileName']}", index=False)
 
-                for i in range(len(outTMatrix[dm])):
-                    ABS_TMatrix += outTMatrix[dm][i][0] * checkedDict[dm]['chance'][i]
-                    SCA_TMatrix += outTMatrix[dm][i][1] * checkedDict[dm]['chance'][i]
-                    ABS_RDG += outRDG[dm][i][0] * checkedDict[dm]['chance'][i]
-                    SCA_RDG += outRDG[dm][i][1] * checkedDict[dm]['chance'][i]
-                    Np_Ave += checkedDict[dm]['Np'][i] * checkedDict[dm]['chance'][i]
-                    dp_Ave += checkedDict[dm]['dp'][i] * checkedDict[dm]['chance'][i]
-                    AggregateMass += self._convertDensityToMass(dp=checkedDict[dm]['dp'][i], density=self.__AGG_MATERIAL_DENSITY_CENTER, Np=checkedDict[dm]['Np'][i]) * checkedDict[dm]['chance'][i]
-                ################################################
-                ################################################
-                ################################################ MAC and MSC
-                if AggregateMass != 0:
-                    MAC_TMatrix = ABS_TMatrix * (Decimal(10) ** (Decimal(-12))) / AggregateMass
-                    MSC_TMatrix = SCA_TMatrix * (Decimal(10) ** (Decimal(-12))) / AggregateMass
-                    MAC_RDG = ABS_RDG * (Decimal(10) ** (Decimal(-12))) / AggregateMass
-                    MSC_RDG = SCA_RDG * (Decimal(10) ** (Decimal(-12))) / AggregateMass
+        except Exception as e:
+            logging.exception(e)
+            raise
 
-                else:
-                    MAC_TMatrix = 0
-                    MSC_TMatrix = 0
-                    MAC_RDG = 0
-                    MSC_RDG = 0
+    def CalcRealNpdpDistribution(self, checkedDict):
+        try:
+            maindp = []
+            NpAverage = []
+            for dm in checkedDict:
+                Np = checkedDict[dm]['Np']
+                dp = checkedDict[dm]['dp']
+                chance = checkedDict[dm]['chance']
+                for i in range(len(dp)):
+                    maindp.append(dp[i])
+                    NpAverage.append(chance[i] * Np[i])
 
-                errorRealABS = ABS_TMatrix - ABS_RDG
-                errorRealSCA = SCA_TMatrix - SCA_RDG
-                errorAbsoluteABS = abs(ABS_TMatrix - ABS_RDG)
-                errorAbsoluteSCA = abs(SCA_TMatrix - SCA_RDG)
-                ################################################
-                ################################################
-                ################################################ SSA
-                if (ABS_TMatrix + SCA_TMatrix) != 0:
-                    SSA_TMatrix = SCA_TMatrix / (ABS_TMatrix + SCA_TMatrix)
-                else:
-                    SSA_TMatrix = 0
+            x = np.array(maindp)
+            indexes = np.argsort(x)
 
-                if (ABS_RDG + SCA_RDG) != 0:
-                    SSA_RDG = SCA_RDG / (ABS_RDG + SCA_RDG)
-                else:
-                    SSA_RDG = 0
-                ################################################
-                ################################################
-                ################################################ Error percenet and ratio
-                if ABS_RDG != 0:
-                    errorRealPercentABS = 100 * (ABS_TMatrix - ABS_RDG) / ABS_RDG
-                    errorAbsolutePercentABS = 100 * abs(ABS_TMatrix - ABS_RDG) / ABS_RDG
-                    ratioABS = ABS_TMatrix / ABS_RDG
-                else:
-                    errorRealPercentABS = 0
-                    errorAbsolutePercentABS = 0
-                    ratioABS = 0
+            maindpsorted = []
+            NpAveragesorted = []
+            for i in range(len(maindp)):
+                maindpsorted.append(float(maindp[indexes[i]]))
+                NpAveragesorted.append(float(NpAverage[indexes[i]]))
 
-                if SCA_RDG != 0:
-                    errorRealPercentSCA = 100 * (SCA_TMatrix - SCA_RDG) / SCA_RDG
-                    errorAbsolutePercentSCA = 100 * abs(SCA_TMatrix - SCA_RDG) / SCA_RDG
-                    ratioSCA = SCA_TMatrix / SCA_RDG
-                else:
-                    errorRealPercentSCA = 0
-                    errorAbsolutePercentSCA = 0
-                    ratioSCA = 0
-                ################################################
-                ################################################
-                ################################################
-                df.loc[len(df)] = {'dm': dm, 'ABS_TMatrix': ABS_TMatrix, 'SCA_TMatrix': SCA_TMatrix,
-                                   'ABS_RDG': ABS_RDG, 'SCA_RDG': SCA_RDG, 'NumberOfCalcs': len(outTMatrix[dm]),
-                                   'dp_median': self.dict_dpMedianNano[dm], 'Np_Ave': Np_Ave, 'dp_Ave': dp_Ave,
-                                   'RealErrorABS': errorRealABS, 'RealErrorSCA': errorRealSCA,
-                                   'D_TEM': self.D_TEM, 'dp_100nm': self.dp100_nano,
-                                   'AbsoluteErrorABS': errorAbsoluteABS, 'AbsoluteErrorSCA': errorAbsoluteSCA,
-                                   'RealPercentErrorABS': errorRealPercentABS, 'AbsolutePercentErrorABS': errorAbsolutePercentABS, 'RatioABS': ratioABS,
-                                   'RealPercentErrorSCA': errorRealPercentSCA, 'AbsolutePercentErrorSCA': errorAbsolutePercentSCA, 'RatioSCA': ratioSCA,
-                                   'SSA_TMatrix': SSA_TMatrix, 'SSA_RDG': SSA_RDG,
-                                   'MAC_TMatrix': MAC_TMatrix, 'MSC_TMatrix': MSC_TMatrix, 'MAC_RDG': MAC_RDG, 'MSC_RDG': MSC_RDG,
-                                   'Agg_Mass_gr': AggregateMass}
-            return df
+            diameter_Nano = []
+            NpAveragesortedV2 = []
+            bound_D_Max = 90
+            bound_D_Min = 5
+            total_Number_Bins = 20
+            D_Ratio = (bound_D_Max / bound_D_Min) ** (1 / (total_Number_Bins - 1))
+
+            for i in range(0, total_Number_Bins):
+                d1 = bound_D_Min * (D_Ratio ** i)
+                diameter_Nano.append(round(d1, 3))
+                NpAveragesortedV2.append(0)
+
+            for i in range(1, len(diameter_Nano)):
+                for p in range(len(maindp)):
+                    if maindp[p] < diameter_Nano[i] and maindp[p] > diameter_Nano[i - 1]:
+                        NpAveragesortedV2[i] = NpAveragesortedV2[i] + float(NpAverage[p])
+
+            plt.plot(diameter_Nano, NpAveragesortedV2)
+            plt.show()
+
+            Sum1 = 0.0
+            Sum2 = 0.0
+            Sum3 = 0.0
+            Sum4 = 0.0
+            Sum5 = 0.0
+            Cols = len(diameter_Nano)
+            ######### D_G
+            D_G = 0
+            for j in range(Cols):
+                Sum1 = Sum1 + (NpAveragesortedV2[j] * log(diameter_Nano[j]))
+                Sum2 = Sum2 + NpAveragesortedV2[j]
+            if Sum2 != 0:
+                D_G = exp(Sum1 / Sum2)
+            else:
+                D_G = 0
+
+            ##################
+
+            ######### Sigma_G
+
+            for j in range(Cols):
+                Sum3 = Sum3 + (NpAveragesortedV2[j] * ((log(diameter_Nano[j]) - log(D_G)) ** 2))
+
+            Sigma_G = exp((Sum3 / (Sum2 - 1)) ** (0.5))
+
+            ##################
+
+            ######### Total Concentration in (#/cm^3)
+            for j in range(Cols - 1):
+                if Particle_Concentration_Raw[i][j] != 0:
+                    Sum4 = Sum4 + Particle_Concentration_Raw[i][j] * (log(Particle_Concentration_Raw[0][j + 1], 10) - log(Particle_Concentration_Raw[0][j], 10))
+            Total_Conc = Sum4
+            ##################
+
+            ######### Median Diameter in nm
+            for j in range(Cols - 1):
+                if Particle_Concentration_Raw[i][j] != 0:
+                    Sum5 = Sum5 + Particle_Concentration_Raw[i][j] * (log(Particle_Concentration_Raw[0][j + 1], 10) - log(Particle_Concentration_Raw[0][j], 10))
+                if Sum5 > ((Sum4 / 2)):
+                    D_Median = (Particle_Concentration_Raw[0][j - 1] * Particle_Concentration_Raw[0][j]) ** 0.5
+                    break
+
+            ##################
+
+            def pdf(x, mu, sigma):
+                """pdf of lognormal distribution"""
+                return (np.exp(-(np.log(x) - mu) ** 2 / (2 * sigma ** 2)) / (x * sigma * np.sqrt(2 * np.pi)))
+
+            mu, sigma = 3., 1.  # actual parameter value
+
+            # data = np.random.lognormal(mu, sigma, size=1000)  # data generation
+            # h = plt.hist(data, bins=30, normed=True)
+
+            # y = h[0]  # frequencies for each bin, this is y value to fit
+            # xs = h[1]  # boundaries for each bin
+            # delta = xs[1] - xs[0]  # width of bins
+            # x = xs[:-1] + delta /  # midpoints of bins, this is x value to fit
+
+            popt, pcov = curve_fit(pdf, diameter_Nano, NpAveragesortedV2)  # data fitting, popt contains the fitted parameters
+            print(popt)
+            # [ 3.13048122  1.01360758]                       fitting results
+
+            fig, ax = plt.subplots()
+            # ax.hist(data, bins=30, normed=True, align='mid', label='Histogram')
+            xr = np.linspace(0, 100, 10000)
+            # yr = pdf(xr, mu, sigma)
+            yf = pdf(xr, *popt)
+            # ax.plot(xr, yr, label="Actual")
+            ax.plot(xr, yf, linestyle='dashed', label="Fitted")
+            # ax.set_xscale('log')
+            ax.legend()
+            plt.show()
+
+            # plt.plot(maindpsorted,NpAveragesorted)
+            # plt.show()
+            j = 3
+
+
+
         except Exception as e:
             logging.exception(e)
             raise
@@ -265,7 +303,7 @@ class KeyhanV1:
                 monometerParameter = []
                 dpDecimal = []
                 for dp in self.dict_dpMobDistribNano[dm]:
-                    dpDecimal.append(round(Decimal(dp), 3))
+                    dpDecimal.append(round(Decimal(dp), 6))
                     monometerParameter.append(pi * dp / self.__AGG_WLENGTH_CENTER)
                 S['dp'] = dpDecimal
                 S['MP'] = monometerParameter
@@ -386,16 +424,6 @@ class KeyhanV1:
 
             K = ((Eff_rho_100nm / (Primary_K_Alpha * Soot_Material_Density)) ** (1 / (3 - 2 * Primary_D_Alpha))) * (100)
             return K
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def _convertDensityToMass(self, dp, density, Np):
-        try:
-            V = (Decimal(10) ** (Decimal(-27))) * Decimal(pi) * (dp ** Decimal(3)) / Decimal(6)
-            mass = Np * V * Decimal(density) * Decimal(1000)  # to gram
-            return mass
 
         except Exception as e:
             logging.exception(e)

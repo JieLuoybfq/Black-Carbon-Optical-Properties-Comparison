@@ -32,15 +32,15 @@ class GraphTools:
             #################################################
             #################################################
             ################################################# Comparison Graphs
-            self.__CRSGraphs = True
-            self.__ErrorAndRatioGraphs = True
-            self.__MACMSCGraphs = True
-            self.__EfficiencyGraphs = True
-            self.__SSAGraphs = True
-            self.__dpInfoGraphs = True
+            self.__CRSGraphs = False
+            self.__ErrorAndRatioGraphs = False
+            self.__MACMSCGraphs = False
+            self.__EfficiencyGraphs = False
+            self.__SSAGraphs = False
+            self.__dpInfoGraphs = False
             self.__dmDistributionGraphsBar = True
             self.__dmDistributionGraphsLine = True
-            self.__dmDistributionRatioGraphsBar = True
+            self.__dmDistributionRatioGraphsBar = False
             ###############
             self.__DmCTE = True
             self.__rhoEff100nmCTE = True
@@ -92,23 +92,23 @@ class GraphTools:
             self.__subplotLineStyle = ['-', '--', '-.']
             self.__subplotMarkerStyle = ["o", "X", "^"]
             self.__subplotMarkerSize = 8
-            self.__xMajorTickLabelSubplotFontSize = 15
-            self.__xTickLabelSubplotRotation = 40
-            self.__yMajorTickLabelSubplotFontSize = 15
+            self.__xMajorTickLabelSubplotFontSize = 18
+            self.__xTickLabelSubplotRotation = 45
+            self.__yMajorTickLabelSubplotFontSize = 18
             self.__yLabelEachSubplotFontSize = 26
             self.__yLabelEachSubplotRotation = -90
-            self.__yLabelEachSubplotPad = 40
+            self.__yLabelEachSubplotPad = 42
             self.__xLabelEachSubplotFontSize = 26
             self.__xLabelEachSubplotPad = 17
             self.__subplotGridSetup = [0.88, 0.018, 0.018]
             self.__xLabelCommonSubplotAdjustment = 0.033  # lower to get down
             self.__xLabelCommonSubplotFontSize = 24
             self.__yLabelCommonSubplotFontSize = 24
-            self.__yLabelCommonSubplotAdjustment = [0.026, 0.044]  # lower to get left
-            self.__legendSubplotAdjustment = [1.24, 1.7]
+            self.__yLabelCommonSubplotAdjustment = [0.018, 0.044]  # lower to get left
+            self.__legendSubplotAdjustment = [1.25, 1.7]
             self.__legendSubplotMarkerScale = 2.25
             self.__legendSubplotFontSize = 20
-            self.__legendSubplotLineWidth = 4
+            self.__legendSubplotLineWidth = 4.5
             #################################################
             self.__figureDPI = 500
             self.__legendMarkerScale = 2
@@ -622,7 +622,7 @@ class GraphTools:
                                       titleName=titleName, titleA=titleAppend,
                                       shareY='all', folderName=folderName,
                                       yScale='linear', yLabel=self.__yLabelMSC,
-                                      showValue=True, valueFormat='{:.2f}', yAxisFormat='%1.2f')
+                                      showValue=False, valueFormat='{:.2f}', yAxisFormat='%1.2f')
             ######################## SSA
             columnName1 = 'SSA_RDG_Total'
             columnDetail1 = 'RDG-FA'

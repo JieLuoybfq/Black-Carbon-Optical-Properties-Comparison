@@ -211,7 +211,7 @@ class GraphTools:
             ###################
             ###################
 
-            def calcViscosity(Temperature, Pressure):  # ASSUME INDEPENDENT OF P HERE, Sutherland Equation
+            def __calcViscosity(Temperature, Pressure):  # ASSUME INDEPENDENT OF P HERE, Sutherland Equation
                 # Assume Air, https://www.cfd-online.com/Wiki/Sutherland%27s_law
                 try:
                     U0 = 1.716 * 10 ** (-5)
@@ -229,7 +229,7 @@ class GraphTools:
                 try:
                     results = np.empty(shape=int(length))
                     for i in range(int(length)):
-                        results[i] = calcViscosity(Temperature=temperature[i], Pressure=pressure[i])
+                        results[i] = __calcViscosity(Temperature=temperature[i], Pressure=pressure[i])
                     return results
 
                 except Exception as e:
@@ -497,11 +497,13 @@ class GraphTools:
                                                          number=arraySize)
 
                 arrPAX_Absorption_Coefficient = _createRandomNormalArr(center=ser_PAX_ABS_Coef_Ave[index],
-                                                                       width=sqrt(((ser_PAX_ABS_Coef_STD[index]) ** 2) + ((ser_PAX_ABS_Coef_Ave[index] * self.__biasUncertaintyPercentABS / 100) ** 2)),
+                                                                       width=sqrt(
+                                                                           ((ser_PAX_ABS_Coef_STD[index]) ** 2) + ((ser_PAX_ABS_Coef_Ave[index] * self.__biasUncertaintyPercentABS / 100 / 2) ** 2)),
                                                                        number=arraySize)
 
                 arrPAX_Scattering_Coefficient = _createRandomNormalArr(center=ser_PAX_SCA_Coef_Ave[index],
-                                                                       width=sqrt(((ser_PAX_SCA_Coef_STD[index]) ** 2) + ((ser_PAX_SCA_Coef_STD[index] * self.__biasUncertaintyPercentSCA / 100) ** 2)),
+                                                                       width=sqrt(
+                                                                           ((ser_PAX_SCA_Coef_STD[index]) ** 2) + ((ser_PAX_SCA_Coef_Ave[index] * self.__biasUncertaintyPercentSCA / 100 / 2) ** 2)),
                                                                        number=arraySize)
 
                 arrCPC_Number_Density = _createRandomNormalArr(center=ser_CPC_Ave[index],
