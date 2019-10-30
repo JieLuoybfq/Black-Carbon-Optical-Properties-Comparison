@@ -7,14 +7,10 @@ import numpy as np
 import AppFunctions as FN
 from BoundaryFinder import BCDBBoundaryCheck as BCheck
 from decimal import Decimal
-from TMatrix import TMatrixCalculation
-from FSAC_RDG import RDGCalculation
 import pandas as pd
 import GeneralFunctions as GF
 import gmpy2
 from scipy.ndimage import gaussian_filter1d
-from matplotlib import pyplot as plt
-from scipy.optimize import curve_fit
 import CalculationCore
 import TotalCrossSectionCalculator
 
@@ -43,13 +39,16 @@ class KeyhanV2:
             self.__AGG_WLENGTH_CENTER = inputDict['AGG_WLENGTH_CENTER']
             self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER = inputDict['AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
             ######################################################################################
-            self.__Sample_Sigma_Bins = 59  # Number of bins
+            self.__Sample_Sigma_Bins = 4  # Number of bins
             self.__Primary_Sigma_dm_CTE_Bound = 3  # Number of Sigma G to cover
-            self.__Primary_Sigma_dm_CTE_Nt = 48  # Number of bins
+            self.__Primary_Sigma_dm_CTE_Nt = 4  # Number of bins
+            ######################################################################################
             self.infoDict['MobilityBins'] = self.__Sample_Sigma_Bins
             self.infoDict['NumberOfSigma'] = self.__Primary_Sigma_dm_CTE_Bound
             self.infoDict['PrimaryBins'] = self.__Primary_Sigma_dm_CTE_Nt
-
+            self.infoDict['FittedSigma'] = 0
+            self.infoDict['FittedMedian'] = 0
+            ######################################################################################
         except Exception as e:
             logging.exception(e)
             raise
@@ -64,13 +63,20 @@ class KeyhanV2:
             dictSuggested = self.CreateDictForEvaluation()
 
             dictChecked = self.CheckDictWithBoundary(dict=dictSuggested)
-            dictRealNpdpDistribution = self.CalcRealNpdpDistribution(checkedDict=dictChecked)
-
             dictConvertedTR = self.ConvertDictToArray(dict=dictChecked)
-            dictConvertedRE = self.ConvertDictToArray(dict=dictRealNpdpDistribution)
 
-            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedTR, dictChecked=dictChecked, fileAppend="TR")
-            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedRE, dictChecked=dictChecked, fileAppend="RE")
+            dictdpMedianRealDict, dictCheckedRealNpdp = self.CalcRealNpdpDistribution(checkedDict=dictChecked)
+            dictConvertedRE = self.ConvertDictToArray(dict=dictCheckedRealNpdp)
+
+            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedTR, dictChecked=dictChecked, mediandpDict=self.dict_dpMedianNano, fileAppend="TR")
+            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedRE, dictChecked=dictCheckedRealNpdp, mediandpDict=dictdpMedianRealDict, fileAppend="RE")
+
+            # newInfoDf = pd.DataFrame([self.infoDict])
+            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
+            dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
+            dfInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            j = 1
 
         except Exception as e:
             logging.exception(e)
@@ -84,20 +90,14 @@ class KeyhanV2:
     ######################################################################################
     ######################################################################################
 
-    def RDGTMCore(self, DB_Info, dictConverted, dictChecked, fileAppend):
+    def RDGTMCore(self, DB_Info, dictConverted, dictChecked, mediandpDict, fileAppend):
         try:
             CC = CalculationCore.CalculationCore(infoDict=DB_Info, calcDict=dictConverted)
             dictOutputT1, dictOutputR1 = CC.Calc()
 
             TCSC = TotalCrossSectionCalculator.TotalCrossSectionCalculator(infoDict=self.infoDict, outTMatrix=dictOutputT1, outRDG=dictOutputR1, checkedDict=dictChecked,
-                                                                           dict_dpMedianNano=self.dict_dpMedianNano)
+                                                                           dict_dpMedianNano=mediandpDict)
             dfResult = TCSC.Calc()
-
-            dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
-            dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
-            # newInfoDf = pd.DataFrame([self.infoDict])
-            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            dfInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
             dfResult.to_csv(f"TMatrix_RDG_Result\{fileAppend}_{self.infoDict['AA_FileName']}", index=False)
 
         except Exception as e:
@@ -186,7 +186,11 @@ class KeyhanV2:
             res = self.LogNormalFit(diameter_Nano, NpChanceBinArr)
             logging.info(f"Lognormal fit res:___D_G:{res['D_G']}___Sigma_G:{res['Sigma_G']}___Total_Conc:{res['Total_Conc']}___D_Median:{res['D_Median']}")
             ############################
-
+            self.infoDict['FittedSigma'] = res['Sigma_G']
+            self.infoDict['FittedMedian'] = res['D_Median']
+            ############################
+            ############################
+            ############################
             bound_D_Max = res['D_Median'] * (res['Sigma_G'] ** self.__Primary_Sigma_dm_CTE_Bound)
             bound_D_Min = res['D_Median'] * (res['Sigma_G'] ** (-1 * self.__Primary_Sigma_dm_CTE_Bound))
             total_Number_Bins = self.__Primary_Sigma_dm_CTE_Nt
@@ -240,11 +244,36 @@ class KeyhanV2:
 
             ################################
             ################################
+            dpMedianDict = {}
+            suggestedDict = {}
+            for dm in self.arrMobilityDiamNano:
+                dpMedianDict[dm] = res['D_Median']
+                if res['Sigma_G'] != 1:
+                    pointNumber = self.__Primary_Sigma_dm_CTE_Nt
+                else:
+                    pointNumber = 1
+                Df = FN.CreateConstantArray(Number=self.__AGG_FRACTAL_DIMENSION_CENTER, HowMany=pointNumber)
+                kf = FN.CreateConstantArray(Number=self.__AGG_FRACTAL_PREFACTOR_CENTER, HowMany=pointNumber)
+                RI_Real = FN.CreateConstantArray(Number=self.__AGG_RI_REAL_CENTER, HowMany=pointNumber)
+                RI_Imag = FN.CreateConstantArray(Number=self.__AGG_RI_IMAG_CENTER, HowMany=pointNumber)
+                wavelength = FN.CreateConstantArray(Number=self.__AGG_WLENGTH_CENTER, HowMany=pointNumber)
+                S = {}
+                S['Df'] = Df
+                S['Kf'] = kf
+                S['RI_Real'] = RI_Real
+                S['RI_Imag'] = RI_Imag
+                S['Np'] = dictNp[dm]
+                S['chance'] = primaryChance
+                S['wL'] = wavelength
 
-            for dm in checkedDict:
-                checkedDict[dm]['Np'] = dictNp[dm]
-                checkedDict[dm]['dp'] = primaryDiam
-                checkedDict[dm]['chance'] = primaryChance
+                monometerParameter = []
+                dpDecimal = []
+                for dp in primaryDiam:
+                    dpDecimal.append(round(Decimal(dp), 6))
+                    monometerParameter.append(pi * dp / self.__AGG_WLENGTH_CENTER)
+                S['dp'] = dpDecimal
+                S['MP'] = monometerParameter
+                suggestedDict[dm] = S
             # fitted = [0]
             # fittedV2 = [0]
             # for i in range(1, total_Number_Bins):
@@ -255,8 +284,8 @@ class KeyhanV2:
             # plt.plot(diameter_Nano, fittedV2, label="D_G")
             # plt.legend()
             # plt.show()
-            dictCheckedNpdp = self.CheckDictWithBoundary(dict=checkedDict)
-            return dictCheckedNpdp
+            dictCheckedNpdp = self.CheckDictWithBoundary(dict=suggestedDict)
+            return dpMedianDict, dictCheckedNpdp
 
 
         except Exception as e:
@@ -411,7 +440,6 @@ class KeyhanV2:
                             l1 = 0
                         sum += l1
                         logNormalPDF.append(Decimal(l1))
-
                 else:
                     diameter_Nano.append(dpMedian)
                     logNormalPDF.append(Decimal(1))
@@ -427,11 +455,11 @@ class KeyhanV2:
 
     def CalcPrimaryParticleSizeMedianNano(self):
         try:
-            self.dp100_nano = self._calcPrimaryDiameter100nm_nano()
-            self.D_TEM = self._calc_D_TEM_From_EffDens_D_Alpha()
-            self.infoDict['dp100_nano'] = self.dp100_nano
-            self.infoDict['D_TEM'] = self.D_TEM
-            dm_dp = self._calcPPSM()
+            dp100_nano = self._calcPrimaryDiameter100nm_nano()
+            D_TEM = self._calc_D_TEM_From_EffDens_D_Alpha()
+            self.infoDict['dp100_nano'] = dp100_nano
+            self.infoDict['D_TEM'] = D_TEM
+            dm_dp = self._calcPPSM(dp100_nano, D_TEM)
             return dm_dp
 
         except Exception as e:
@@ -473,12 +501,12 @@ class KeyhanV2:
             logging.exception(e)
             raise
 
-    def _calcPPSM(self):
+    def _calcPPSM(self, dp100_nano, D_TEM):
         # Primary particle size for each mobility diameter
         try:
             dm_dp = {}
             for dm in self.arrMobilityDiamNano:
-                dp = (self.dp100_nano * ((dm / 100) ** self.D_TEM))
+                dp = (dp100_nano * ((dm / 100) ** D_TEM))
                 dm_dp[dm] = round(dp, 3)
             return dm_dp
 
