@@ -4,7 +4,7 @@ import AppFunctions as FN
 
 class BCDBBoundaryCheck:
 
-    def __init__(self):
+    def __init__(self, insane=False):
         try:
             self._arrDf_Bound = [1.801, 2.799]
             self._arrKf_Bound = [1.199, 1.201]
@@ -12,6 +12,13 @@ class BCDBBoundaryCheck:
             self._arrRI_Imag_Bound = [0.001, 0.999]
             self._arrNp_Bound = [1, 3000]
             self._arrMonomerParameter_Bound = [0.051, 0.499]
+            if insane:
+                self._arrDf_Bound = [1.5, 3]
+                self._arrKf_Bound = [1, 3]
+                self._arrRI_Real_Bound = [1.001, 2.001]
+                self._arrRI_Imag_Bound = [0.001, 1.001]
+                self._arrNp_Bound = [1, 6000]
+                self._arrMonomerParameter_Bound = [0.001, 0.75]
         except Exception as e:
             logging.exception(e)
             raise

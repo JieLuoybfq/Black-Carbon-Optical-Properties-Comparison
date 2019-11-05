@@ -29,8 +29,9 @@ class GraphTools:
             ################################################# dm and dp distribution variables
             self.__dpDeviation = True
             self.__dpDeviationPercent = 10  ###
-            self.__dmSigmaLogN = [1.2, 1.4, 1.6]
-            self.__dmMedianLogN = [100, 200, 300]
+            self.__dmSigmaLogN = []
+            self.__dmMedianLogN = []
+            self.__TotalConc = []
             self.__biasUncertaintyPercentABS = 9.6
             self.__biasUncertaintyPercentSCA = 7.0
             self.__saveHistogram = False
@@ -43,6 +44,7 @@ class GraphTools:
             self.__EfficiencyGraphsExpFull = True
             self.__SSAGraphsExpFull = True
             self.__dpMedianGraphsExpFull = True
+            self.__dmDistributionGraphsBarExpFull = True
 
             # self.__dmDistributionGraphsBarExpFull = True
             self.__dmDistributionGraphsLineExpFull = True
@@ -65,8 +67,9 @@ class GraphTools:
             self.__DmCTE = True
             self.__rhoEff100nmCTE = True
             self.__sigmaEachMobCTE = True
+            self.__counter = 1
             #################################################
-            self.__TotalDFLabels = ['sigma', 'median', 'TotalMassGram',
+            self.__TotalDFLabels = ['fileName', 'sigma', 'median', 'TotalMassGram',
                                     'ABS_RDG_Total', 'SCA_RDG_Total',
                                     'ABS_TMatrix_Total', 'SCA_TMatrix_Total',
                                     'MAC_RDG_Total', 'MSC_RDG_Total',
@@ -76,6 +79,7 @@ class GraphTools:
             self.__folderNameGraph = folderInfo['FOLDER_NAME_GRAPH']
             self.__folderNameData = folderInfo['FOLDER_NAME_DATA']
             self.__WMF_SVGSaving = False
+            self.__OnlySVGSaving = False
             self.__inkScapePath = "C://Program Files//inkscape//inkscape.exe"
             ################################################# Graphs Labels
             self.__xLabelMobDiameter = "Mobility-equivalent Diameter (nm)"
@@ -104,11 +108,11 @@ class GraphTools:
             self.__yMinorTickLabelGeneralFontSize = 8
             ################################################# Graph Setting for subplot
             self.__A1Color = 'red'
-            self.__A1LineWidth = [1.5, 1, 0.5]
-            self.__A1AlphaMainLine = 0.30
+            self.__A1LineWidth = [1.8, 1.2, 0.6]
+            self.__A1AlphaMainLine = 0.35
             self.__A2Color = 'blue'
-            self.__A2LineWidth = [2.5, 2, 1.5]
-            self.__A2AlphaMainLine = 0.50
+            self.__A2LineWidth = [4, 3, 2.5]
+            self.__A2AlphaMainLine = 0.65
             self.__A3Color = 'black'
             self.__A3LineWidth = [2.5, 2, 1.5]
             self.__A3AlphaMainLine = 0.7
@@ -129,12 +133,12 @@ class GraphTools:
             self.__yLabelCommonSubplotFontSize = 24
             self.__yLabelCommonSubplotAdjustment = [0.018, 0.044]  # lower to get left
             self.__legendSubplotAdjustment = [1.25, 1.7]
-            self.__legendSubplotMarkerScale = 3
+            self.__legendSubplotMarkerScale = 2.25
             self.__legendSubplotFontSize = 20
             self.__legendSubplotLineWidth = 4.5
             #################################################
             self.__figureDPI = 500
-            self.__legendMarkerScale = 4
+            self.__legendMarkerScale = 2
             self.__markerSize = 3
             self.__alphaMainLine = 0.55
             self.__lineColor = ['red', 'blue', 'green']
@@ -145,6 +149,7 @@ class GraphTools:
             self.__lineWidth = [1.5, 1, 0.5]
             self.__xAxisLimitsComp = [49, 960]
             #####
+            self.__valueFontSizeTotal = 7
             self.__barWidth = 0.34
             self.__barRatioWidth = 0.25
             self.__plotTitleFontSizeTotal = 30
@@ -487,6 +492,8 @@ class GraphTools:
                            pressure, pressureSTD,
                            arraySize, fileName, randomSize=500):
         try:
+            arraySize = 100
+            randomSize = 10
             def ToSaveHistogram(self, folderName, fileName, array, Figure_DPI=250):
                 try:
                     n, bins, patches = plt.hist(array, 50, density=True, facecolor='b', alpha=0.75)
@@ -679,15 +686,19 @@ class GraphTools:
 
             ser_ABS_CRS_Tmatrix_Ave = self.dictData[fileName]['ABS_TMatrix']
             ser_ABS_CRS_Tmatrix_STD = 0
+
             ser_SCA_CRS_Tmatrix_Ave = self.dictData[fileName]['SCA_TMatrix']
             ser_SCA_CRS_Tmatrix_STD = 0
+
             ser_ABS_CRS_RDG_Ave = self.dictData[fileName]['ABS_RDG']
             ser_ABS_CRS_RDG_STD = 0
+
             ser_SCA_CRS_RDG_Ave = self.dictData[fileName]['SCA_RDG']
             ser_SCA_CRS_RDG_STD = 0
 
             ser_SSA_Tmatrix_Ave = self.dictData[fileName]['SSA_TMatrix']
             ser_SSA_Tmatrix_STD = 0
+
             ser_SSA_RDG_Ave = self.dictData[fileName]['SSA_RDG']
             ser_SSA_RDG_STD = 0
 
@@ -926,11 +937,11 @@ class GraphTools:
                 'rhoEff_AVE': rhoEff100_AVE,
                 'rhoEff_STD': rhoEff100_STD,
 
-                'ABS_CRS_AVE_Tmatrix_MDL': ABS_CRS_AVE_Tmatrix_MDL,
-                'ABS_CRS_STD_Tmatrix_MDL': ABS_CRS_STD_Tmatrix_MDL,
+                'ABS_CRS_AVE_TMatrix_MDL': ABS_CRS_AVE_Tmatrix_MDL,
+                'ABS_CRS_STD_TMatrix_MDL': ABS_CRS_STD_Tmatrix_MDL,
 
-                'SCA_CRS_AVE_Tmatrix_MDL': SCA_CRS_AVE_Tmatrix_MDL,
-                'SCA_CRS_STD_Tmatrix_MDL': SCA_CRS_STD_Tmatrix_MDL,
+                'SCA_CRS_AVE_TMatrix_MDL': SCA_CRS_AVE_Tmatrix_MDL,
+                'SCA_CRS_STD_TMatrix_MDL': SCA_CRS_STD_Tmatrix_MDL,
 
                 'ABS_CRS_AVE_RDG_MDL': ABS_CRS_AVE_RDG_MDL,
                 'ABS_CRS_STD_RDG_MDL': ABS_CRS_STD_RDG_MDL,
@@ -938,17 +949,17 @@ class GraphTools:
                 'SCA_CRS_AVE_RDG_MDL': SCA_CRS_AVE_RDG_MDL,
                 'SCA_CRS_STD_RDG_MDL': SCA_CRS_STD_RDG_MDL,
 
-                'SSA_AVE_Tmatrix_MDL': SSA_AVE_Tmatrix_MDL,
-                'SSA_STD_Tmatrix_MDL': SSA_STD_Tmatrix_MDL,
+                'SSA_AVE_TMatrix_MDL': SSA_AVE_Tmatrix_MDL,
+                'SSA_STD_TMatrix_MDL': SSA_STD_Tmatrix_MDL,
 
                 'SSA_AVE_RDG_MDL': SSA_AVE_RDG_MDL,
                 'SSA_STD_RDG_MDL': SSA_STD_RDG_MDL,
 
-                'ABS_EFF_AVE_Tmatrix_MDL': ABS_EFF_AVE_Tmatrix_MDL,
-                'ABS_EFF_STD_Tmatrix_MDL': ABS_EFF_STD_Tmatrix_MDL,
+                'ABS_EFF_AVE_TMatrix_MDL': ABS_EFF_AVE_Tmatrix_MDL,
+                'ABS_EFF_STD_TMatrix_MDL': ABS_EFF_STD_Tmatrix_MDL,
 
-                'SCA_EFF_AVE_Tmatrix_MDL': SCA_EFF_AVE_Tmatrix_MDL,
-                'SCA_EFF_STD_Tmatrix_MDL': SCA_EFF_STD_Tmatrix_MDL,
+                'SCA_EFF_AVE_TMatrix_MDL': SCA_EFF_AVE_Tmatrix_MDL,
+                'SCA_EFF_STD_TMatrix_MDL': SCA_EFF_STD_Tmatrix_MDL,
 
                 'ABS_EFF_AVE_RDG_MDL': ABS_EFF_AVE_RDG_MDL,
                 'ABS_EFF_STD_RDG_MDL': ABS_EFF_STD_RDG_MDL,
@@ -959,7 +970,7 @@ class GraphTools:
 
             self.modelConvertedDF[fileName] = pd.DataFrame(modelConverted)
             self.modelConvertedDF[fileName].to_csv(f"{self.__folderNameGraph}\__ExperimentResults\Rev_ETR_{fileName}.csv", index=False)
-
+            k = 4
 
         except Exception as e:
             logging.exception(e)
@@ -1084,7 +1095,8 @@ class GraphTools:
                     result['median'] = median
                     result['sum'] = sum
 
-                    if sum >= 0.90:
+                    if sum >= 0.85:
+                        result['fileName'] = fileName
                         result['TotalMassGram'] = totalMass_gr
                         result['ABS_RDG_Total'] = RDG_ABSTotal  # in um2
                         result['SCA_RDG_Total'] = RDG_SCATotal  # in um2
@@ -1098,6 +1110,7 @@ class GraphTools:
                         result['SSA_TMatrix_Total'] = TMatrix_SCATotal / (TMatrix_SCATotal + TMatrix_ABSTotal)
 
                     else:
+                        result['fileName'] = fileName
                         result['TotalMassGram'] = np.nan
                         result['ABS_RDG_Total'] = np.nan
                         result['SCA_RDG_Total'] = np.nan
@@ -1112,7 +1125,16 @@ class GraphTools:
 
                     df.loc[len(df)] = result
 
-            self.dictTotalOpticalProp[fileName] = df
+            # self.dictTotalOpticalProp[fileName] = df
+            # newInfoDf = pd.DataFrame([self.infoDict])
+            if self.__counter == 0:
+                dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\cT1.csv")
+                dfInfoDB.loc[len(dfInfoDB)] = result
+                dfInfoDB.to_csv(f"TMatrix_RDG_Result\cT1.csv", index=False)
+            if self.__counter == 1:
+                df.to_csv(f"TMatrix_RDG_Result\cT1.csv", index=False)
+                self.__counter = 0
+
 
         except Exception as e:
             logging.exception(e)
@@ -1142,6 +1164,66 @@ class GraphTools:
                                               "$\\rho_{eff,100}$=" + str(round(self.ser_rhoEff100nmAve.loc[index], 1)) + ", " + \
                                               "$D_{TEM}=$" + str(abs(round(self.ser_D_TEM.loc[index], 2))) + ", " + \
                                               "$d_{p,100}=$" + str(round(self.ser_dp100_nano.loc[index], 1))
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def _LogNormalFit(self, x, y):
+        try:
+
+            if len(x) == len(y):
+                Sum1 = 0.0
+                Sum2 = 0.0
+                Sum3 = 0.0
+                Sum4 = 0.0
+                Sum5 = 0.0
+                Cols = len(x)
+                ######### D_G
+                for j in range(Cols):
+                    Sum1 = Sum1 + (y[j] * log(x[j]))
+                    Sum2 = Sum2 + y[j]
+                if Sum2 != 0:
+                    D_G = exp(Sum1 / Sum2)
+                else:
+                    D_G = 0
+                ##################
+
+                ######### Sigma_G
+                for j in range(Cols):
+                    Sum3 = Sum3 + (y[j] * ((log(x[j]) - log(D_G)) ** 2))
+                Sigma_G = exp((Sum3 / (Sum2 - 1)) ** (0.5))
+                ##################
+
+                ######### Total Concentration in (#/cm^3)
+                for j in range(Cols - 1):
+                    Sum4 = Sum4 + (y[j] * (log(x[j + 1], 10) - log(x[j], 10)))
+                Total_Conc = Sum4
+                ##################
+
+                ######### Median Diameter in nm
+                D_Median = 0
+                for j in range(Cols - 1):
+                    Sum5 = Sum5 + (y[j] * (log(x[j + 1], 10) - log(x[j], 10)))
+                    if Sum5 > ((Sum4 / 2)):
+                        D_Median = (x[j - 1] * x[j]) ** 0.5
+                        break
+                result = {'D_G': D_G, 'Sigma_G': Sigma_G, 'Total_Conc': Total_Conc, 'D_Median': D_Median}
+                return result
+
+            else:
+                logging.exception(f"Lognormal fit error: array lengths are not equal {len(x)},{len(y)}")
+            ##################
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def LognormalFitter(self, df):
+        try:
+            dm = df['dm']
+            conc = df['Conc']
+            return self._LogNormalFit(dm, conc)
 
         except Exception as e:
             logging.exception(e)
@@ -1197,6 +1279,7 @@ class GraphTools:
             ###########################################
             ###########################################
             if self.__EXPFull:
+
                 self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beacon', extension='csv'))
                 self.dictData = {}
                 self.dictDataLabel = {}
@@ -1206,45 +1289,57 @@ class GraphTools:
                 self.GetDataDefinitionEXP(mainDf=self.dfMainInfo)
                 self.ExperimentCalc(arraySize=self.serArraySize.loc[0], randomSize=self.serRandomSize.loc[0])
 
+                self.Expdistrib = self.LognormalFitter(pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='SMPS', extension='csv')))
+                self.__dmSigmaLogN.append(self.Expdistrib['Sigma_G'])
+                self.__dmMedianLogN.append(self.Expdistrib['D_Median'])
+                self.__TotalConc.append(self.Expdistrib['Total_Conc'])
+
                 for index, fileN in self.serMainFileName.iteritems():
-                    self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
-                    self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
-                    if self.__dpDeviation:
-                        self.Check_dpRatio(fileName=fileN)
+                    self.CoreReader("TR_" + fileN, index)
+                    self.CoreReader("RE_" + fileN, index)
 
-                        self.RevExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
-                                                rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
-                                                temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
-                                                pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
-                                                arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
-                                                fileName=fileN)
+                #### compring RE and TR
+                self.CoreComparer("TR_", "RDG", "TR_", "Tmatrix", "full")
+                # self.CoreComparer("RE_", "RDG", "RE_", "Tmatrix")
 
-                    # self.CalcTotalMACMSC(self.dictData[fileN], fileN)
-
-                    # self.CalcEfficiency(fileName=fileN)
-
-                    self.GetDataLabel(fileName=fileN, index=index)
-
-                if self.__CRSGraphsExpFull:
-                    pass
-                    # self.PlotCrossSectionsEXP(append="_Full_REV")
-                if self.__EfficiencyGraphsExpFull:
-                    pass
-                    # self.PlotEffEXP(append="_Full_REV")
-                if self.__SSAGraphsExpFull:
-                    pass
-                    # self.PlotSSAEXP(append="_Full_REV")
-                if self.__dpMedianGraphsExpFull:
-                    pass
-                    # self.PlotdpInfo(append="_Full_REV")
-                if self.__dmDistributionGraphsLineExpFull:
-                    self.PlotTotalGraphsLineEXP(append="_Full_REV")
-
-
+                # self.CoreComparer("TR_", "RDG", "RE_", "RDG")
+                # self.CoreComparer("TR_", "Tmatrix", "RE_", "Tmatrix")
         except Exception as e:
             logging.exception(e)
             raise
 
+    def CoreComparer(self, mode1, model1, mode2, model2, append):
+        try:
+            if self.__dmDistributionGraphsLineExpFull:
+                self.PlotTotalGraphsLineEXP(mode1, model1, mode2, model2, append)
+            if self.__dmDistributionGraphsBarExpFull:
+                self.PlotTotalGraphsBarEXP(mode1, model1, mode2, model2, append)
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CoreReader(self, fileN, index):
+        try:
+            self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
+            self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
+
+            if self.__dpDeviation:
+                self.Check_dpRatio(fileName=fileN)
+
+            self.RevExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
+                                    rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
+                                    temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
+                                    pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
+                                    arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
+                                    fileName=fileN)
+
+            self.CalcTotalMACMSC(self.dictData[fileN], fileN)
+            self.CalcEfficiency(fileName=fileN)
+            self.GetDataLabel(fileName=fileN, index=index)
+
+        except Exception as e:
+            logging.exception(e)
+            raise
     ##########################################################################################
     ##########################################################################################
     ##########################################################################################
@@ -1331,22 +1426,49 @@ class GraphTools:
     ###################################
     ###################################
 
-    def PlotTotalGraphsLineEXP(self, append):
+    def PlotTotalGraphsLineEXP(self, mode1, model1, mode2, model2, append):
         try:
-            folderName = '_TotalLineGraphs' + append
+
+            if model1 == "RDG":
+                columnNameA = "_RDG"
+                columnDetailA = 'RDG-FA'
+            elif model1 == "Tmatrix":
+                columnNameA = "_TMatrix"
+                columnDetailA = 'T-matrix'
+            #########################################
+            if model2 == "RDG":
+                columnNameB = "_RDG"
+                columnDetailB = 'RDG-FA'
+            elif model2 == "Tmatrix":
+                columnNameB = "_TMatrix"
+                columnDetailB = 'T-matrix'
+            #########################################
+            #########################################
+            #########################################
+            if mode1 == "TR_":
+                columnDetailA += ', Obs'
+            elif mode1 == "RE_":
+                columnDetailA += ', Trad'
+            #########################################
+            if mode2 == "TR_":
+                columnDetailB += ', Obs'
+            elif mode2 == "RE_":
+                columnDetailB += ', Trad'
+
+            folderName = f'{mode1}_{model1}--{mode2}_{model2}/_TotalLineGraphs' + append
             ######################## ABS Cross Section
-            columnName1 = 'ABS_CRS_AVE_RDG_MDL'
-            columnName1_STD = 'ABS_CRS_STD_RDG_MDL'
-            columnDetail1 = 'RDG-FA'
-            columnName2 = 'ABS_CRS_AVE_Tmatrix_MDL'
-            columnName2_STD = 'ABS_CRS_STD_Tmatrix_MDL'
-            columnDetail2 = 'T-matrix'
+            columnName1 = 'ABS_CRS_AVE' + columnNameA + '_MDL'
+            columnName1_STD = 'ABS_CRS_STD' + columnNameA + '_MDL'
+            columnDetail1 = columnDetailA
+            columnName2 = 'ABS_CRS_AVE' + columnNameB + '_MDL'
+            columnName2_STD = 'ABS_CRS_STD' + columnNameB + '_MDL'
+            columnDetail2 = columnDetailB
             mean = 'ABS_CRS_AVE_EXP'
             STD = 'ABS_CRS_STD_EXP'
             titleName = "Absorption Cross-section"
-            titleAppend = " Vs. Mobility-equivalent Diameter"
-            self.PlotSettingTotalLinesEXP(colName1=columnName1, colName1_STD=columnName1_STD, colDetail1=columnDetail1,
-                                          colName2=columnName2, colName2_STD=columnName2_STD, colDetail2=columnDetail2,
+            titleAppend = " Vs. Aerodynamic Diameter"
+            self.PlotSettingTotalLinesEXP(colName1=columnName1, colName1_STD=columnName1_STD, colDetail1=columnDetail1, mode1=mode1,
+                                          colName2=columnName2, colName2_STD=columnName2_STD, colDetail2=columnDetail2, mode2=mode2,
                                           titleName=titleName, titleA=titleAppend,
                                           shareY='all', folderName=folderName,
                                           yScale='log', yLabel=self.__yLabelPlotCrossSections,
@@ -2030,8 +2152,8 @@ class GraphTools:
     ###################################
 
     def PlotMultipleLinesTotalEXP(self, A1, A1Name, A2, A2Name,
-                                  column1, colName1_STD, column1T,
-                                  column2, colName2_STD, column2T,
+                                  column1, colName1_STD, column1T, mode1,
+                                  column2, colName2_STD, column2T, mode2,
                                   title, titleAppend,
                                   mean, STD, xaxis_STD, yaxis_STD,
                                   folderName, yCommonLabel,
@@ -2057,7 +2179,7 @@ class GraphTools:
                     for index, fileN in fileNames.iteritems():
 
                         if fileN in self.dictData:
-                            df = self.modelConvertedDF[fileN]
+                            df1 = self.modelConvertedDF[mode1 + fileN]
 
                             if self.__RDGPlot:
                                 if xaxis_STD:
@@ -2187,8 +2309,8 @@ class GraphTools:
             logging.exception(e)
             raise
 
-    def PlotSettingTotalLinesEXP(self, colName1, colName1_STD, colDetail1,
-                                 colName2, colName2_STD, colDetail2,
+    def PlotSettingTotalLinesEXP(self, colName1, colName1_STD, colDetail1, mode1,
+                                 colName2, colName2_STD, colDetail2, mode2,
                                  titleName, titleA, shareY, folderName,
                                  mean, STD,
                                  yScale, yLabel, yAxisFormat):
@@ -2196,8 +2318,8 @@ class GraphTools:
 
             self.PlotMultipleLinesTotalEXP(A1=self.ser_rhoEff100nmAve, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
                                            A2=self.ser_SigmaMob, A2Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column1=colName1, colName1_STD=colName1_STD, column1T=colDetail1,
-                                           column2=colName2, colName2_STD=colName2_STD, column2T=colDetail2,
+                                           column1=colName1, colName1_STD=colName1_STD, column1T=colDetail1, mode1=mode1,
+                                           column2=colName2, colName2_STD=colName2_STD, column2T=colDetail2, mode2=mode2,
                                            title=titleName, titleAppend=titleA,
                                            mean=mean, STD=STD,
                                            folderName=folderName,
@@ -2394,15 +2516,21 @@ class GraphTools:
 
     def SaveAndClosePlot(self, folderName, F1):
         try:
-            Address = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="jpg")
-            plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
+            if self.__OnlySVGSaving:
 
-            if self.__WMF_SVGSaving:
                 Address = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="svg")
                 plt.savefig(Address, format='svg', dpi=self.__figureDPI, bbox_inches='tight')
 
-                AddressWMF = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="wmf")
-                subprocess.call([self.__inkScapePath, str(Address.resolve()), '--export-wmf', str(AddressWMF.resolve())])
+            else:
+                Address = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="jpg")
+                plt.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
+
+                if self.__WMF_SVGSaving:
+                    Address = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="svg")
+                    plt.savefig(Address, format='svg', dpi=self.__figureDPI, bbox_inches='tight')
+
+                    AddressWMF = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="wmf")
+                    subprocess.call([self.__inkScapePath, str(Address.resolve()), '--export-wmf', str(AddressWMF.resolve())])
 
             plt.clf()
             plt.close()

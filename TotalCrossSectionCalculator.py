@@ -8,7 +8,7 @@ from math import *
 
 
 class TotalCrossSectionCalculator:
-    def __init__(self, infoDict, outTMatrix, outRDG, checkedDict, dict_dpMedianNano):
+    def __init__(self, infoDict, outTMatrix, outRDG, checkedDict, dict_dpMedianNano, RDGActive, TmatrixActive):
         try:
             self.__outTMatrix = outTMatrix
             self.__outRDG = outRDG
@@ -17,6 +17,9 @@ class TotalCrossSectionCalculator:
             self.D_TEM = infoDict['D_TEM']
             self.dp100_nano = infoDict['dp100_nano']
             self.dict_dpMedianNano = dict_dpMedianNano
+            self.__RDGActive = RDGActive
+            self.__TmatrixActive = TmatrixActive
+
         except Exception as e:
             logging.exception(e)
             raise
@@ -33,7 +36,7 @@ class TotalCrossSectionCalculator:
                                        'SSA_TMatrix', 'SSA_RDG',
                                        'MAC_TMatrix', 'MSC_TMatrix', 'MAC_RDG', 'MSC_RDG', 'Agg_Mass_gr'])
 
-            for dm in self.__outTMatrix:
+            for dm in self.__outRDG:
 
                 Np_Ave = 0
                 dp_Ave = 0
@@ -43,11 +46,20 @@ class TotalCrossSectionCalculator:
                 SCA_RDG = 0
                 AggregateMass = 0
 
-                for i in range(len(self.__outTMatrix[dm])):
-                    ABS_TMatrix += self.__outTMatrix[dm][i][0] * self.__checkedDict[dm]['chance'][i]
-                    SCA_TMatrix += self.__outTMatrix[dm][i][1] * self.__checkedDict[dm]['chance'][i]
-                    ABS_RDG += self.__outRDG[dm][i][0] * self.__checkedDict[dm]['chance'][i]
-                    SCA_RDG += self.__outRDG[dm][i][1] * self.__checkedDict[dm]['chance'][i]
+                for i in range(len(self.__outRDG[dm])):
+                    if self.__TmatrixActive:
+                        ABS_TMatrix += self.__outTMatrix[dm][i][0] * self.__checkedDict[dm]['chance'][i]
+                        SCA_TMatrix += self.__outTMatrix[dm][i][1] * self.__checkedDict[dm]['chance'][i]
+                    else:
+                        ABS_TMatrix += 0 * self.__checkedDict[dm]['chance'][i]
+                        SCA_TMatrix += 0 * self.__checkedDict[dm]['chance'][i]
+                    if self.__RDGActive:
+                        ABS_RDG += self.__outRDG[dm][i][0] * self.__checkedDict[dm]['chance'][i]
+                        SCA_RDG += self.__outRDG[dm][i][1] * self.__checkedDict[dm]['chance'][i]
+                    else:
+                        ABS_RDG += 0 * self.__checkedDict[dm]['chance'][i]
+                        SCA_RDG += 0 * self.__checkedDict[dm]['chance'][i]
+
                     Np_Ave += self.__checkedDict[dm]['Np'][i] * self.__checkedDict[dm]['chance'][i]
                     dp_Ave += self.__checkedDict[dm]['dp'][i] * self.__checkedDict[dm]['chance'][i]
                     AggregateMass += self._convertDensityToMass(dp=self.__checkedDict[dm]['dp'][i], density=self.__AGG_MATERIAL_DENSITY_CENTER, Np=self.__checkedDict[dm]['Np'][i]) * \
@@ -107,7 +119,7 @@ class TotalCrossSectionCalculator:
                 ################################################
                 ################################################
                 df.loc[len(df)] = {'dm': dm, 'ABS_TMatrix': ABS_TMatrix, 'SCA_TMatrix': SCA_TMatrix,
-                                   'ABS_RDG': ABS_RDG, 'SCA_RDG': SCA_RDG, 'NumberOfCalcs': len(self.__outTMatrix[dm]),
+                                   'ABS_RDG': ABS_RDG, 'SCA_RDG': SCA_RDG, 'NumberOfCalcs': len(self.__outRDG[dm]),
                                    'dp_median': self.dict_dpMedianNano[dm], 'Np_Ave': Np_Ave, 'dp_Ave': dp_Ave,
                                    'RealErrorABS': errorRealABS, 'RealErrorSCA': errorRealSCA,
                                    'D_TEM': self.D_TEM, 'dp_100nm': self.dp100_nano,
