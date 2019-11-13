@@ -12,6 +12,8 @@ from math import isnan
 from math import log
 import subprocess
 
+from matplotlib import colors
+
 ####### Plotting Parameters
 rcParams['mathtext.fontset'] = 'stix'
 rcParams['font.family'] = 'STIXGeneral'
@@ -55,8 +57,8 @@ class GraphTools:
             ################################################# General Variables
             self.__folderNameGraph = folderInfo['FOLDER_NAME_GRAPH']
             self.__folderNameData = folderInfo['FOLDER_NAME_DATA']
-            self.__WMF_SVGSaving = True
-            self.__OnlySVGSaving = False
+            self.__WMF_SVGSaving = False
+            self.__OnlySVGSaving = True
             self.__inkScapePath = "C://Program Files//inkscape//inkscape.exe"
             ################################################# Graphs Labels
             self.__xLabelMobDiameter = "Mobility-equivalent Diameter (nm)"
@@ -251,7 +253,7 @@ class GraphTools:
                     result['median'] = median
                     result['sum'] = sum
 
-                    if sum >= 0.90:
+                    if sum >= 0.85:
                         result['TotalMassGram'] = totalMass_gr
                         result['ABS_RDG_Total'] = RDG_ABSTotal  # in um2
                         result['SCA_RDG_Total'] = RDG_SCATotal  # in um2
@@ -616,31 +618,7 @@ class GraphTools:
 
     def PlotTotalGraphsBar(self, mode1, model1, mode2, model2):
         try:
-            if model1 == "RDG":
-                columnNameA = "_RDG"
-                columnDetailA = 'RDG-FA'
-            elif model1 == "Tmatrix":
-                columnNameA = "_TMatrix"
-                columnDetailA = 'T-matrix'
-            #########################################
-            if model2 == "RDG":
-                columnNameB = "_RDG"
-                columnDetailB = 'RDG-FA'
-            elif model2 == "Tmatrix":
-                columnNameB = "_TMatrix"
-                columnDetailB = 'T-matrix'
-            #########################################
-            #########################################
-            #########################################
-            if mode1 == "TR_":
-                columnDetailA += ', Obs'
-            elif mode1 == "RE_":
-                columnDetailA += ', Trad'
-            #########################################
-            if mode2 == "TR_":
-                columnDetailB += ', Obs'
-            elif mode2 == "RE_":
-                columnDetailB += ', Trad'
+            columnNameA, columnDetailA, columnNameB, columnDetailB = self.ModeModelSelector(mode1, model1, mode2, model2)
             #########################################
             #########################################
             #########################################
@@ -676,7 +654,7 @@ class GraphTools:
             columnDetail1 = columnDetailA
             columnName2 = 'MAC' + columnNameB + '_Total'
             columnDetail2 = columnDetailB
-            titleName = "Mass-absorption Coefficient (MAC)"
+            titleName = "Total Mass-absorption Coefficient (MAC)"
             titleAppend = ""
             self.PlotSettingTotalBars(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
                                       colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
@@ -689,7 +667,7 @@ class GraphTools:
             columnDetail1 = columnDetailA
             columnName2 = 'MSC' + columnNameB + '_Total'
             columnDetail2 = columnDetailB
-            titleName = "Mass-scattering Coefficient (MSC)"
+            titleName = "Total Mass-scattering Coefficient (MSC)"
             titleAppend = ""
             self.PlotSettingTotalBars(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
                                       colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
@@ -702,7 +680,7 @@ class GraphTools:
             columnDetail1 = columnDetailA
             columnName2 = 'SSA' + columnNameB + '_Total'
             columnDetail2 = columnDetailB
-            titleName = "Single-scattering Albedo"
+            titleName = "Total Single-scattering Albedo"
             titleAppend = ""
             self.PlotSettingTotalBars(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
                                       colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
@@ -1022,6 +1000,7 @@ class GraphTools:
             rowCount = 0
             for i in A1.unique():
                 colCount = 0
+                # DmCount=0
                 for j in A2.unique():
                     fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
 
@@ -1050,6 +1029,7 @@ class GraphTools:
                                                          label=column1T)
                     AXES_B = ax1[rowCount, colCount].bar(indexBarPlot + self.__barWidth / 2, C2Height, color=self.__A2Color, width=self.__barWidth, edgecolor='white', hatch=self.__patterns[4],
                                                          label=column2T)
+                    #DmCount+=1
 
                     if showValue:
                         autoLabel(self, rects=AXES_A, row=rowCount, col=colCount, format=valueFormat)
@@ -1155,13 +1135,13 @@ class GraphTools:
                     for index, fileN in fileNames.iteritems():
                         df1 = self.dictData[mode1 + fileN]
                         ax1[rowCount, colCount].plot(df1['dm'], df1[column1], label=column1T + ', ' + Dmlist[DmCount],
-                                                     color=self.__A1Color, linewidth=self.__A1LineWidth[c_lineWidth],
+                                                     color=self.get_color(self.__A1Color, 'yellow', portion=(DmCount + 1) * 0.1), linewidth=self.__A1LineWidth[c_lineWidth],
                                                      linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine,
                                                      marker=self.__subplotMarkerStyle[c_markerStyle], markersize=self.__subplotMarkerSize)
 
                         df2 = self.dictData[mode2 + fileN]
                         ax1[rowCount, colCount].plot(df2['dm'], df2[column2], label=column2T + ', ' + Dmlist[DmCount],
-                                                     color=self.__A2Color, linewidth=self.__A2LineWidth[c_lineWidth],
+                                                     color=self.get_color(self.__A2Color, 'gray', portion=(DmCount + 1) * 0.2), linewidth=self.__A2LineWidth[c_lineWidth],
                                                      linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A2AlphaMainLine)
 
                         c_lineStyle += 1
@@ -1442,6 +1422,18 @@ class GraphTools:
             logging.exception(e)
             raise
 
+    def get_color(self, color1, color2, portion=1):
+        try:
+            colorRGBA1 = colors.to_rgba(color1)
+            colorRGBA2 = colors.to_rgba(color2)
+            alpha = (colorRGBA1[3] + colorRGBA2[3] * portion) / 2
+            red = ((colorRGBA1[0] * colorRGBA1[3]) + (colorRGBA2[0] * colorRGBA2[3] * portion)) / (colorRGBA1[3] + colorRGBA2[3] * portion)
+            green = ((colorRGBA1[1] * colorRGBA1[3]) + (colorRGBA2[1] * colorRGBA2[3] * portion)) / (colorRGBA1[3] + colorRGBA2[3] * portion)
+            blue = ((colorRGBA1[2] * colorRGBA1[3]) + (colorRGBA2[2] * colorRGBA2[3] * portion)) / (colorRGBA1[3] + colorRGBA2[3] * portion)
+            return (red, green, blue, alpha)
+        except Exception as e:
+            logging.exception(e)
+            raise
     ######################################################################
     ######################################################################
     ######################################################################

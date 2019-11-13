@@ -17,8 +17,8 @@ class BCDBBoundaryCheck:
                 self._arrKf_Bound = [1, 3]
                 self._arrRI_Real_Bound = [1.001, 2.001]
                 self._arrRI_Imag_Bound = [0.001, 1.001]
-                self._arrNp_Bound = [1, 6000]
-                self._arrMonomerParameter_Bound = [0.001, 0.75]
+                self._arrNp_Bound = [1, 8000]
+                self._arrMonomerParameter_Bound = [0.001, 0.85]
         except Exception as e:
             logging.exception(e)
             raise

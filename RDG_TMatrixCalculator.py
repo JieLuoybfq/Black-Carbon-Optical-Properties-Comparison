@@ -1,6 +1,11 @@
 # Keyhan Babaee, https://github.com/KeyhanB
 # V1.2
 # Oct 2019
+import os
+
+from matplotlib.ticker import FormatStrFormatter
+from sklearn.metrics import explained_variance_score, r2_score
+
 from ConfigReaderModule import logging
 from math import *
 import numpy as np
@@ -45,9 +50,9 @@ class KeyhanV2:
             self.__AGG_WLENGTH_CENTER = inputDict['AGG_WLENGTH_CENTER']
             self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER = inputDict['AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER']
             ######################################################################################
-            self.__Sample_Sigma_Bins = 39  # Number of bins
+            self.__Sample_Sigma_Bins = 23  # Number of bins
             self.__Primary_Sigma_dm_CTE_Bound = 3  # Number of Sigma G to cover
-            self.__Primary_Sigma_dm_CTE_Nt = 36  # Number of bins
+            self.__Primary_Sigma_dm_CTE_Nt = 20  # Number of bins
             ######################################################################################
             self.infoDict['MobilityBins'] = self.__Sample_Sigma_Bins
             self.infoDict['NumberOfSigma'] = self.__Primary_Sigma_dm_CTE_Bound
@@ -55,17 +60,24 @@ class KeyhanV2:
             self.infoDict['FittedSigma'] = 0
             self.infoDict['FittedMedian'] = 0
             ######################################################################################
-            self.__PlotDetails = False
+            self.__PlotDetails = True
             self.__dmSelectForPlot = 4  # Number of bins
             self.__folderNameGraph = 'Detail Graphs'
             self.__OnlySVGSaving = False
             self.__figureDPI = 400
             ######################################################################################
-            self.__dmCalc = False
+            self.__dmCalc = True
             self.__dmSigma = 1.4
             self.__dmMedian = 130
+            self.__dpMin = 1
+            self.__dpMax = 105
+            self.__dpBin = 50
+            ######################################################################################
             self.__GoBeyondBound = True
-
+            self.__TMatrixActive = False
+            self.__RDGActive = True
+            self.__TraditionalDistribution = True
+            ######################################################################################
         except Exception as e:
             logging.exception(e)
             raise
@@ -83,17 +95,24 @@ class KeyhanV2:
             dictConvertedTR = self.ConvertDictToArray(dict=dictChecked)
 
             dict_dpMedianReal, dictCheckedRealNpdp = self.CalcRealNpdpDistribution(dictChecked=dictChecked, dictSuggested=dictSuggested)
+            '''
             dictConvertedRE = self.ConvertDictToArray(dict=dictCheckedRealNpdp)
 
-            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedTR, dictChecked=dictChecked, mediandpDict=self.dict_dpMedianNano, fileAppend="TR", RDGActive=True, TmatrixActive=False)
-            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedRE, dictChecked=dictCheckedRealNpdp, mediandpDict=dict_dpMedianReal, fileAppend="RE", RDGActive=True, TmatrixActive=False)
+            self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedTR, dictChecked=dictChecked, mediandpDict=self.dict_dpMedianNano, fileAppend="TR", RDGActive=self.__RDGActive,
+                           TmatrixActive=self.__TMatrixActive)
 
-            # newInfoDf = pd.DataFrame([self.infoDict])
-            # newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
-            dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
-            dfInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-            j = 1
+            if self.__TraditionalDistribution:
+                self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedRE, dictChecked=dictCheckedRealNpdp, mediandpDict=dict_dpMedianReal, fileAppend="RE", RDGActive=self.__RDGActive,
+                               TmatrixActive=self.__TMatrixActive)
+            '''
+            if os.path.exists('TMatrix_RDG_Result\Beacon.csv'):
+                dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
+                dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
+                dfInfoDB.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+            else:
+                newInfoDf = pd.DataFrame([self.infoDict])
+                newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
+                
 
         except Exception as e:
             logging.exception(e)
@@ -121,16 +140,12 @@ class KeyhanV2:
             logging.exception(e)
             raise
 
-    def PlotdpDistribution(self, dict, resR, resC, dictMedian, title):
+    def PlotdpDistribution(self, dict, resR, resC, dmFalse_resR, dmFalse_resC, dictMedian, title):
         try:
 
-            resR['D_Median'] = round(resR['D_Median'], 1)
-            resR['Sigma_G'] = round(resR['Sigma_G'], 2)
-            resC['D_Median'] = round(resC['D_Median'], 1)
-            resC['Sigma_G'] = round(resC['Sigma_G'], 2)
             yLimits = [1, 100]
             xLimits = [49, 1500]
-
+            lineSt = ['-', '--', '-.']
             ######## creating dp array
             bound_D_Max = yLimits[1]
             bound_D_Min = yLimits[0]
@@ -150,16 +165,18 @@ class KeyhanV2:
             ##########################################
             ##########################################
             ########################################## chance and Np
-            ax1[0].plot(self.arrMobilityDiamNano, dpMedian, label="MedianDiameter")
-            ax1[0].set_xscale('log')
-            factor = 1
-            dm_Base = self.dmRandom[0]
 
+            ax1[0].plot(self.arrMobilityDiamNano, dpMedian, color='black', label="Median diameter")
+            ax1[0].set_xscale('log')
+            ##########################################
+            factor = 1.8
+            dm_Base = self.dmRandom[0]
+            counter = 0
             for dm in self.dmRandom:
                 l1 = len(dict[dm]['Df'])
                 if l1 == 1:
                     ##### one point of random
-                    ax1[0].plot([dm], [dict[dm]['dp'][0]], label=round(dm), color='red', marker='*', markersize=9)
+                    ax1[0].plot([dm], [dict[dm]['dp'][0]], label=f'd$_p$ for dm:{round(dm)} nm', color='red', marker='*', markersize=9)
                 else:
                     dp = dict[dm]['dp']
                     dpChance = dict[dm]['chance']
@@ -167,16 +184,15 @@ class KeyhanV2:
                     x_adj = []
                     x_base = []
                     for i in range(len(dpChance)):
-                        x_adj.append(dm - (float(dpChance[i]) * float(Np[i]) * (dm_Base / dm) * factor))
+                        x_adj.append(dm - (float(dpChance[i]) * float(Np[i]) * factor ** (dm_Base / dm)))
                         x_base.append(dm)
-                    ax1[0].plot(x_adj, dp, label=round(dm), color='green')
-                    ax1[0].plot(x_base, dp, color='yellow')
+                    ax1[0].plot(x_adj, dp, label=f'd$_p$ distribution for dm:{round(dm)} nm', color='green', linestyle=lineSt[counter])
+                    counter += 1
+                    ax1[0].plot(x_base, dp, color='gray', alpha=0.75)
 
-            #### total
-            logNormalPDF = []
-            last_dm = self.arrMobilityDiamNano[-1] * 1.5
+            #####################  total distribution: dm is calculated
+            logNormal_with_dm = []
             sum = 0
-
             if resR['Sigma_G'] != 1:
                 for i in range(0, total_Number_Bins):
                     if i != 0:
@@ -184,40 +200,109 @@ class KeyhanV2:
                     else:
                         l1 = 0
                     sum += l1
-                    logNormalPDF.append(l1)
+                    logNormal_with_dm.append(l1)
             else:
-                dp_Nano_tot1 = []
-                dp_Nano_tot1.append(resR['D_Median'])
-                logNormalPDF.append(1)
+                dp_Nano_tot_with_dm = []
+                dp_Nano_tot_with_dm.append(resR['D_Median'])
+                logNormal_with_dm.append(0.5)
+            #####################  total distribution: dm is not calculated
+            logNormal_without_dm = []
+            sumNO = 0
+            if dmFalse_resR['Sigma_G'] != 1:
+                for i in range(0, total_Number_Bins):
+                    if i != 0:
+                        l1 = self._calcLogNDistribPDF(dmFalse_resR['D_Median'], dmFalse_resR['Sigma_G'], dp_Nano_tot[i], dp_Nano_tot[i - 1])
+                    else:
+                        l1 = 0
+                    sumNO += l1
+                    logNormal_without_dm.append(l1)
+            else:
+                dp_Nano_tot_without_dm = []
+                dp_Nano_tot_without_dm.append(dmFalse_resR['D_Median'])
+                logNormal_without_dm.append(1)
+            ##################################### Main dm distribution
+            logNormal_Main_dm = []
+            sumMain = 0
+            if self.__dmSigma != 1:
+                for i in range(0, self.__Sample_Sigma_Bins):
+                    if i != 0:
+                        l1 = 400 * self._calcLogNDistribPDF(self.__dmMedian, self.__dmSigma, self.arrMobilityDiamNano[i], self.arrMobilityDiamNano[i - 1])
+                    else:
+                        l1 = 0
+                    sumMain += l1
+                    logNormal_Main_dm.append(l1)
+            else:
+                dp_Nano_Main_dm = []
+                dp_Nano_Main_dm.append(self.__dmMedian)
+                logNormal_Main_dm.append(55)
+            #####################################
 
+            last_dm = self.arrMobilityDiamNano[-1] * 1.5
             x_adj = []
             x_base = []
-
             if resR['Sigma_G'] != 1:
-                for i in range(len(logNormalPDF)):
-                    x_adj.append(last_dm - (float(logNormalPDF[i]) * (last_dm / dm_Base) * 300))
+                for i in range(len(logNormal_with_dm)):
+                    x_adj.append(last_dm - (float(logNormal_with_dm[i]) * (last_dm / dm_Base) * 250))
                     x_base.append(last_dm)
-                ax1[0].plot(x_adj, dp_Nano_tot, label='Total', color='black')
-                ax1[0].plot(x_base, dp_Nano_tot, color='yellow')
+                ax1[0].plot(x_adj, dp_Nano_tot, label=f'Total distribution averaged over d$_m$', color='black')
+                ax1[0].plot(x_base, dp_Nano_tot, color='gray')
             else:
                 x_adj = last_dm
-                ax1[0].plot(x_adj, dp_Nano_tot1, label='Total', color='black', marker='*', markersize=9)
+                ax1[0].plot(x_adj, dp_Nano_tot_with_dm, label=f'Total distribution averaged over d$_m$', color='black', marker='*', markersize=9)
+
+            #####################################
+            x_adj = []
+            x_base = []
+            if dmFalse_resR['Sigma_G'] != 1:
+                for i in range(len(logNormal_without_dm)):
+                    x_adj.append(last_dm - (float(logNormal_without_dm[i]) * (last_dm / dm_Base) * 250))
+                    x_base.append(last_dm)
+                ax1[0].plot(x_adj, dp_Nano_tot, label=f'Total distribution with constant d$_m$', color='gray', linestyle=':', alpha=0.85)
+                ax1[0].plot(x_base, dp_Nano_tot, color='gray')
+            else:
+                x_adj = last_dm
+                ax1[0].plot(x_adj, dp_Nano_tot_without_dm, label=f'Total distribution with constant d$_m$', color='gray', marker='s', markersize=11, alpha=0.85)
+            #####################################
+
+            if self.__dmSigma != 1:
+                ax1[0].plot(self.arrMobilityDiamNano, logNormal_Main_dm, label=f'd$_m$ distribution, median:{self.__dmMedian}, sigma:{self.__dmSigma}', color='rosybrown', linestyle='--', alpha=0.8)
+            else:
+                ax1[0].plot(dp_Nano_Main_dm, logNormal_Main_dm, label=f'd$_m$ distribution, median:{self.__dmMedian}, sigma:{self.__dmSigma}', color='rosybrown', marker='*', markersize=9)
+
+            #####################################
+            ax1[0].xaxis.set_major_formatter(FormatStrFormatter("%i"))
+            # ax1[0].xaxis.set_major_locator(plt.MaxNLocator(6))
+            ax1[0].xaxis.set_tick_params(labelsize=12)
+            ax1[0].yaxis.set_tick_params(labelsize=12)
             ax1[0].set_ylim(yLimits)
             ax1[0].set_xlim(xLimits)
-            ax1[0].set_title(f"Considering [Np*Chance], Median:{round(resR['D_Median'], 1)}, Sigma:{round(resR['Sigma_G'], 2)}")
-            ax1[0].legend()
+            ax1[0].set_title(f"Considering [Np*Likelihood], Median:{round(resR['D_Median'], 1)}, Sigma:{round(resR['Sigma_G'], 2)}")
+            # ax1[0].legend()
+
+            ####################################################################################
+            ####################################################################################
+            ####################################################################################
+            ####################################################################################
+            ####################################################################################
+            ####################################################################################
+            ##########################################
+            ##########################################
+            ##########################################
+            ##########################################
             ##########################################
             ##########################################
             ########## only chance
-            ax1[1].plot(self.arrMobilityDiamNano, dpMedian, label="MedianDiameter")
+            ax1[1].plot(self.arrMobilityDiamNano, dpMedian, color='black', label="Median Diameter")
             ax1[1].set_xscale('log')
-            factor = 300
+            ##########################################
+            factor = 2.1
             dm_Base = self.dmRandom[0]
-
+            counter = 0
             for dm in self.dmRandom:
                 l1 = len(dict[dm]['Df'])
                 if l1 == 1:
-                    ax1[1].plot([dm], [dict[dm]['dp'][0]], label=round(dm), color='red', marker='*', markersize=9)
+                    ##### one point of random
+                    ax1[1].plot([dm], [dict[dm]['dp'][0]], label=f'd$_p$ for dm:{round(dm)} nm', color='red', marker='*', markersize=9)
                 else:
                     dp = dict[dm]['dp']
                     dpChance = dict[dm]['chance']
@@ -225,13 +310,14 @@ class KeyhanV2:
                     x_adj = []
                     x_base = []
                     for i in range(len(dpChance)):
-                        x_adj.append(dm - (float(dpChance[i]) * (dm / dm_Base) * factor))
+                        x_adj.append(dm - (float(dpChance[i]) * 80 * factor ** (dm / dm_Base)))
                         x_base.append(dm)
-                    ax1[1].plot(x_adj, dp, label=round(dm), color='green')
-                    ax1[1].plot(x_base, dp, color='yellow')
+                    ax1[1].plot(x_adj, dp, label=f'd$_p$ distribution for dm:{round(dm)} nm', color='green', linestyle=lineSt[counter])
+                    counter += 1
+                    ax1[1].plot(x_base, dp, color='gray', alpha=0.75)
 
-            logNormalPDF = []
-            last_dm = self.arrMobilityDiamNano[-1] * 1.5
+            #####################  total distribution: dm is calculated
+            logNormal_with_dm = []
             sum = 0
             if resC['Sigma_G'] != 1:
                 for i in range(0, total_Number_Bins):
@@ -240,35 +326,213 @@ class KeyhanV2:
                     else:
                         l1 = 0
                     sum += l1
-                    logNormalPDF.append(l1)
+                    logNormal_with_dm.append(l1)
             else:
-                dp_Nano_tot1 = []
-                dp_Nano_tot1.append(resC['D_Median'])
-                logNormalPDF.append(1)
+                dp_Nano_tot_with_dm = []
+                dp_Nano_tot_with_dm.append(resC['D_Median'])
+                logNormal_with_dm.append(0.5)
+            #####################  total distribution: dm is not calculated
+            logNormal_without_dm = []
+            sumNO = 0
+            if dmFalse_resC['Sigma_G'] != 1:
+                for i in range(0, total_Number_Bins):
+                    if i != 0:
+                        l1 = self._calcLogNDistribPDF(dmFalse_resC['D_Median'], dmFalse_resC['Sigma_G'], dp_Nano_tot[i], dp_Nano_tot[i - 1])
+                    else:
+                        l1 = 0
+                    sumNO += l1
+                    logNormal_without_dm.append(l1)
+            else:
+                dp_Nano_tot_without_dm = []
+                dp_Nano_tot_without_dm.append(dmFalse_resC['D_Median'])
+                logNormal_without_dm.append(1)
+            ##################################### Main dm distribution
+            logNormal_Main_dm = []
+            sumMain = 0
+            if self.__dmSigma != 1:
+                for i in range(0, self.__Sample_Sigma_Bins):
+                    if i != 0:
+                        l1 = 400 * self._calcLogNDistribPDF(self.__dmMedian, self.__dmSigma, self.arrMobilityDiamNano[i], self.arrMobilityDiamNano[i - 1])
+                    else:
+                        l1 = 0
+                    sumMain += l1
+                    logNormal_Main_dm.append(l1)
+            else:
+                dp_Nano_Main_dm = []
+                dp_Nano_Main_dm.append(self.__dmMedian)
+                logNormal_Main_dm.append(55)
+            #####################################
 
+            last_dm = self.arrMobilityDiamNano[-1] * 1.5
             x_adj = []
             x_base = []
             if resC['Sigma_G'] != 1:
-                for i in range(len(logNormalPDF)):
-                    x_adj.append(last_dm - (float(logNormalPDF[i]) * (last_dm / dm_Base) * 300))
+                for i in range(len(logNormal_with_dm)):
+                    x_adj.append(last_dm - (float(logNormal_with_dm[i]) * (last_dm / dm_Base) * 250))
                     x_base.append(last_dm)
-                ax1[1].plot(x_adj, dp_Nano_tot, label='Total', color='black')
-                ax1[1].plot(x_base, dp_Nano_tot, color='yellow')
+                ax1[1].plot(x_adj, dp_Nano_tot, label=f'Total distribution averaged over d$_m$', color='black')
+                ax1[1].plot(x_base, dp_Nano_tot, color='gray')
             else:
                 x_adj = last_dm
-                ax1[1].plot(x_adj, dp_Nano_tot1, label='Total', color='black', marker='*', markersize=9)
-                # ax1[0].plot(x_base, diameter_Nano_tot1, color='yellow')
+                ax1[1].plot(x_adj, dp_Nano_tot_with_dm, label=f'Total distribution averaged over d$_m$', color='black', marker='*', markersize=9)
 
+            #####################################
+            x_adj = []
+            x_base = []
+            if dmFalse_resC['Sigma_G'] != 1:
+                for i in range(len(logNormal_without_dm)):
+                    x_adj.append(last_dm - (float(logNormal_without_dm[i]) * (last_dm / dm_Base) * 250))
+                    x_base.append(last_dm)
+                ax1[1].plot(x_adj, dp_Nano_tot, label=f'Total distribution with constant d$_m$', color='gray', linestyle=':', alpha=0.85)
+                ax1[1].plot(x_base, dp_Nano_tot, color='gray')
+            else:
+                x_adj = last_dm
+                ax1[1].plot(x_adj, dp_Nano_tot_without_dm, label=f'Total distribution with constant d$_m$', color='gray', marker='s', markersize=11, alpha=0.85)
+            #####################################
+
+            if self.__dmSigma != 1:
+                ax1[1].plot(self.arrMobilityDiamNano, logNormal_Main_dm, label=f'd$_m$ distribution, median:{self.__dmMedian}, sigma:{self.__dmSigma}', color='rosybrown', linestyle='--', alpha=0.8)
+            else:
+                ax1[1].plot(dp_Nano_Main_dm, logNormal_Main_dm, label=f'd$_m$ distribution, median:{self.__dmMedian}, sigma:{self.__dmSigma}', color='rosybrown', marker='*', markersize=9)
+
+            ####################################
+            ax1[1].xaxis.set_major_formatter(FormatStrFormatter("%i"))
+            # ax1[1].xaxis.set_major_locator(plt.MaxNLocator(6))
+            ax1[1].xaxis.set_tick_params(labelsize=12)
+            ax1[1].yaxis.set_tick_params(labelsize=12)
+            # ax1[1].xaxis.set_major_formatter(FormatStrFormatter('%1.2f'))
+            # ax1[1].yaxis.set_major_formatter(FormatStrFormatter('%1.2f'))
             ax1[1].set_ylim(yLimits)
             ax1[1].set_xlim(xLimits)
-            ax1[1].set_title(f"Considering Chance Only, Median:{round(resC['D_Median'], 1)}, Sigma:{round(resC['Sigma_G'], 2)}")
-            ax1[1].legend()
+            ax1[1].set_title(f"Considering Likelihood Only, Median:{round(resC['D_Median'], 1)}, Sigma:{round(resC['Sigma_G'], 2)}")
+            # ax1[1].legend()
             ########################
             ########################
             ########################
             fig.suptitle(f"{title}_Dm:{self.__AGG_EFF_DM_CENTER}_rhoeff:{self.__AGG_EFF_RHO_100NM_CENTER}_Sigma_p:{self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER}")
+            fig.subplots_adjust(top=0.88, wspace=0.03, hspace=0.03)
+
+            fig.text(0.5, 0.023, 'Mobility Diameter (nm)', ha='center', fontsize=14)
+            fig.text(0.08, 0.5, 'Primary Particle Diameter (nm)', va='center', rotation='vertical', fontsize=14)
+            leg = plt.legend(bbox_to_anchor=(1.05, 0.5), markerscale=1, fontsize=12, loc='lower left', borderaxespad=0.)
+            ################# set the lineWidth of each legend object
+            for legObj in leg.legendHandles:
+                legObj.set_linewidth(2)
+
             self.SaveAndClosePlot(
-                folderName=f"Dp_Dm_Distribution_Dm_{self.__AGG_EFF_DM_CENTER}_rhoeff_{self.__AGG_EFF_RHO_100NM_CENTER}_Sigma_p_{self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER}",
+                folderName="Np_dp_Distribution",
+                F1=f"{title}_Dm_{self.__AGG_EFF_DM_CENTER}_rhoeff_{self.__AGG_EFF_RHO_100NM_CENTER}_Sigma_p_{self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER}")
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def PlotdpDistributionTot(self, dict, resR, dictMedian, title, resFK):
+        try:
+
+            yLimits = [1, 60]
+            xLimits = [49, 1500]
+            lineSt = ['-', '--', '-.']
+            ######## creating dp array
+            bound_D_Max = yLimits[1]
+            bound_D_Min = yLimits[0]
+            total_Number_Bins = 49
+            D_Ratio = (bound_D_Max / bound_D_Min) ** (1 / (total_Number_Bins - 1))
+            dp_Nano_tot = []
+            for i in range(0, total_Number_Bins):
+                d1 = bound_D_Min * (D_Ratio ** i)
+                dp_Nano_tot.append(round(d1, 3))
+
+            ############ getting median diameter for the dict
+            dpMedian = []
+            for dm in self.arrMobilityDiamNano:
+                dpMedian.append(dictMedian[dm])
+
+            fig, ax1 = plt.subplots()
+            ##########################################
+            ##########################################
+            ########################################## chance and Np
+
+            ax1.plot(self.arrMobilityDiamNano, dpMedian, color='black', label="Median diameter")
+            ax1.set_xscale('log')
+            ##########################################
+            factor = 1.6
+            dm_Base = self.dmRandom[0]
+            counter = 0
+            for dm in self.dmRandom:
+                l1 = len(dict[dm]['Df'])
+                if l1 == 1:
+                    ##### one point of random
+                    ax1.plot([dm], [dict[dm]['dp'][0]], label=f'd$_p$ for dm:{round(dm)} nm', color='red', marker='*', markersize=9)
+                else:
+                    dp = dict[dm]['dp']
+                    dpChance = dict[dm]['chance']
+                    Np = dict[dm]['Np']
+                    x_adj = []
+                    x_base = []
+                    for i in range(len(dpChance)):
+                        x_adj.append(dm - (float(dpChance[i]) * float(Np[i]) * factor ** (dm_Base / dm)))
+                        x_base.append(dm)
+                    ax1.plot(x_adj, dp, label=f'd$_p$ distribution for dm:{round(dm)} nm', color='green', linestyle=lineSt[counter])
+                    counter += 1
+                    ax1.plot(x_base, dp, color='gray', alpha=0.75)
+
+            #####################
+            logNormal_with_dm = []
+            sum = 0
+            if resR['Sigma_G'] != 1:
+                for i in range(0, total_Number_Bins):
+                    if i != 0:
+                        l1 = self._calcLogNDistribPDF(resR['D_Median'], resR['Sigma_G'], dp_Nano_tot[i], dp_Nano_tot[i - 1])
+                    else:
+                        l1 = 0
+                    sum += l1
+                    logNormal_with_dm.append(l1)
+            else:
+                dp_Nano_tot_with_dm = []
+                dp_Nano_tot_with_dm.append(resR['D_Median'])
+                logNormal_with_dm.append(0.5)
+
+            #####################################
+
+            last_dm = self.arrMobilityDiamNano[-1] * 1.5
+            x_adj = []
+            x_base = []
+            if resR['Sigma_G'] != 1:
+                for i in range(len(logNormal_with_dm)):
+                    x_adj.append(last_dm - (float(logNormal_with_dm[i]) * (last_dm / dm_Base) * 250))
+                    x_base.append(last_dm)
+                ax1.plot(x_adj, dp_Nano_tot, label=f'Total distribution averaged over d$_m$', color='black')
+                ax1.plot(x_base, dp_Nano_tot, color='gray')
+            else:
+                x_adj = last_dm
+                ax1.plot(x_adj, dp_Nano_tot_with_dm, label=f'Total distribution averaged over d$_m$', color='black', marker='*', markersize=9)
+
+            #####################################
+
+            #####################################
+            ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
+            # ax1[0].xaxis.set_major_locator(plt.MaxNLocator(6))
+            ax1.xaxis.set_tick_params(labelsize=12)
+            ax1.yaxis.set_tick_params(labelsize=12)
+            ax1.set_ylim(yLimits)
+            ax1.set_xlim(xLimits)
+            ax1.set_title(f"Considering [Np*Likelihood], Median:{round(resFK['D_Median'], 1)}, Sigma:{round(resFK['Sigma_G'], 2)}")
+            # ax1[0].legend()
+
+            ########################
+            fig.suptitle(f"{title}_Dm:{self.__AGG_EFF_DM_CENTER}_rhoeff:{self.__AGG_EFF_RHO_100NM_CENTER}_Sigma_p:{self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER}")
+            fig.subplots_adjust(top=0.88, wspace=0.03, hspace=0.03)
+
+            fig.text(0.5, 0.023, 'Mobility Diameter (nm)', ha='center', fontsize=14)
+            fig.text(0.04, 0.5, 'Primary Particle Diameter (nm)', va='center', rotation='vertical', fontsize=14)
+            leg = plt.legend(bbox_to_anchor=(1.05, 0.5), markerscale=1, fontsize=12, loc='lower left', borderaxespad=0.)
+            ################# set the lineWidth of each legend object
+            for legObj in leg.legendHandles:
+                legObj.set_linewidth(2)
+
+            self.SaveAndClosePlot(
+                folderName="Np_dp_Distribution",
                 F1=f"{title}_Dm_{self.__AGG_EFF_DM_CENTER}_rhoeff_{self.__AGG_EFF_RHO_100NM_CENTER}_Sigma_p_{self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER}")
 
         except Exception as e:
@@ -299,6 +563,7 @@ class KeyhanV2:
                 for j in range(Cols):
                     Sum3 = Sum3 + (y[j] * ((log(x[j]) - log(D_G)) ** 2))
                 Sigma_G = exp((Sum3 / (Sum2 - 1)) ** (0.5))
+                Sigma_G = round(Sigma_G, 3)
                 ##################
 
                 ######### Total Concentration in (#/cm^3)
@@ -314,7 +579,40 @@ class KeyhanV2:
                     if Sum5 > ((Sum4 / 2)):
                         D_Median = (x[j - 1] * x[j]) ** 0.5
                         break
-                result = {'D_G': D_G, 'Sigma_G': Sigma_G, 'Total_Conc': Total_Conc, 'D_Median': D_Median}
+                ######### check goodness of fitting
+
+                logNormalFitted = []
+                sum = 0
+                if Sigma_G != 1:
+                    for i in range(len(x)):
+                        if i != 0:
+                            l1 = self._calcLogNDistribPDF(D_Median, Sigma_G, x[i], x[i - 1])
+                        else:
+                            l1 = 0
+                        sum += l1
+                        logNormalFitted.append(l1)
+
+                else:
+                    logNormalFitted.append(1)
+
+                ratio = max(y) / max(logNormalFitted)
+
+                fittedCorrected = []
+                for i in logNormalFitted:
+                    fittedCorrected.append(i * ratio)
+
+                # plt.plot(x,y)
+                # plt.plot(x, fittedCorrected)
+                # plt.show()
+                if Sigma_G != 1:
+                    explainedVarianceScore = explained_variance_score(y, fittedCorrected)
+                    R2score = r2_score(y, fittedCorrected)
+                else:
+                    explainedVarianceScore = 1
+                    R2score = 1
+
+                result = {'D_G': round(D_G, 1), 'Sigma_G': round(Sigma_G, 2), 'Total_Conc': round(Total_Conc, 1), 'D_Median': round(D_Median, 1), 'R2score': round(R2score, 2),
+                          'explainedVarianceScore': round(explainedVarianceScore, 2)}
                 return result
 
             else:
@@ -325,11 +623,10 @@ class KeyhanV2:
             logging.exception(e)
             raise
 
-    def RealNpDp(self, dict):
+    def _CalcRealNpDp(self, dict, dmCalc, Np_multiple):
         try:
-            #################################################
 
-            if self.__dmCalc:
+            if dmCalc:
                 logNormalPDFdm = []
                 sum = 0
                 if self.__dmSigma != 1:
@@ -346,37 +643,46 @@ class KeyhanV2:
 
             #################################################
             #################################################
-            bound_D_MaxCC = 100
-            bound_D_MinCC = 1
-            total_Number_BinsCC = self.__Primary_Sigma_dm_CTE_Nt
+            bound_D_MaxCC = self.__dpMax
+            bound_D_MinCC = self.__dpMin
+            total_Number_BinsCC = self.__dpBin
             #################################################
             #################################################
-            ############ chance multiplied
             dpArr = []
             NpChanceArr = []
             counter = 0
             for dm in dict:
-                if self.__dmCalc == True:
+
+                if dmCalc == True:
                     dmChance = logNormalPDFdm[counter] * 100
                     counter += 1
                 else:
                     dmChance = 1
 
+                # number of aggregates in the specific dm
                 l1 = len(dict[dm]['Df'])
+
                 if l1 == 1:
                     Np = dict[dm]['Np'][:1]
                     dp = dict[dm]['dp'][:1]
                     chance = dict[dm]['chance'][:1]
                     for i in range(len(dp)):
                         dpArr.append(dp[i])
-                        NpChanceArr.append(chance[i] * Np[i] * Decimal(dmChance))
+                        if Np_multiple:
+                            NpChanceArr.append(chance[i] * Np[i] * Decimal(dmChance))
+                        else:
+                            NpChanceArr.append(chance[i] * Decimal(1) * Decimal(dmChance))
+
                 else:
                     Np = dict[dm]['Np']
                     dp = dict[dm]['dp']
                     chance = dict[dm]['chance']
                     for i in range(len(dp)):
                         dpArr.append(dp[i])
-                        NpChanceArr.append(chance[i] * Np[i] * Decimal(dmChance))
+                        if Np_multiple:
+                            NpChanceArr.append(chance[i] * Np[i] * Decimal(dmChance))
+                        else:
+                            NpChanceArr.append(chance[i] * Decimal(1) * Decimal(dmChance))
 
             diameter_Nano = []
             NpChanceBinArr = []
@@ -390,75 +696,47 @@ class KeyhanV2:
             for i in range(1, len(diameter_Nano)):
                 for p in range(len(dpArr)):
                     if dpArr[p] < diameter_Nano[i] and dpArr[p] > diameter_Nano[i - 1]:
-                        NpChanceBinArr[i] = NpChanceBinArr[i] + float(NpChanceArr[p])
+                        NpChanceBinArr[i] = NpChanceBinArr[i] + float(NpChanceArr[p]) * 10000
 
-            resR = self.LogNormalFit(diameter_Nano, NpChanceBinArr)
-            logging.info(f"LogNormal fit [Chance*Np] res:___D_G:{resR['D_G']}___Sigma_G:{resR['Sigma_G']}___Total_Conc:{resR['Total_Conc']}___D_Median:{resR['D_Median']}")
-            #########################
-            #########################
-            ######################### Only Chance
-            dpArrC = []
-            NpChanceArrC = []
-            counter = 0
-            for dm in dict:
-                if self.__dmCalc == True:
-                    dmChance = logNormalPDFdm[counter] * 100
-                    counter += 1
-                else:
-                    dmChance = 1
+            res = self.LogNormalFit(diameter_Nano, NpChanceBinArr)
+            logging.info(
+                f"LogNormal fit res:___D_G:{res['D_G']}___Sigma_G:{res['Sigma_G']}___Total_Conc:{res['Total_Conc']}___D_Median:{res['D_Median']}___R2:{res['R2score']}___explainedVarianceScore:{res['explainedVarianceScore']}")
+            return res
 
-                l1 = len(dict[dm]['Df'])
-                if l1 == 1:
-                    # Np = dict[dm]['Np'][:1]
-                    dp = dict[dm]['dp'][:1]
-                    chance = dict[dm]['chance'][:1]
-                    for i in range(len(dp)):
-                        dpArrC.append(dp[i])
-                        NpChanceArrC.append(chance[i] * Decimal(dmChance))
-                else:
-                    # Np = dict[dm]['Np']
-                    dp = dict[dm]['dp']
-                    chance = dict[dm]['chance']
-                    for i in range(len(dp)):
-                        dpArrC.append(dp[i])
-                        NpChanceArrC.append(chance[i] * Decimal(dmChance))
+        except Exception as e:
+            logging.exception(e)
+            raise
 
-            diameter_NanoC = []
-            NpChanceBinArrC = []
+    def RealNpDp(self, dict):
+        try:
 
-            D_Ratio = (bound_D_MaxCC / bound_D_MinCC) ** (1 / (total_Number_BinsCC - 1))
+            resR = self._CalcRealNpDp(dict=dict, dmCalc=self.__dmCalc, Np_multiple=True)
+            resC = self._CalcRealNpDp(dict=dict, dmCalc=self.__dmCalc, Np_multiple=False)
 
-            for i in range(0, total_Number_BinsCC):
-                d1 = bound_D_MinCC * (D_Ratio ** i)
-                diameter_NanoC.append(round(d1, 3))
-                NpChanceBinArrC.append(0)
+            dmFalse_resR = self._CalcRealNpDp(dict=dict, dmCalc=False, Np_multiple=True)
+            dmFalse_resC = self._CalcRealNpDp(dict=dict, dmCalc=False, Np_multiple=False)
 
-            for i in range(1, len(diameter_NanoC)):
-                for p in range(len(dpArrC)):
-                    if dpArrC[p] < diameter_NanoC[i] and dpArrC[p] > diameter_NanoC[i - 1]:
-                        NpChanceBinArrC[i] = NpChanceBinArrC[i] + float(NpChanceArrC[p])
-
-            resC = self.LogNormalFit(diameter_NanoC, NpChanceBinArrC)
-            logging.info(f"LogNormal fit [Only Chance] res:___D_G:{resC['D_G']}___Sigma_G:{resC['Sigma_G']}___Total_Conc:{resC['Total_Conc']}___D_Median:{resC['D_Median']}")
-
-            return resR, resC
+            return resR, resC, dmFalse_resR, dmFalse_resC
         except Exception as e:
             logging.exception(e)
             raise
 
     def CalcRealNpdpDistribution(self, dictChecked, dictSuggested):
         try:
-            resSuggestedR, resSuggestedC = self.RealNpDp(dictSuggested)
-            resCheckedR, resCheckedC = self.RealNpDp(dictChecked)
+            # resSuggestedR, resSuggestedC = self.RealNpDp(dictSuggested)
+            resCheckedR, resCheckedC, dmFalse_resR, dmFalse_resC = self.RealNpDp(dictChecked)
+
             if self.__PlotDetails:
-                self.PlotdpDistribution(dictSuggested, resSuggestedR, resSuggestedC, self.dict_dpMedianNano, "Obs-Suggested")
-                self.PlotdpDistribution(dictChecked, resCheckedR, resCheckedC, self.dict_dpMedianNano, "Obs-Checked")
+                self.PlotdpDistribution(dictChecked, resCheckedR, resCheckedC, dmFalse_resR, dmFalse_resC, self.dict_dpMedianNano, "Np_dp")
+                # self.PlotdpDistribution(dictSuggested, resSuggestedR, resSuggestedC, self.dict_dpMedianNano, "Obs-Suggested")
 
             ############################
             res = resCheckedR
             ############################
             self.infoDict['FittedSigma'] = res['Sigma_G']
             self.infoDict['FittedMedian'] = res['D_Median']
+            self.infoDict['R2score'] = res['R2score']
+            self.infoDict['explainedVarianceScore'] = res['explainedVarianceScore']
             ############################
             ############################
             ############################
@@ -468,24 +746,11 @@ class KeyhanV2:
 
             diameter_Nano = []
             logNormalPDF = []
+            D_Ratio = (bound_D_Max / bound_D_Min) ** (1 / (total_Number_Bins - 1))
 
-            A = np.linspace(-1.2, 1.2, total_Number_Bins)
-            B = []
-            for i in A:
-                B.append(float(gmpy2.root(pow(i, 7), 5)))
-
-            x_Down = res['D_Median'] - bound_D_Min
-            x_Up = bound_D_Max - res['D_Median']
-
-            for i in range(len(B)):
-                if B[i] < 0:
-                    diameter_Nano.append(res['D_Median'] - x_Down * abs(B[i]))
-                if B[i] > 0:
-                    diameter_Nano.append(res['D_Median'] + x_Up * abs(B[i]))
-
-            diameter_Nano = sorted(diameter_Nano, key=float)
-            diameter_Nano = gaussian_filter1d(diameter_Nano, 8)
-            diameter_Nano = diameter_Nano.tolist()
+            for i in range(0, total_Number_Bins):
+                d1 = bound_D_Min * (D_Ratio ** i)
+                diameter_Nano.append(round(d1, 3))
 
             sum = 0
             if res['Sigma_G'] != 1:
@@ -498,6 +763,7 @@ class KeyhanV2:
                     logNormalPDF.append(Decimal(l1))
 
             else:
+                diameter_Nano = []
                 diameter_Nano.append(res['D_Median'])
                 logNormalPDF.append(Decimal(1))
 
@@ -506,13 +772,42 @@ class KeyhanV2:
             ################################
             ################################
             dictNp = {}
+            dictChp = {}
             for dm in self.arrMobilityDiamNano:
                 arrNp = []
+                arrNpChance = []
                 dpArr = primaryDiam
-                for dp in dpArr:
-                    arrNp.append(self._calcPPN(dm=dm, dp=dp))
+                chanceArr = primaryChance
+                for i in range(len(dpArr)):
+                    np1 = self._calcPPN(dm=dm, dp=dpArr[i])
+                    arrNp.append(np1)
+                    arrNpChance.append(100000 * float(chanceArr[i] / np1))
+                res1 = self.LogNormalFit(x=dpArr, y=arrNpChance)
+                #################
+                realChance = []
+                sum = 0
+                if res1['Sigma_G'] != 1:
+                    for i in range(len(dpArr)):
+                        if i != 0:
+                            l1 = self._calcLogNDistribPDF(res1['D_Median'], res1['Sigma_G'], dpArr[i], dpArr[i - 1])
+                        else:
+                            l1 = 0
+                        sum += l1
+                        realChance.append(Decimal(l1))
+                else:
+                    # diameter_Nano.append(res['D_Median'])
+                    realChance.append(Decimal(1))
+                ##################
                 dictNp[dm] = arrNp
-            ### add something
+                dictChp[dm] = realChance
+                #######################
+                if len(dictNp[dm]) != len(dictChp[dm]):
+                    raise
+                # npdp=[]
+                # for i in range(len(dictNp[dm])):
+                #    npdp.append(float(10000*dictNp[dm][i]*dictChp[dm][i]))
+                # rescheck = self.LogNormalFit(x=dpArr, y=npdp)
+                # k=3
 
             ################################
             ################################
@@ -535,7 +830,7 @@ class KeyhanV2:
                 S['RI_Real'] = RI_Real
                 S['RI_Imag'] = RI_Imag
                 S['Np'] = dictNp[dm]
-                S['chance'] = primaryChance
+                S['chance'] = dictChp[dm]
                 S['wL'] = wavelength
 
                 monometerParameter = []
@@ -550,11 +845,16 @@ class KeyhanV2:
             dictCheckedNpdp = self.CheckDictWithBoundary(dict=suggestedDict, Beyond=self.__GoBeyondBound)
 
             if self.__PlotDetails:
-                resSuggestedR, resSuggestedC = self.RealNpDp(suggestedDict)
-                resCheckedR, resCheckedC = self.RealNpDp(dictCheckedNpdp)
-                self.PlotdpDistribution(suggestedDict, resSuggestedR, resSuggestedC, dpMedianDict, "Trad-Suggested")
-                self.PlotdpDistribution(dictCheckedNpdp, resCheckedR, resCheckedC, dpMedianDict, "Trad-Checked")
+                # resSuggestedR, resSuggestedC = self.RealNpDp(suggestedDict)
+                resCheckedR = self._CalcRealNpDp(dict=dictCheckedNpdp, dmCalc=False, Np_multiple=True)
+                # for dm in self.arrMobilityDiamNano:
+                #   dpMedianDict[dm] = resCheckedR['D_Median']-1
+                # resCheckedR, resCheckedC = self.RealNpDp(dictCheckedNpdp)
+                # self.PlotdpDistribution(suggestedDict, resSuggestedR, resSuggestedC, dpMedianDict, "Trad-Suggested")
+                self.PlotdpDistributionTot(dictCheckedNpdp, resCheckedR, dpMedianDict, "Total", res)
+
             return dpMedianDict, dictCheckedNpdp
+
         except Exception as e:
             logging.exception(e)
             raise

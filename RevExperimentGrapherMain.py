@@ -1,6 +1,6 @@
 # Graphing figures to compare experiment data with RDG-FA and T-matrix using simulated data
 Version = 0.2
-# Sep 2019
+# Nov 2019
 import ConfigReaderModule as CPM
 from ConfigReaderModule import logging
 import RevExperimentGraphModule as REGM
