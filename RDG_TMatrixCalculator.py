@@ -73,8 +73,8 @@ class KeyhanV2:
             self.__dpMax = 105
             self.__dpBin = 50
             ######################################################################################
-            self.__GoBeyondBound = True
-            self.__TMatrixActive = False
+            self.__GoBeyondBound = False
+            self.__TMatrixActive = True
             self.__RDGActive = True
             self.__TraditionalDistribution = True
             ######################################################################################
@@ -95,7 +95,7 @@ class KeyhanV2:
             dictConvertedTR = self.ConvertDictToArray(dict=dictChecked)
 
             dict_dpMedianReal, dictCheckedRealNpdp = self.CalcRealNpdpDistribution(dictChecked=dictChecked, dictSuggested=dictSuggested)
-            '''
+
             dictConvertedRE = self.ConvertDictToArray(dict=dictCheckedRealNpdp)
 
             self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedTR, dictChecked=dictChecked, mediandpDict=self.dict_dpMedianNano, fileAppend="TR", RDGActive=self.__RDGActive,
@@ -104,7 +104,7 @@ class KeyhanV2:
             if self.__TraditionalDistribution:
                 self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedRE, dictChecked=dictCheckedRealNpdp, mediandpDict=dict_dpMedianReal, fileAppend="RE", RDGActive=self.__RDGActive,
                                TmatrixActive=self.__TMatrixActive)
-            '''
+
             if os.path.exists('TMatrix_RDG_Result\Beacon.csv'):
                 dfInfoDB = pd.read_csv(f"TMatrix_RDG_Result\Beacon.csv")
                 dfInfoDB.loc[len(dfInfoDB)] = self.infoDict
