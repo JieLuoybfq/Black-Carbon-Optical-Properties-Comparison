@@ -14,8 +14,6 @@ from BoundaryFinder import BCDBBoundaryCheck as BCheck
 from decimal import Decimal
 import pandas as pd
 import GeneralFunctions as GF
-import gmpy2
-from scipy.ndimage import gaussian_filter1d
 import CalculationCore
 import TotalCrossSectionCalculator
 from matplotlib import pyplot as plt
@@ -60,7 +58,7 @@ class KeyhanV2:
             self.infoDict['FittedSigma'] = 0
             self.infoDict['FittedMedian'] = 0
             ######################################################################################
-            self.__PlotDetails = True
+            self.__PlotDetails = False
             self.__dmSelectForPlot = 4  # Number of bins
             self.__folderNameGraph = 'Detail Graphs'
             self.__OnlySVGSaving = False
@@ -73,7 +71,7 @@ class KeyhanV2:
             self.__dpMax = 105
             self.__dpBin = 50
             ######################################################################################
-            self.__GoBeyondBound = False
+            self.__GoBeyondBound = True
             self.__TMatrixActive = True
             self.__RDGActive = True
             self.__TraditionalDistribution = True
@@ -98,6 +96,7 @@ class KeyhanV2:
 
             dictConvertedRE = self.ConvertDictToArray(dict=dictCheckedRealNpdp)
 
+
             self.RDGTMCore(DB_Info=DB_Info, dictConverted=dictConvertedTR, dictChecked=dictChecked, mediandpDict=self.dict_dpMedianNano, fileAppend="TR", RDGActive=self.__RDGActive,
                            TmatrixActive=self.__TMatrixActive)
 
@@ -112,7 +111,7 @@ class KeyhanV2:
             else:
                 newInfoDf = pd.DataFrame([self.infoDict])
                 newInfoDf.to_csv(f"TMatrix_RDG_Result\Beacon.csv", index=False)
-                
+
 
         except Exception as e:
             logging.exception(e)
@@ -983,26 +982,14 @@ class KeyhanV2:
                 bound_D_Min = dpMedian * (self.__AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER ** (-1 * self.__Primary_Sigma_dm_CTE_Bound))
                 total_Number_Bins = self.__Primary_Sigma_dm_CTE_Nt
 
-                diameter_Nano = []
                 logNormalPDF = []
+                diameter_Nano = []
 
-                A = np.linspace(-1.2, 1.2, total_Number_Bins)
-                B = []
-                for i in A:
-                    B.append(float(gmpy2.root(pow(i, 7), 5)))
+                D_Ratio = (bound_D_Max / bound_D_Min) ** (1 / (total_Number_Bins - 1))
 
-                x_Down = dpMedian - bound_D_Min
-                x_Up = bound_D_Max - dpMedian
-
-                for i in range(len(B)):
-                    if B[i] < 0:
-                        diameter_Nano.append(dpMedian - x_Down * abs(B[i]))
-                    if B[i] > 0:
-                        diameter_Nano.append(dpMedian + x_Up * abs(B[i]))
-
-                diameter_Nano = sorted(diameter_Nano, key=float)
-                diameter_Nano = gaussian_filter1d(diameter_Nano, 8)
-                diameter_Nano = diameter_Nano.tolist()
+                for i in range(0, total_Number_Bins):
+                    d1 = bound_D_Min * (D_Ratio ** i)
+                    diameter_Nano.append(round(d1, 3))
 
                 sum = 0
 
