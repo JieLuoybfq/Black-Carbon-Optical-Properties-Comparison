@@ -166,6 +166,120 @@ class GraphTools:
             logging.exception(e)
             raise
 
+    def RExperiment_RDG_TMatrixComparisonGraphs(self):
+        try:
+            if self.__EXPAccurate:
+
+                self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beaconACU', extension='csv'))
+                self.dictData = {}
+                self.dictDataLabel = {}
+                self.dictDataLabelEXP = {}
+                self.dictTotalOpticalProp = {}
+                self.modelConvertedDF = {}
+                self.GetDataDefinitionEXP(mainDf=self.dfMainInfo)
+                self.ExperimentCalc(arraySize=self.serArraySize.loc[0], randomSize=self.serRandomSize.loc[0])
+
+                for index, fileN in self.serMainFileName.iteritems():
+                    self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
+                    self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
+                    if self.__dpDeviation:
+                        self.Check_dpRatio(fileName=fileN)
+
+                        self.RevExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
+                                                rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
+                                                temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
+                                                pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
+                                                arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
+                                                fileName=fileN)
+
+                    # self.CalcTotalMACMSC(self.dictData[fileN], fileN)
+
+                    # self.CalcEfficiency(fileName=fileN)
+
+                    self.GetDataLabel(fileName=fileN, index=index)
+
+                if self.__CRSGraphsEXPAccurate:
+                    pass
+                    # self.PlotCrossSectionsEXP(append="_ACU_REV")
+                if self.__EfficiencyGraphsEXPAccurate:
+                    pass
+                    # self.PlotEffEXP(append="_ACU_REV")
+                if self.__SSAGraphsEXPAccurate:
+                    pass
+                    # self.PlotSSAEXP(append="_ACU_REV")
+                if self.__dpMedianGraphsEXPAccurate:
+                    pass
+                    # self.PlotdpInfo(append="_ACU_REV")
+
+            ###########################################
+            ###########################################
+            ###########################################
+            ###########################################
+            if self.__EXPFull:
+                self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beacon', extension='csv'))
+                self.dictData = {}
+                self.dictDataLabel = {}
+                self.dictDataLabelEXP = {}
+                self.dictTotalOpticalProp = {}
+                self.modelConvertedDF = {}
+                self.GetDataDefinitionEXP(mainDf=self.dfMainInfo)
+                self.ExperimentCalc(arraySize=self.serArraySize.loc[0], randomSize=self.serRandomSize.loc[0])
+
+                self.Expdistrib = self.LognormalFitter(pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='SMPS', extension='csv')))
+                self.__dmSigmaLogN.append(self.Expdistrib['Sigma_G'])
+                self.__dmMedianLogN.append(self.Expdistrib['D_Median'])
+                self.__TotalConc.append(self.Expdistrib['Total_Conc'])
+
+                for index, fileN in self.serMainFileName.iteritems():
+                    self.CoreReader("TR_" + fileN, index)
+                    self.CoreReader("RE_" + fileN, index)
+
+                #### compring RE and TR
+                self.CoreComparer("TR_", "RDG", "TR_", "Tmatrix", "full")
+                self.CoreComparer("RE_", "RDG", "RE_", "Tmatrix", "full")
+
+                self.CoreComparer("TR_", "RDG", "RE_", "RDG", "full")
+                self.CoreComparer("TR_", "Tmatrix", "RE_", "Tmatrix", "full")
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CoreComparer(self, mode1, model1, mode2, model2, append):
+        try:
+
+            if self.__dmDistributionGraphsLineExpFull:
+                self.PlotTotalGraphsLineEXP(mode1, model1, mode2, model2, append)
+            if self.__dmDistributionGraphsBarExpFull:
+                self.PlotTotalGraphsBarsEXP(mode1, model1, mode2, model2, append)
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CoreReader(self, fileN, index):
+        try:
+            self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
+            self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
+
+            if self.__dpDeviation:
+                self.Check_dpRatio(fileName=fileN)
+
+            self.RevExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
+                                    rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
+                                    temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
+                                    pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
+                                    arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
+                                    fileName=fileN)
+
+            self.CalcTotalMACMSC(self.dictData[fileN], fileN)
+            # self.CalcEfficiency(fileName=fileN)
+            self.GetDataLabel(fileName=fileN, index=index)
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
     def ExperimentCalc(self, arraySize, randomSize=500, ):
         try:
 
@@ -1015,7 +1129,7 @@ class GraphTools:
             ser_dpMed = self.dictData[fileName]['dp_median']
             ser_dpAve = self.dictData[fileName]['dp_Ave']
             ##################################
-            self.__dpDeviationPercent = 35
+            self.__dpDeviationPercent = 90
             x = 5
             c = 2.5
             ##################################
@@ -1235,121 +1349,6 @@ class GraphTools:
         except Exception as e:
             logging.exception(e)
             raise
-
-    def RExperiment_RDG_TMatrixComparisonGraphs(self):
-        try:
-            if self.__EXPAccurate:
-
-                self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beaconACU', extension='csv'))
-                self.dictData = {}
-                self.dictDataLabel = {}
-                self.dictDataLabelEXP = {}
-                self.dictTotalOpticalProp = {}
-                self.modelConvertedDF = {}
-                self.GetDataDefinitionEXP(mainDf=self.dfMainInfo)
-                self.ExperimentCalc(arraySize=self.serArraySize.loc[0], randomSize=self.serRandomSize.loc[0])
-
-                for index, fileN in self.serMainFileName.iteritems():
-                    self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
-                    self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
-                    if self.__dpDeviation:
-                        self.Check_dpRatio(fileName=fileN)
-
-                        self.RevExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
-                                                rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
-                                                temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
-                                                pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
-                                                arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
-                                                fileName=fileN)
-
-                    # self.CalcTotalMACMSC(self.dictData[fileN], fileN)
-
-                    # self.CalcEfficiency(fileName=fileN)
-
-                    self.GetDataLabel(fileName=fileN, index=index)
-
-                if self.__CRSGraphsEXPAccurate:
-                    pass
-                    # self.PlotCrossSectionsEXP(append="_ACU_REV")
-                if self.__EfficiencyGraphsEXPAccurate:
-                    pass
-                    # self.PlotEffEXP(append="_ACU_REV")
-                if self.__SSAGraphsEXPAccurate:
-                    pass
-                    # self.PlotSSAEXP(append="_ACU_REV")
-                if self.__dpMedianGraphsEXPAccurate:
-                    pass
-                    # self.PlotdpInfo(append="_ACU_REV")
-
-            ###########################################
-            ###########################################
-            ###########################################
-            ###########################################
-            if self.__EXPFull:
-                self.dfMainInfo = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='beacon', extension='csv'))
-                self.dictData = {}
-                self.dictDataLabel = {}
-                self.dictDataLabelEXP = {}
-                self.dictTotalOpticalProp = {}
-                self.modelConvertedDF = {}
-                self.GetDataDefinitionEXP(mainDf=self.dfMainInfo)
-                self.ExperimentCalc(arraySize=self.serArraySize.loc[0], randomSize=self.serRandomSize.loc[0])
-
-                self.Expdistrib = self.LognormalFitter(pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='SMPS', extension='csv')))
-                self.__dmSigmaLogN.append(self.Expdistrib['Sigma_G'])
-                self.__dmMedianLogN.append(self.Expdistrib['D_Median'])
-                self.__TotalConc.append(self.Expdistrib['Total_Conc'])
-
-                for index, fileN in self.serMainFileName.iteritems():
-                    self.CoreReader("TR_" + fileN, index)
-                    self.CoreReader("RE_" + fileN, index)
-
-                #### compring RE and TR
-                self.CoreComparer("TR_", "RDG", "TR_", "Tmatrix", "full")
-                self.CoreComparer("RE_", "RDG", "RE_", "Tmatrix", "full")
-
-                self.CoreComparer("TR_", "RDG", "RE_", "RDG", "full")
-                self.CoreComparer("TR_", "Tmatrix", "RE_", "Tmatrix", "full")
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def CoreComparer(self, mode1, model1, mode2, model2, append):
-        try:
-
-            if self.__dmDistributionGraphsLineExpFull:
-                self.PlotTotalGraphsLineEXP(mode1, model1, mode2, model2, append)
-            if self.__dmDistributionGraphsBarExpFull:
-                self.PlotTotalGraphsBarsEXP(mode1, model1, mode2, model2, append)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def CoreReader(self, fileN, index):
-        try:
-            self.dictData[fileN] = pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName=fileN))
-            self.dictData[fileN] = self.dictData[fileN].replace(0, np.nan)
-
-            if self.__dpDeviation:
-                self.Check_dpRatio(fileName=fileN)
-
-            self.RevExecuteMobility(Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
-                                    rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
-                                    temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
-                                    pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index],
-                                    arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
-                                    fileName=fileN)
-
-            self.CalcTotalMACMSC(self.dictData[fileN], fileN)
-            # self.CalcEfficiency(fileName=fileN)
-            self.GetDataLabel(fileName=fileN, index=index)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
     ###################################
     ###################################
     ###################################
