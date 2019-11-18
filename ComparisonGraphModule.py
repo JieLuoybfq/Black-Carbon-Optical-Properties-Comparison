@@ -29,8 +29,8 @@ class GraphTools:
             ################################################# dm and dp distribution variables
             self.__dpDeviation = True
             self.__dpDeviationPercent = 10  ###
-            self.__dmSigmaLogN = [1.4]
-            self.__dmMedianLogN = [130]
+            self.__dmSigmaLogN = [1.867]
+            self.__dmMedianLogN = [133.3]
             #################################################
             #################################################
             ################################################# Comparison Graphs
@@ -87,11 +87,11 @@ class GraphTools:
             self.__yMinorTickLabelGeneralFontSize = 8
             ################################################# Graph Setting for subplot
             self.__A1Color = 'red'
-            self.__A1LineWidth = [1.8, 1.2, 0.6]
-            self.__A1AlphaMainLine = 0.35
+            self.__A1LineWidth = [3, 1.9, 1.3]
+            self.__A1AlphaMainLine = 0.65
             self.__A2Color = 'blue'
-            self.__A2LineWidth = [4, 3, 2.5]
-            self.__A2AlphaMainLine = 0.65
+            self.__A2LineWidth = [3, 1.9, 1.3]
+            self.__A2AlphaMainLine = 0.7
             self.__subplotLineStyle = ['-', '--', '-.']
             self.__subplotMarkerStyle = ["o", "X", "^"]
             self.__subplotMarkerSize = 8
@@ -165,8 +165,12 @@ class GraphTools:
         try:
             ser_dpMed = self.dictData[fileName]['dp_median']
             ser_dpAve = self.dictData[fileName]['dp_Ave']
+            file = fileName[:2]
             ##################################
-            self.__dpDeviationPercent = 35
+            if file == "TR":
+                self.__dpDeviationPercent = 35
+            if file == "RE":
+                self.__dpDeviationPercent = 100
             x = 5
             c = 2.5
             ##################################
@@ -467,14 +471,14 @@ class GraphTools:
             #########################################
             #########################################
             if mode1 == "TR_":
-                columnDetailA += ', Obs'
+                columnDetailA += ', New Model'
             elif mode1 == "RE_":
-                columnDetailA += ', Trad'
+                columnDetailA += ', Traditional Equivalent'
             #########################################
             if mode2 == "TR_":
-                columnDetailB += ', Obs'
+                columnDetailB += ', New Model'
             elif mode2 == "RE_":
-                columnDetailB += ', Trad'
+                columnDetailB += ', Traditional Equivalent'
 
             return columnNameA, columnDetailA, columnNameB, columnDetailB
         except Exception as e:
@@ -1029,7 +1033,7 @@ class GraphTools:
                                                          label=column1T)
                     AXES_B = ax1[rowCount, colCount].bar(indexBarPlot + self.__barWidth / 2, C2Height, color=self.__A2Color, width=self.__barWidth, edgecolor='white', hatch=self.__patterns[4],
                                                          label=column2T)
-                    #DmCount+=1
+                    # DmCount+=1
 
                     if showValue:
                         autoLabel(self, rects=AXES_A, row=rowCount, col=colCount, format=valueFormat)
@@ -1136,8 +1140,7 @@ class GraphTools:
                         df1 = self.dictData[mode1 + fileN]
                         ax1[rowCount, colCount].plot(df1['dm'], df1[column1], label=column1T + ', ' + Dmlist[DmCount],
                                                      color=self.get_color(self.__A1Color, 'yellow', portion=(DmCount + 1) * 0.1), linewidth=self.__A1LineWidth[c_lineWidth],
-                                                     linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine,
-                                                     marker=self.__subplotMarkerStyle[c_markerStyle], markersize=self.__subplotMarkerSize)
+                                                     linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine)
 
                         df2 = self.dictData[mode2 + fileN]
                         ax1[rowCount, colCount].plot(df2['dm'], df2[column2], label=column2T + ', ' + Dmlist[DmCount],

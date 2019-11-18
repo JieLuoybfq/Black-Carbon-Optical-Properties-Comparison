@@ -1,3 +1,5 @@
+import os
+
 from ConfigReaderModule import logging
 import GeneralFunctions as GF
 import numpy as np
@@ -34,10 +36,10 @@ class GraphTools:
             self.__TotalConc = []
             self.__biasUncertaintyPercentABS = 9.6
             self.__biasUncertaintyPercentSCA = 7.0
-            self.__EXP_MAC_AVE = 5.67
-            self.__EXP_MAC_STD = 0.4 / 2
-            self.__EXP_MSC_AVE = 1.19
-            self.__EXP_MSC_STD = 0.26 / 2
+            self.__EXP_MAC_AVE = 5.64
+            self.__EXP_MAC_STD = 0.53
+            self.__EXP_MSC_AVE = 1.18
+            self.__EXP_MSC_STD = 0.13
 
             self.__saveHistogram = False
 
@@ -46,19 +48,8 @@ class GraphTools:
             ################################################# Comparison Graphs
             self.__EXPFull = True
 
-            self.__CRSGraphsExpFull = True
-            self.__EfficiencyGraphsExpFull = True
-            self.__SSAGraphsExpFull = True
-            self.__dpMedianGraphsExpFull = True
             self.__dmDistributionGraphsBarExpFull = True
-
-            # self.__dmDistributionGraphsBarExpFull = True
             self.__dmDistributionGraphsLineExpFull = True
-            # self.__dmDistributionRatioGraphsBarExpFull = True
-
-            self.__RDGPlot = True
-            self.__TmatrixPlot = True
-
             #################################################
             #################################################
             ################################################# Exact Experiment Graphs
@@ -80,12 +71,18 @@ class GraphTools:
                                     'ABS_TMatrix_Total', 'SCA_TMatrix_Total',
                                     'MAC_RDG_Total', 'MSC_RDG_Total',
                                     'MAC_TMatrix_Total', 'MSC_TMatrix_Total',
-                                    'SSA_RDG_Total', 'SSA_TMatrix_Total', 'sum']
+                                    'SSA_RDG_Total', 'SSA_TMatrix_Total',
+                                    'sum',
+                                    'EXP_ABS_AVE', 'EXP_ABS_STD',
+                                    'EXP_SCA_AVE', 'EXP_SCA_STD',
+                                    'EXP_MAC_AVE', 'EXP_MAC_STD',
+                                    'EXP_MSC_AVE', 'EXP_MSC_STD',
+                                    'EXP_SSA_AVE', 'EXP_SSA_STD']
             ################################################# General Variables
             self.__folderNameGraph = folderInfo['FOLDER_NAME_GRAPH']
             self.__folderNameData = folderInfo['FOLDER_NAME_DATA']
             self.__WMF_SVGSaving = False
-            self.__OnlySVGSaving = False
+            self.__OnlySVGSaving = True
             self.__inkScapePath = "C://Program Files//inkscape//inkscape.exe"
             ################################################# Graphs Labels
             self.__xLabelAeroDiameter = "Aerodynamic Diameter (nm)"
@@ -114,14 +111,14 @@ class GraphTools:
             self.__yMinorTickLabelGeneralFontSize = 8
             ################################################# Graph Setting for subplot
             self.__A1Color = 'red'
-            self.__A1LineWidth = [1.8, 1.2, 0.6]
-            self.__A1AlphaMainLine = 0.35
+            self.__A1LineWidth = [3, 1.9, 1.3]
+            self.__A1AlphaMainLine = 0.65
             self.__A2Color = 'blue'
-            self.__A2LineWidth = [4, 3, 2.5]
-            self.__A2AlphaMainLine = 0.65
+            self.__A2LineWidth = [3, 1.9, 1.3]
+            self.__A2AlphaMainLine = 0.7
             self.__A3Color = 'black'
             self.__A3LineWidth = [2.5, 2, 1.5]
-            self.__A3AlphaMainLine = 0.6
+            self.__A3AlphaMainLine = 0.5
             self.__subplotLineStyle = ['-', '--', '-.']
             self.__subplotMarkerStyle = ["o", "X", "^"]
             self.__subplotMarkerSize = 8
@@ -137,7 +134,7 @@ class GraphTools:
             self.__xLabelCommonSubplotAdjustment = 0.033  # lower to get down
             self.__xLabelCommonSubplotFontSize = 24
             self.__yLabelCommonSubplotFontSize = 24
-            self.__yLabelCommonSubplotAdjustment = [0.018, 0.044]  # lower to get left
+            self.__yLabelCommonSubplotAdjustment = [0.011, 0.038]  # lower to get left
             self.__legendSubplotAdjustment = [1.25, 1.7]
             self.__legendSubplotMarkerScale = 1.75
             self.__legendSubplotFontSize = 20
@@ -225,7 +222,7 @@ class GraphTools:
                 self.GetDataDefinitionEXP(mainDf=self.dfMainInfo)
                 self.ExperimentCalc(arraySize=self.serArraySize.loc[0], randomSize=self.serRandomSize.loc[0])
 
-                self.Expdistrib = self.LognormalFitter(pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='SMPS', extension='csv')))
+                self.Expdistrib = self.SMPSLogNormalFitter(pd.read_csv(GF.GetAddressTo(folderName=self.__folderNameData, fileName='SMPS', extension='csv')))
                 self.__dmSigmaLogN.append(self.Expdistrib['Sigma_G'])
                 self.__dmMedianLogN.append(self.Expdistrib['D_Median'])
                 self.__TotalConc.append(self.Expdistrib['Total_Conc'])
@@ -247,7 +244,6 @@ class GraphTools:
 
     def CoreComparer(self, mode1, model1, mode2, model2, append):
         try:
-
             if self.__dmDistributionGraphsLineExpFull:
                 self.PlotTotalGraphsLineEXP(mode1, model1, mode2, model2, append)
             if self.__dmDistributionGraphsBarExpFull:
@@ -272,8 +268,11 @@ class GraphTools:
                                     arraySize=self.serArraySize.loc[index], randomSize=self.serRandomSize.loc[index],
                                     fileName=fileN)
 
-            self.CalcTotalMACMSC(self.dictData[fileN], fileN)
-            # self.CalcEfficiency(fileName=fileN)
+            self.CalcTotalMACMSC(self.dictData[fileN], fileN, Dm=self.ser_DmAve.loc[index], DmSTD=self.ser_DmSTD.loc[index],
+                                 rhoEff=self.ser_rhoEff100nmAve.loc[index], rhoEffSTD=self.ser_rhoEff100nmSTD.loc[index],
+                                 temperature=self.serTemperatureAve.loc[index], temperatureSTD=self.serTemperatureSTD.loc[index],
+                                 pressure=self.serPressureAve.loc[index], pressureSTD=self.serPressureSTD.loc[index], )
+
             self.GetDataLabel(fileName=fileN, index=index)
 
         except Exception as e:
@@ -282,6 +281,8 @@ class GraphTools:
 
     def ExperimentCalc(self, arraySize, randomSize=500, ):
         try:
+            arraySize = 1500
+            randomSize = 450
 
             def ToSaveHistogram(self, folderName, fileName, array, Figure_DPI=250):
                 try:
@@ -526,7 +527,6 @@ class GraphTools:
                                                                          scatteringCoefficient=arrPAX_Scattering_Coefficient_Random,
                                                                          numberDensity=arrCPC_Number_Density_Random)
 
-                # arrAgg_Aero_DiameterAverageSTD = _getAverageAndSTD(arrAgg_Aero_Diameter_Random)
                 arrAbsorptionCSAverageSTD = _getAverageAndSTD(arrMonteCarloAbsorptionCS)
                 arrScatteringCSAverageSTD = _getAverageAndSTD(arrMonteCarloScatteringCS)
 
@@ -599,6 +599,8 @@ class GraphTools:
             }
 
             self.dfExperiment = pd.DataFrame(ExpDict)
+            if not os.path.exists(f"{self.__folderNameGraph}\__ExperimentResults"):
+                os.makedirs(f"{self.__folderNameGraph}\__ExperimentResults")
             self.dfExperiment.to_csv(f"{self.__folderNameGraph}\__ExperimentResults\ExperimentOut.csv", index=False)
 
 
@@ -612,8 +614,8 @@ class GraphTools:
                            pressure, pressureSTD,
                            arraySize, fileName, randomSize=500):
         try:
-            # arraySize = 100
-            randomSize = 1000
+            arraySize = 1500
+            randomSize = 450
 
             def ToSaveHistogram(self, folderName, fileName, array, Figure_DPI=250):
                 try:
@@ -940,7 +942,6 @@ class GraphTools:
                                                                          temperature=arrAir_Temperature_Random,
                                                                          pressure=arrAir_Pressure_Random)
 
-                # arrAgg_Mobility_DiameterAverageSTD = _getAverageAndSTD(arrAgg_Mobility_Diameter_Random)
                 arrViscosityAverageSTD = _getAverageAndSTD(arrMonteCarloViscosity)
                 arrMeanFreePathAverageSTD = _getAverageAndSTD(arrMonteCarloMeanFreePath)
 
@@ -1091,7 +1092,6 @@ class GraphTools:
 
             self.modelConvertedDF[fileName] = pd.DataFrame(modelConverted)
             self.modelConvertedDF[fileName].to_csv(f"{self.__folderNameGraph}\__ExperimentResults\Rev_ETR_{fileName}.csv", index=False)
-            k = 4
 
         except Exception as e:
             logging.exception(e)
@@ -1128,8 +1128,13 @@ class GraphTools:
         try:
             ser_dpMed = self.dictData[fileName]['dp_median']
             ser_dpAve = self.dictData[fileName]['dp_Ave']
+            file = fileName[:2]
             ##################################
-            self.__dpDeviationPercent = 90
+            if file == "TR":
+                self.__dpDeviationPercent = 35
+            if file == "RE":
+                self.__dpDeviationPercent = 100
+            ##################################
             x = 5
             c = 2.5
             ##################################
@@ -1179,8 +1184,100 @@ class GraphTools:
             logging.exception(e)
             raise
 
-    def CalcTotalMACMSC(self, dataFrame, fileName):
+    def __calcViscosity(self, Temperature, Pressure):  # ASSUME INDEPENDENT OF P HERE, Sutherland Equation
+        # Assume Air, https://www.cfd-online.com/Wiki/Sutherland%27s_law
         try:
+            U0 = 1.716 * 10 ** (-5)
+            T_ref = 273.15
+            b = 1.458e-6
+            S = 110.4
+            Viscosity = U0 * ((Temperature / T_ref) ** 1.5) * ((T_ref + S) / (Temperature + S))
+            return Viscosity
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def __calcMeanFreePath(self, viscosity, temperature, pressure):
+        try:
+            # For Air
+            M = .029  # kg/mol/K
+            R = 8.314  # J/mol/K
+            l = 2 * viscosity / (pressure * (8 * M / pi / R / temperature) ** 0.5)
+            return l
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def __calcMobilityDiameter(self, aerodynamicDiameter_nm, meanFreePath_m, eff_Dm, eff_Rho_100nm):
+        try:
+            da = aerodynamicDiameter_nm * (10 ** (-9))
+            func = lambda mobilityDiameterIn_nm: ((mobilityDiameterIn_nm ** 2) * (
+                    1 + (2 * meanFreePath_m / mobilityDiameterIn_nm) * (1.257 + .4 * exp(-1.1 / (2 * meanFreePath_m / mobilityDiameterIn_nm)))) * (
+                                                          (eff_Rho_100nm / ((100 * (10 ** -9)) ** (eff_Dm - 3))) * (mobilityDiameterIn_nm) ** (eff_Dm - 3))) - (
+                                                         (da ** 2) * (1 + (2 * meanFreePath_m / da) * (1.257 + .4 * exp(-1.1 / (2 * meanFreePath_m / da)))) * 1000)
+            dm_initial_guess = da
+            dm_solution = fsolve(func, dm_initial_guess)
+            dm_Nano = dm_solution[0] * (10 ** 9)
+            return dm_Nano
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CalcTotalMACMSC(self, dataFrame, fileName,
+                        temperature, temperatureSTD,
+                        pressure, pressureSTD,
+                        Dm, DmSTD,
+                        rhoEff, rhoEffSTD, ):
+        try:
+
+            def _getAverageAndSTD(Array):
+                try:
+                    A = []
+                    Average = np.average(Array)
+                    STD = np.std(Array)
+                    A.append(Average)
+                    A.append(STD)
+                    return A
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            def _getRandomFromArr(array, number):
+                try:
+                    # uniform choice
+
+                    A = np.random.choice(array, size=int(number), replace=False)
+                    for index, x in np.ndenumerate(A):
+                        if x < 0:
+                            A[index[0]] = A.mean()
+                    return A
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            def _createRandomNormalArr(center, width, number):
+                try:
+                    A = np.random.normal(center, width, int(number))
+                    return A
+
+                except Exception as e:
+                    logging.exception(e)
+                    raise
+
+            def __R2(x, y, p1d):
+                yhat = p1d(x)
+                ybar = np.sum(y) / len(y)
+                SST = np.sum((y - ybar) ** 2)
+                SSreg = np.sum((yhat - ybar) ** 2)
+                R2 = SSreg / SST
+                return R2
+
+            ########################################################################
 
             df = pd.DataFrame(columns=self.__TotalDFLabels)
 
@@ -1196,6 +1293,100 @@ class GraphTools:
                     serRDG_SCA = dataFrame['SCA_RDG']
                     serTMatrix_ABS = dataFrame['ABS_TMatrix']
                     serTMatrix_SCA = dataFrame['SCA_TMatrix']
+
+                    #################################################
+                    aerodynamicDiam = self.dfExperiment['da_AVE_EXP']
+
+                    num = 1500
+                    num1 = 450
+
+                    IarrTemperature = _createRandomNormalArr(temperature, temperatureSTD, num)
+                    IarrPressure = _createRandomNormalArr(pressure, pressureSTD, num)
+                    IarrDm = _createRandomNormalArr(Dm, DmSTD, num)
+                    IarrRhoEff = _createRandomNormalArr(rhoEff, rhoEffSTD, num)
+
+                    arrTemperature = _getRandomFromArr(IarrTemperature, num1)
+                    arrPressure = _getRandomFromArr(IarrPressure, num1)
+                    arrDm = _getRandomFromArr(IarrDm, num1)
+                    arrRhoEff = _getRandomFromArr(IarrRhoEff, num1)
+
+                    arrEXPABS = {}
+                    arrEXPSCA = {}
+
+                    arrEXPABSTotal = []
+                    arrEXPSCATotal = []
+                    arrEXPMACTotal = []
+                    arrEXPMSCTotal = []
+                    arrEXPSSATotal = []
+
+                    r2_ABS = []
+                    r2_SCA = []
+
+                    for index, aeroDiam in aerodynamicDiam.iteritems():
+                        IarrABS = _createRandomNormalArr(self.dfExperiment['ABS_CRS_AVE_EXP'][index], self.dfExperiment['ABS_CRS_STD_EXP'][index], num)
+                        arrABS = _getRandomFromArr(IarrABS, num1)
+
+                        IarrSCA = _createRandomNormalArr(self.dfExperiment['SCA_CRS_AVE_EXP'][index], self.dfExperiment['SCA_CRS_STD_EXP'][index], num)
+                        arrSCA = _getRandomFromArr(IarrSCA, num1)
+
+                        arrEXPABS[aeroDiam] = arrABS
+                        arrEXPSCA[aeroDiam] = arrSCA
+
+                    for i in range(num1):
+
+                        mobDiam = []
+                        arrABS_CRS_AVE = []
+                        arrSCA_CRS_AVE = []
+                        Viscosity = self.__calcViscosity(Temperature=arrTemperature[i], Pressure=arrPressure[i])
+                        meanFreePath = self.__calcMeanFreePath(viscosity=Viscosity, temperature=arrTemperature[i], pressure=arrPressure[i])
+
+                        for index, aeroDiam in aerodynamicDiam.iteritems():
+                            EXPABS = arrEXPABS[aeroDiam]
+                            EXPSCA = arrEXPSCA[aeroDiam]
+                            mobilityDiameter = self.__calcMobilityDiameter(aerodynamicDiameter_nm=aeroDiam, meanFreePath_m=meanFreePath, eff_Dm=arrDm[i], eff_Rho_100nm=arrRhoEff[i])
+                            if mobilityDiameter < 955:
+                                mobDiam.append(mobilityDiameter)
+                                arrABS_CRS_AVE.append(EXPABS[i])
+                                arrSCA_CRS_AVE.append(EXPSCA[i])
+
+                        pABS = np.poly1d(np.polyfit(mobDiam, np.log(arrABS_CRS_AVE), 2))
+                        pSCA = np.poly1d(np.polyfit(mobDiam, np.log(arrSCA_CRS_AVE), 2))
+
+                        EXP_ABS_CRS_AVE = 0
+                        EXP_SCA_CRS_AVE = 0
+                        totalMass_gr = 0
+                        sum = 0
+                        for index, dm in ser_dm.iteritems():
+
+                            if index == length - 1:
+                                break
+
+                            chance = self._calcLogNDistribPDF(median=median, sigmaG=sigma, D2=ser_dm.loc[index + 1], D1=ser_dm.loc[index])
+                            totalMass_gr += chance * serAggMass_gr.loc[index]
+                            EXP_ABS_CRS_AVE += chance * exp(pABS(ser_dm.loc[index]))
+                            EXP_SCA_CRS_AVE += chance * exp(pSCA(ser_dm.loc[index]))
+                            sum += chance
+
+                        if sum > 0.85:
+                            arrEXPABSTotal.append(EXP_ABS_CRS_AVE)
+                            arrEXPSCATotal.append(EXP_SCA_CRS_AVE)
+                            arrEXPMACTotal.append(EXP_ABS_CRS_AVE * (10 ** (-12)) / totalMass_gr)
+                            arrEXPMSCTotal.append(EXP_SCA_CRS_AVE * (10 ** (-12)) / totalMass_gr)
+                            arrEXPSSATotal.append(EXP_SCA_CRS_AVE / (EXP_SCA_CRS_AVE + EXP_ABS_CRS_AVE))
+                        else:
+                            arrEXPABSTotal.append(np.nan)
+                            arrEXPSCATotal.append(np.nan)
+                            arrEXPMACTotal.append(np.nan)
+                            arrEXPMSCTotal.append(np.nan)
+                            arrEXPSSATotal.append(np.nan)
+
+                    arrEXPABS_AVE_STD = _getAverageAndSTD(arrEXPABSTotal)
+                    arrEXPSCA_AVE_STD = _getAverageAndSTD(arrEXPSCATotal)
+                    arrEXPMAC_AVE_STD = _getAverageAndSTD(arrEXPMACTotal)
+                    arrEXPMSC_AVE_STD = _getAverageAndSTD(arrEXPMSCTotal)
+                    arrEXPSSA_AVE_STD = _getAverageAndSTD(arrEXPSSATotal)
+
+                    sum = 0
                     totalMass_gr, RDG_ABSTotal, RDG_SCATotal, TMatrix_ABSTotal, TMatrix_SCATotal = 0, 0, 0, 0, 0
 
                     for index, dm in ser_dm.iteritems():
@@ -1204,7 +1395,6 @@ class GraphTools:
                             break
 
                         chance = self._calcLogNDistribPDF(median=median, sigmaG=sigma, D2=ser_dm.loc[index + 1], D1=ser_dm.loc[index])
-
                         totalMass_gr += chance * serAggMass_gr.loc[index]
                         RDG_ABSTotal += chance * serRDG_ABS.loc[index]
                         RDG_SCATotal += chance * serRDG_SCA.loc[index]
@@ -1230,6 +1420,18 @@ class GraphTools:
                         result['SSA_RDG_Total'] = RDG_SCATotal / (RDG_SCATotal + RDG_ABSTotal)
                         result['SSA_TMatrix_Total'] = TMatrix_SCATotal / (TMatrix_SCATotal + TMatrix_ABSTotal)
 
+                        result['EXP_ABS_AVE'] = arrEXPABS_AVE_STD[0]
+                        result['EXP_SCA_AVE'] = arrEXPSCA_AVE_STD[0]
+                        result['EXP_MAC_AVE'] = arrEXPMAC_AVE_STD[0]
+                        result['EXP_MSC_AVE'] = arrEXPMSC_AVE_STD[0]
+                        result['EXP_SSA_AVE'] = arrEXPSSA_AVE_STD[0]
+
+                        result['EXP_ABS_STD'] = arrEXPABS_AVE_STD[1]
+                        result['EXP_SCA_STD'] = arrEXPSCA_AVE_STD[1]
+                        result['EXP_MAC_STD'] = arrEXPMAC_AVE_STD[1]
+                        result['EXP_MSC_STD'] = arrEXPMSC_AVE_STD[1]
+                        result['EXP_SSA_STD'] = arrEXPSSA_AVE_STD[1]
+
                     else:
                         result['fileName'] = fileName
                         result['TotalMassGram'] = np.nan
@@ -1244,18 +1446,29 @@ class GraphTools:
                         result['SSA_RDG_Total'] = np.nan
                         result['SSA_TMatrix_Total'] = np.nan
 
+                        result['EXP_ABS_AVE'] = np.nan
+                        result['EXP_ABS_STD'] = np.nan
+                        result['EXP_SCA_AVE'] = np.nan
+                        result['EXP_SCA_STD'] = np.nan
+                        result['EXP_MAC_AVE'] = np.nan
+                        result['EXP_MAC_STD'] = np.nan
+                        result['EXP_MSC_AVE'] = np.nan
+                        result['EXP_MSC_STD'] = np.nan
+                        result['EXP_SSA_AVE'] = np.nan
+                        result['EXP_SSA_STD'] = np.nan
+
                     df.loc[len(df)] = result
 
             self.dictTotalOpticalProp[fileName] = df
-            # newInfoDf = pd.DataFrame([self.infoDict])
+
             if self.__counter == 0:
                 dfInfoDB = pd.read_csv(f"{self.__folderNameGraph}\__ExperimentResults\TotalOptExp1.csv")
                 dfInfoDB.loc[len(dfInfoDB)] = result
                 dfInfoDB.to_csv(f"{self.__folderNameGraph}\__ExperimentResults\TotalOptExp1.csv", index=False)
+
             if self.__counter == 1:
                 df.to_csv(f"{self.__folderNameGraph}\__ExperimentResults\TotalOptExp1.csv", index=False)
                 self.__counter = 0
-
 
         except Exception as e:
             logging.exception(e)
@@ -1340,7 +1553,7 @@ class GraphTools:
             logging.exception(e)
             raise
 
-    def LognormalFitter(self, df):
+    def SMPSLogNormalFitter(self, df):
         try:
             dm = df['dm']
             conc = df['Conc']
@@ -1349,6 +1562,7 @@ class GraphTools:
         except Exception as e:
             logging.exception(e)
             raise
+
     ###################################
     ###################################
     ###################################
@@ -1373,14 +1587,14 @@ class GraphTools:
             #########################################
             #########################################
             if mode1 == "TR_":
-                columnDetailA += ', Obs'
+                columnDetailA += ', New Model'
             elif mode1 == "RE_":
-                columnDetailA += ', Trad'
+                columnDetailA += ', Traditional Equivalent'
             #########################################
             if mode2 == "TR_":
-                columnDetailB += ', Obs'
+                columnDetailB += ', New Model'
             elif mode2 == "RE_":
-                columnDetailB += ', Trad'
+                columnDetailB += ', Traditional Equivalent'
 
             return columnNameA, columnDetailA, columnNameB, columnDetailB
         except Exception as e:
@@ -1414,6 +1628,7 @@ class GraphTools:
                                           yScale='log', yLabel=self.__yLabelPlotCrossSections,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.1e')
+
             ######################## SCA Cross Section
             columnName1 = 'SCA_CRS_AVE' + columnNameA + '_MDL'
             columnName1_STD = 'SCA_CRS_STD' + columnNameA + '_MDL'
@@ -1432,6 +1647,7 @@ class GraphTools:
                                           yScale='log', yLabel=self.__yLabelPlotCrossSections,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.1e')
+
             ######################## SSA
             columnName1 = 'SSA_AVE' + columnNameA + '_MDL'
             columnName1_STD = 'SSA_STD' + columnNameA + '_MDL'
@@ -1450,6 +1666,7 @@ class GraphTools:
                                           yScale='log', yLabel=self.__yLabelSSA,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.2f')
+
             ######################## Absorption Eff
             columnName1 = 'ABS_EFF_AVE' + columnNameA + '_MDL'
             columnName1_STD = 'ABS_EFF_STD' + columnNameA + '_MDL'
@@ -1468,6 +1685,7 @@ class GraphTools:
                                           yScale='log', yLabel=self.__yLabelEFF,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.2f')
+
             ######################## Scattering Eff
             columnName1 = 'SCA_EFF_AVE' + columnNameA + '_MDL'
             columnName1_STD = 'SCA_EFF_STD' + columnNameA + '_MDL'
@@ -1486,65 +1704,6 @@ class GraphTools:
                                           yScale='log', yLabel=self.__yLabelEFF,
                                           mean=mean, STD=STD,
                                           yAxisFormat='%1.2f')
-            ######################## MAC Cross Section
-            # columnName1 = 'MAC_RDG'
-            # columnDetail1 = 'RDG-FA'
-            # columnName2 = 'MAC_TMatrix'
-            # columnDetail2 = 'T-matrix'
-            # titleName = "Mass-absorption Coefficient (MAC)"
-            # titleAppend = " Vs. Mobility-equivalent Diameter"
-            # self.PlotSettingTotalLinesEXP(colName1=columnName1, colDetail1=columnDetail1,
-            #                               colName2=columnName2, colDetail2=columnDetail2,
-            #                               titleName=titleName, titleA=titleAppend,
-            #                               shareY='all', folderName=folderName,
-            #                               yScale='linear', yLabel=self.__yLabelMAC,
-            #                               mean=mean, STD=STD,
-            #                               yAxisFormat='%1.2f')
-            ######################## MSC Cross Section
-            # columnName1 = 'MSC_RDG'
-            # columnDetail1 = 'RDG-FA'
-            # columnName2 = 'MSC_TMatrix'
-            # columnDetail2 = 'T-matrix'
-            # titleName = "Mass-scattering Coefficient (MSC)"
-            # titleAppend = " Vs. Mobility-equivalent Diameter"
-            # self.PlotSettingTotalLinesEXP(colName1=columnName1, colDetail1=columnDetail1,
-            #                               colName2=columnName2, colDetail2=columnDetail2,
-            #                               titleName=titleName, titleA=titleAppend,
-            #                               shareY='all', folderName=folderName,
-            #                               yScale='linear', yLabel=self.__yLabelMSC,
-            #                               mean=mean, STD=STD,
-            #                               yAxisFormat='%1.2f')
-
-            ######################## Ratio ABS and SCA
-            # columnName1 = 'RatioABS'
-            # columnDetail1 = 'ABS Ratio'
-            # columnName2 = 'RatioSCA'
-            # columnDetail2 = 'SCA Ratio'
-            # titleName = "T-matrix and RDG-FA Cross Section Ratio"
-            # titleAppend = " Vs. Mobility-equivalent Diameter"
-            # self.PlotSettingTotalLinesEXP(colName1=columnName1, colDetail1=columnDetail1,
-            #                               colName2=columnName2, colDetail2=columnDetail2,
-            #                               titleName=titleName, titleA=titleAppend,
-            #                               shareY='all', folderName=folderName,
-            #                               yScale='linear', yLabel=self.__yLabelRatioCRS,
-            #                               mean=mean, STD=STD,
-            #                               yAxisFormat='%1.2f')
-            ######################## dp median and dp Avg
-            # columnName1 = 'dp_median'
-            # columnDetail1 = 'Primary Particle Median Diameter'
-            # columnName2 = 'dp_Ave'
-            # columnDetail2 = 'Primary Particle Average Diameter'
-            # titleName = "Primary Particle Median and Average Diameter"
-            # titleAppend = " Vs. Mobility-equivalent Diameter"
-            # self.PlotSettingTotalLinesEXP(colName1=columnName1, colDetail1=columnDetail1,
-            #                               colName2=columnName2, colDetail2=columnDetail2,
-            #                               titleName=titleName, titleA=titleAppend,
-            #                               shareY='all', folderName=folderName,
-            #                               yScale='linear', yLabel=self.__yLabel_dp,
-            #                               mean=mean, STD=STD,
-            #                               yAxisFormat='%1.2f')
-
-            A = 33
 
         except Exception as e:
             logging.exception(e)
@@ -1555,6 +1714,7 @@ class GraphTools:
             columnNameA, columnDetailA, columnNameB, columnDetailB = self.ModeModelSelector(mode1, model1, mode2, model2)
 
             folderName = f'{mode1}_{model1}--{mode2}_{model2}/_TotalBarGraphs' + append
+
             ######################## MAC
             columnName1 = 'MAC' + columnNameA + '_Total'
             columnDetail1 = columnDetailA
@@ -1562,15 +1722,22 @@ class GraphTools:
             columnDetail2 = columnDetailB
             mean = self.__EXP_MAC_AVE
             STD = self.__EXP_MAC_STD
+            mean1 = 'EXP_MAC_AVE'
+            STD1 = 'EXP_MAC_STD'
+            mean2 = 'EXP_MAC_AVE'
+            STD2 = 'EXP_MAC_STD'
             titleName = "Total Mass-absorption Coefficient (MAC)"
             titleAppend = ""
             self.PlotSettingTotalBarsEXP(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
                                          colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
                                          titleName=titleName, titleA=titleAppend,
                                          mean=mean, STD=STD,
+                                         mean1=mean1, STD1=STD1,
+                                         mean2=mean2, STD2=STD2,
                                          shareY='all', folderName=folderName,
                                          yScale='linear', yLabel=self.__yLabelMAC,
-                                         showValue=True, valueFormat='{:.2f}', yAxisFormat='%1.2f')
+                                         showValue=False, valueFormat='{:.2f}', yAxisFormat='%1.2f')
+
             ######################## MSC
             columnName1 = 'MSC' + columnNameA + '_Total'
             columnDetail1 = columnDetailA
@@ -1578,16 +1745,90 @@ class GraphTools:
             columnDetail2 = columnDetailB
             mean = self.__EXP_MSC_AVE
             STD = self.__EXP_MSC_STD
+            mean1 = 'EXP_MSC_AVE'
+            STD1 = 'EXP_MSC_STD'
+            mean2 = 'EXP_MSC_AVE'
+            STD2 = 'EXP_MSC_STD'
             titleName = "Total Mass-scattering Coefficient (MSC)"
             titleAppend = ""
             self.PlotSettingTotalBarsEXP(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
                                          colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
                                          titleName=titleName, titleA=titleAppend,
                                          mean=mean, STD=STD,
+                                         mean1=mean1, STD1=STD1,
+                                         mean2=mean2, STD2=STD2,
                                          shareY='all', folderName=folderName,
-                                         yScale='linear', yLabel=self.__yLabelMAC,
-                                         showValue=True, valueFormat='{:.2f}', yAxisFormat='%1.2f')
+                                         yScale='log', yLabel=self.__yLabelMSC,
+                                         showValue=False, valueFormat='{:.2f}', yAxisFormat='%1.2f')
 
+            ######################## Absorption Cross-section
+            columnName1 = 'ABS' + columnNameA + '_Total'
+            columnDetail1 = columnDetailA
+            columnName2 = 'ABS' + columnNameB + '_Total'
+            columnDetail2 = columnDetailB
+            mean = 0
+            STD = 0
+            mean1 = 'EXP_ABS_AVE'
+            STD1 = 'EXP_ABS_STD'
+            mean2 = 'EXP_ABS_AVE'
+            STD2 = 'EXP_ABS_STD'
+            titleName = "Total Absorption Cross-section"
+            titleAppend = ""
+            self.PlotSettingTotalBarsEXP(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
+                                         colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
+                                         titleName=titleName, titleA=titleAppend,
+                                         mean=mean, STD=STD,
+                                         mean1=mean1, STD1=STD1,
+                                         mean2=mean2, STD2=STD2,
+                                         shareY='all', folderName=folderName,
+                                         yScale='log', yLabel=self.__yLabelPlotCrossSections,
+                                         showValue=False, valueFormat='{:.2E}', yAxisFormat='%1.1e')
+
+            ######################## Scattering Cross-section
+            columnName1 = 'SCA' + columnNameA + '_Total'
+            columnDetail1 = columnDetailA
+            columnName2 = 'SCA' + columnNameB + '_Total'
+            columnDetail2 = columnDetailB
+            mean = 0
+            STD = 0
+            mean1 = 'EXP_SCA_AVE'
+            STD1 = 'EXP_SCA_STD'
+            mean2 = 'EXP_SCA_AVE'
+            STD2 = 'EXP_SCA_STD'
+            titleName = "Total Scattering Cross-section"
+            titleAppend = ""
+            self.PlotSettingTotalBarsEXP(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
+                                         colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
+                                         titleName=titleName, titleA=titleAppend,
+                                         mean=mean, STD=STD,
+                                         mean1=mean1, STD1=STD1,
+                                         mean2=mean2, STD2=STD2,
+                                         shareY='all', folderName=folderName,
+                                         yScale='log', yLabel=self.__yLabelPlotCrossSections,
+                                         showValue=False, valueFormat='{:.2E}', yAxisFormat='%1.1e')
+
+            ######################## SSA Total
+            columnName1 = 'SSA' + columnNameA + '_Total'
+            columnDetail1 = columnDetailA
+            columnName2 = 'SSA' + columnNameB + '_Total'
+            columnDetail2 = columnDetailB
+            mean = 0
+            STD = 0
+            mean1 = 'EXP_SSA_AVE'
+            STD1 = 'EXP_SSA_STD'
+            mean2 = 'EXP_SSA_AVE'
+            STD2 = 'EXP_SSA_STD'
+            titleName = "Total Single-scattering Albedo (SSA)"
+            titleAppend = ""
+            self.PlotSettingTotalBarsEXP(colName1=columnName1, colDetail1=columnDetail1, mode1=mode1,
+                                         colName2=columnName2, colDetail2=columnDetail2, mode2=mode2,
+                                         titleName=titleName, titleA=titleAppend,
+                                         mean=mean, STD=STD,
+                                         mean1=mean1, STD1=STD1,
+                                         mean2=mean2, STD2=STD2,
+                                         shareY='all', folderName=folderName,
+                                         yScale='linear', yLabel=self.__yLabelSSA,
+                                         showValue=False, valueFormat='{:.2f}', yAxisFormat='%1.2f')
 
         except Exception as e:
             logging.exception(e)
@@ -1601,6 +1842,8 @@ class GraphTools:
                                  column2, column2T, mode2,
                                  title, titleAppend,
                                  mean, STD,
+                                 mean1, STD1,
+                                 mean2, STD2,
                                  folderName, yCommonLabel,
                                  shareY, yAxisFormat,
                                  sigma, median,
@@ -1630,7 +1873,6 @@ class GraphTools:
             rowCount = 0
             for i in A1.unique():
                 colCount = 0
-                # DmCount=0
                 for j in A2.unique():
                     fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
 
@@ -1638,6 +1880,11 @@ class GraphTools:
 
                     C1Height = []
                     C2Height = []
+
+                    C3Height = []
+                    C4Height = []
+                    C3ErrHeight = []
+                    C4ErrHeight = []
 
                     EXPHeight = []
                     EXPErr = []
@@ -1652,11 +1899,23 @@ class GraphTools:
 
                         if (len(selectedRow1[column1]) != 1) or (len(selectedRow2[column2]) != 1):
                             raise
+
                         else:
                             for c1 in selectedRow1[column1]:
                                 C1Height.append(c1)
                             for c2 in selectedRow2[column2]:
                                 C2Height.append(c2)
+
+                            for c3 in selectedRow1[mean1]:
+                                C3Height.append(c3)
+                            for c3err in selectedRow1[STD1]:
+                                C3ErrHeight.append(c3err * 2)
+
+                            for c4 in selectedRow2[mean2]:
+                                C4Height.append(c4)
+                            for c4err in selectedRow2[STD2]:
+                                C4ErrHeight.append(c4err * 2)
+
                             EXPHeight.append(mean)
                             EXPErr.append(STD * 2)
 
@@ -1664,14 +1923,21 @@ class GraphTools:
                                                          label=column1T)
                     AXES_B = ax1[rowCount, colCount].bar(indexBarPlot + self.__barWidth / 2, C2Height, color=self.__A2Color, width=self.__barWidth, edgecolor='white', hatch=self.__patterns[4],
                                                          label=column2T)
+
+                    # EXP Integrated
+                    AXES_A1 = ax1[rowCount, colCount].bar(indexBarPlot - self.__barWidth / 2, C3Height, yerr=C3ErrHeight, capsize=3, error_kw=dict(elinewidth=2, capthick=2), ecolor='black', width=0.0,
+                                                          edgecolor='white', )
+                    AXES_B1 = ax1[rowCount, colCount].bar(indexBarPlot + self.__barWidth / 2, C4Height, yerr=C4ErrHeight, capsize=3, error_kw=dict(elinewidth=2, capthick=2), ecolor='black', width=0.0,
+                                                          edgecolor='white', )
+
                     # EXP
-                    AXES_C = ax1[rowCount, colCount].bar(indexBarPlot, EXPHeight, yerr=EXPErr, capsize=3, ecolor='black', width=0.0, edgecolor='white', label='Experiment')
-                    # DmCount+=1
+                    if mean != 0:
+                        AXES_C = ax1[rowCount, colCount].bar(indexBarPlot, EXPHeight, yerr=EXPErr, capsize=4, error_kw=dict(elinewidth=3, capthick=1), ecolor='gray', width=0.0, edgecolor='white',
+                                                             label='Experiment')
 
                     if showValue:
                         autoLabel(self, rects=AXES_A, row=rowCount, col=colCount, format=valueFormat)
                         autoLabel(self, rects=AXES_B, row=rowCount, col=colCount, format=valueFormat)
-                        # autoLabel(self, rects=AXES_C, row=rowCount, col=colCount, format=valueFormat)
 
                     ax1[rowCount, colCount].set_xticks(indexBarPlot)
                     ax1[rowCount, colCount].set_xticklabels(("$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)), fontsize=self.__xLabelGroupFontSizeTotal)
@@ -1692,7 +1958,7 @@ class GraphTools:
                     colCount += 1
                 rowCount += 1
 
-            F1 = f"{title} for median={median}-sigma={sigma}"
+            F1 = f"{title} for median={round(median)}-sigma={round(sigma, 2)}"
             T1 = title + titleAppend + " for " + "$d_{m,g}=$" + str(round(median)) + " nm " + "and " + "$\sigma_g=$" + str(round(sigma, 2))
 
             fig.subplots_adjust(top=self.__subplotGridSetup[0], wspace=self.__subplotGridSetup[1], hspace=self.__subplotGridSetup[2])
@@ -1707,12 +1973,12 @@ class GraphTools:
 
             leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustment[0], self.__legendSubplotAdjustment[1]), markerscale=self.__legendSubplotMarkerScale, fontsize=self.__legendSubplotFontSize,
                              loc='lower left', borderaxespad=0.)
+
             ################# set the lineWidth of each legend object
             for legObj in leg.legendHandles:
                 legObj.set_linewidth(self.__legendSubplotLineWidth)
             #################
             self.SaveAndClosePlot(folderName=folderName, F1=F1)
-
 
         except Exception as e:
             logging.exception(e)
@@ -1722,6 +1988,8 @@ class GraphTools:
                                 colName2, colDetail2, mode2,
                                 titleName, titleA, shareY, folderName,
                                 mean, STD,
+                                mean1, STD1,
+                                mean2, STD2,
                                 yScale, yLabel, showValue, valueFormat, yAxisFormat):
         try:
             for sigma in self.__dmSigmaLogN:
@@ -1732,6 +2000,8 @@ class GraphTools:
                                                   column2=colName2, column2T=colDetail2, mode2=mode2,
                                                   title=titleName, titleAppend=titleA,
                                                   mean=mean, STD=STD,
+                                                  mean1=mean1, STD1=STD1,
+                                                  mean2=mean2, STD2=STD2,
                                                   folderName=folderName,
                                                   yScale=yScale, yCommonLabel=yLabel, yAxisFormat=yAxisFormat,
                                                   shareY=shareY,
@@ -1781,28 +2051,36 @@ class GraphTools:
                         da_STD = df1['da_STD'] * 2
                         y_STD = df1[colName1_STD] * 2
                         ax1[rowCount, colCount].errorbar(df1['da_AVE'], df1[column1], xerr=da_STD, yerr=y_STD, label=column1T + ', ' + Dmlist[DmCount],
-                                                         color=self.get_color(self.__A1Color, 'yellow', portion=(DmCount + 1) * 0.1), linewidth=1,
-                                                         linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine,
-                                                         marker=self.__subplotMarkerStyle[c_markerStyle], markersize=3, markevery=4, errorevery=4,
-                                                         capsize=1, elinewidth=1, markeredgewidth=1)
+                                                         color=self.get_color(self.__A1Color, 'yellow', portion=(DmCount + 1) * 0.1), linewidth=self.__A1LineWidth[c_lineStyle],
+                                                         linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine)
+                        # marker=self.__subplotMarkerStyle[c_markerStyle], markersize=3, markevery=4, errorevery=4,
+                        # capsize=1, elinewidth=1, markeredgewidth=1)
 
                         df2 = self.modelConvertedDF[mode2 + fileN]
                         da_STD = df2['da_STD'] * 2
                         y_STD = df2[colName2_STD] * 2
                         ax1[rowCount, colCount].errorbar(df2['da_AVE'], df2[column2], xerr=da_STD, yerr=y_STD, label=column2T + ', ' + Dmlist[DmCount],
-                                                         color=self.get_color(self.__A2Color, 'gray', portion=(DmCount + 1) * 0.2), linewidth=2,
-                                                         linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A2AlphaMainLine, errorevery=5,
-                                                         capsize=1, elinewidth=1, markeredgewidth=1)
+                                                         color=self.get_color(self.__A2Color, 'gray', portion=(DmCount + 1) * 0.2), linewidth=self.__A2LineWidth[c_lineStyle],
+                                                         linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A2AlphaMainLine, )
+                        # errorevery=5,capsize=1, elinewidth=1, markeredgewidth=1)
                         c_lineStyle += 1
                         c_markerStyle += 1
                         c_lineWidth += 1
                         DmCount += 1
 
+                    p8 = np.poly1d(np.polyfit(self.dfExperiment['da_AVE_EXP'], np.log(self.dfExperiment[mean].values), 8))
+                    fittedEXP = []
+                    for da in df2['da_AVE']:
+                        fittedEXP.append(exp(p8(da)))
+
+                    ax1[rowCount, colCount].plot(df2['da_AVE'], fittedEXP, color='black')
+
                     da_STD = self.dfExperiment['da_STD_EXP'] * 2
                     y_STD = self.dfExperiment[STD] * 2
                     ax1[rowCount, colCount].errorbar(self.dfExperiment['da_AVE_EXP'], self.dfExperiment[mean], xerr=da_STD, yerr=y_STD, label="Experiment",
-                                                     color=self.get_color('gray', 'black'), linestyle='-',
-                                                     linewidth=3, alpha=self.__A3AlphaMainLine, marker="D", markersize=self.__markerSize, ecolor='black',
+                                                     color=self.get_color('gray', 'black'),
+                                                     # linestyle='-',linewidth=3,
+                                                     alpha=self.__A3AlphaMainLine, marker="D", markersize=self.__markerSize, ecolor='black',
                                                      capsize=3, elinewidth=1, markeredgewidth=1)
 
                     ax1[rowCount, colCount].grid(True, which='both', axis="both", alpha=0.5)
@@ -1887,512 +2165,6 @@ class GraphTools:
         ###################################
         ###################################
 
-    def PlotdpInfo(self, append):
-        try:
-            folderName = '_PrimaryParticle' + append
-            ######################## dp median
-            columnName = 'dp_median'
-            titleName = "Primary Particle Median Diameter for each Mobility Diameter"
-            self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='linear', yLabel=self.__yLabel_dpMedian)
-            ######################## dp ave
-            columnName = 'dp_Ave'
-            titleName = "Primary Particle Average Diameter for each Mobility Diameter"
-            self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='linear', yLabel=self.__yLabel_dpAve)
-            ######################## Number of calcs
-            columnName = 'NumberOfCalcs'
-            titleName = "Number of Calculations for each Mobility Diameter"
-            self.PlotSetting_3CatLine(columnName=columnName, titleName=titleName, folderName=folderName, yScale='linear', yLabel=self.__yLabelCalcNumber)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ###################################
-    ###################################
-    ###################################
-    ###################################
-
-    def PlotEffEXP(self, append):
-        try:
-            folderName = '_OpticalEfficiency' + append
-            ######################## ABS RDG
-            columnName = 'ABS_RDG_Eff'
-            mean = 'ABS_Eff_AVE'
-            STD = 'ABS_Eff_STD'
-            titleName = "Absorption Efficiency for RDG-FA"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
-            ######################## SCA RDG
-            columnName = 'SCA_RDG_Eff'
-            mean = 'SCA_Eff_AVE'
-            STD = 'SCA_Eff_STD'
-            titleName = "Scattering Efficiency for RDG-FA"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
-            ######################## ABS TMatrix
-            columnName = 'ABS_TMatrix_Eff'
-            mean = 'ABS_Eff_AVE'
-            STD = 'ABS_Eff_STD'
-            titleName = "Absorption Efficiency for T-matrix"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
-            ######################## SCA TMatrix
-            columnName = 'SCA_TMatrix_Eff'
-            mean = 'SCA_Eff_AVE'
-            STD = 'SCA_Eff_STD'
-            titleName = "Scattering Efficiency for T-matrix"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelEFF)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ###################################
-    ###################################
-    ###################################
-    ###################################
-
-    def PlotSSAEXP(self, append):
-        try:
-            folderName = '_SSAs' + append
-            ######################## SSA TMatrix
-            columnName = 'SSA_TMatrix'
-            mean = 'SSA_AVE'
-            STD = 'SSA_STD'
-            titleName = "SSA for T-matrix"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelSSA)
-
-            ######################## SSA RDG
-            columnName = 'SSA_RDG'
-            mean = 'SSA_AVE'
-            STD = 'SSA_STD'
-            titleName = "SSA for RDG-FA"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelSSA)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ###################################
-    ###################################
-    ###################################
-    ###################################
-
-    def PlotCrossSectionsEXP(self, append):
-        try:
-            folderName = '_OpticalCrossSection' + append
-            ######################## Absorption RDG
-            columnName = 'ABS_RDG'
-            mean = 'ABS_CRS_AVE'
-            STD = 'ABS_CRS_STD'
-            titleName = "RDG-FA Absorption Cross-section"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelPlotCrossSections)
-            ######################## Scattering RDG
-            columnName = 'SCA_RDG'
-            mean = 'SCA_CRS_AVE'
-            STD = 'SCA_CRS_STD'
-            titleName = "RDG-FA Scattering Cross-section"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelPlotCrossSections)
-            ######################## Absorption TMatrix
-            columnName = 'ABS_TMatrix'
-            mean = 'ABS_CRS_AVE'
-            STD = 'ABS_CRS_STD'
-            titleName = "T-matrix Absorption Cross-section"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelPlotCrossSections)
-            ######################## Scattering TMatrix
-            columnName = 'SCA_TMatrix'
-            mean = 'SCA_CRS_AVE'
-            STD = 'SCA_CRS_STD'
-            titleName = "T-matrix Scattering Cross-section"
-            self.PlotSetting_3CatLineEXP(columnName=columnName, titleName=titleName, folderName=folderName, mean=mean, STD=STD, yScale='log', yLabel=self.__yLabelPlotCrossSections)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ##################################################################################
-    ##################################################################################
-    ##################################################################################
-    ##################################################################################
-
-    def PlotSimpleLinesEXP(self, A1, A1Name, A2, A2Name,
-                           title, column, folderName,
-                           titleAppend1, roundNTitle,
-                           fileAppend1, roundNFile,
-                           yLabel,
-                           mean, STD,
-                           titleAppend2=None, fileAppend2=None,
-                           xScale='log', yScale='log'):
-        try:
-            alphaMainLine = self.__alphaMainLine
-
-            for i in A1.unique():
-                fig, ax1 = plt.subplots()
-                c_lineColor = 0
-                c_lineWidth = 0
-                for j in A2.unique():
-                    fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
-                    c_lineStyle = 0
-                    c_markerStyle = 0
-
-                    for index, fileN in fileNames.iteritems():
-                        if fileN in self.dictData:
-                            df = self.dictData[fileN]
-                            ax1.plot(df['dm'], df[column], label=self.dictDataLabel[fileN],
-                                     color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine,
-                                     marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-                        c_lineStyle += 1
-                        c_markerStyle += 1
-
-                    dm_STD = self.dfEXP[fileN]['dm_STD'] * 2
-                    y_STD = self.dfEXP[fileN][STD] * 2
-
-                    ax1.errorbar(self.dfEXP[fileN]['dm_AVE'], self.dfEXP[fileN][mean], xerr=dm_STD, yerr=y_STD, label="Experiment, " + self.dictDataLabelEXP[fileN],
-                                 color=self.get_color(self.__lineColor[c_lineWidth], 'black'), linewidth=self.__A3LineWidth[c_lineWidth],
-                                 alpha=self.__A3AlphaMainLine, marker="D", markersize=self.__markerSize - 1, ecolor='black', capsize=3, elinewidth=1, markeredgewidth=1)
-
-                    c_lineColor += 1
-                    c_lineWidth += 1
-
-                if titleAppend2:
-                    T1 = title + titleAppend1 + str(round(i, roundNTitle)) + titleAppend2
-                else:
-                    T1 = title + titleAppend1 + str(round(i, roundNTitle))
-                if fileAppend2:
-                    F1 = title + fileAppend1 + str(round(i, roundNFile)) + fileAppend2
-                else:
-                    F1 = title + fileAppend1 + str(round(i, roundNFile))
-
-                ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale(xScale)
-                ax1.set_yscale(yScale)
-                ax1.set_xlabel(self.__xLabelAeroDiameter, fontsize=self.__xLabelGeneralFontSize)
-                ax1.set_ylabel(yLabel, fontsize=self.__yLabelGeneralFontSize)
-                ax1.set_xlim(self.__xAxisLimitsComp[0], self.__xAxisLimitsComp[1])
-
-                ax1.set_title(T1, fontsize=self.__plotTitleGeneralFontSize)
-                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
-                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.tick_params(axis='x', which='major', labelsize=self.__xMajorTickLabelGeneralFontSize)
-                ax1.tick_params(axis='x', which='minor', labelsize=self.__xMinorTickLabelGeneralFontSize)
-                ax1.tick_params(axis='y', which='major', labelsize=self.__yMajorTickLabelGeneralFontSize)
-                ax1.tick_params(axis='y', which='minor', labelsize=self.__yMinorTickLabelGeneralFontSize)
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), markerscale=self.__legendMarkerScale, loc='center left', fontsize='large')
-                self.SaveAndClosePlot(folderName=folderName, F1=F1)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def PlotSetting_3CatLineEXP(self, columnName, titleName, folderName,
-                                mean, STD,
-                                yScale, yLabel):
-        try:
-            if self.__rhoEff100nmCTE == True:
-                self.PlotSimpleLinesEXP(A1=self.ser_rhoEff100nmAve, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
-                                        A2=self.ser_DmAve, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
-                                        column=columnName, title=titleName, folderName=folderName,
-                                        yScale=yScale, yLabel=yLabel,
-                                        mean=mean, STD=STD,
-                                        titleAppend1=" for " + "$\\rho_{eff,100}$= ", roundNTitle=1, titleAppend2=" kg/m$^3$",
-                                        fileAppend1=" for " + "rho_eff=", roundNFile=0)
-
-            # if self.__DmCTE == True:
-            #     self.PlotSimpleLinesEXP(A1=self.ser_Dm, A1Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
-            #                          A2=self.ser_SigmaMob, A2Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-            #                          column=columnName, title=titleName, folderName=folderName,
-            #                          yScale=yScale, yLabel=yLabel,
-            #                          titleAppend1=" for " + "$D_m=$", roundNTitle=2,
-            #                          fileAppend1=" for " + "Dm=", roundNFile=2)
-            #
-            # if self.__sigmaEachMobCTE == True:
-            #     self.PlotSimpleLinesEXP(A1=self.ser_SigmaMob, A1Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-            #                          A2=self.ser_rhoEff100nm, A2Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
-            #                          column=columnName, title=titleName, folderName=folderName,
-            #                          yScale=yScale, yLabel=yLabel,
-            #                          titleAppend1=" for " + "$\sigma_p|d_m=$", roundNTitle=2,
-            #                          fileAppend1=" for " + "sigma_p=", roundNFile=2)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ###################################
-    ###################################
-    ###################################
-    ###################################
-
-    def PlotSimpleLines(self, A1, A1Name, A2, A2Name,
-                        title, column, folderName,
-                        titleAppend1, roundNTitle,
-                        fileAppend1, roundNFile,
-                        yLabel,
-                        titleAppend2=None, fileAppend2=None,
-                        xScale='log', yScale='log'):
-        try:
-            alphaMainLine = self.__alphaMainLine
-
-            for i in A1.unique():
-                fig, ax1 = plt.subplots()
-                c_lineColor = 0
-                c_lineWidth = 0
-                for j in A2.unique():
-                    fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
-                    c_lineStyle = 0
-                    c_markerStyle = 0
-
-                    for index, fileN in fileNames.iteritems():
-                        if fileN in self.dictData:
-                            df = self.dictData[fileN]
-                            ax1.plot(df['dm'], df[column], label=self.dictDataLabel[fileN],
-                                     color=self.__lineColor[c_lineColor], linewidth=self.__lineWidth[c_lineWidth],
-                                     linestyle=self.__lineStyle[c_lineStyle], alpha=alphaMainLine,
-                                     marker=self.__markerStyle[c_markerStyle], markersize=self.__markerSize)
-                        c_lineStyle += 1
-                        c_markerStyle += 1
-
-                    c_lineColor += 1
-                    c_lineWidth += 1
-
-                if titleAppend2:
-                    T1 = title + titleAppend1 + str(round(i, roundNTitle)) + titleAppend2
-                else:
-                    T1 = title + titleAppend1 + str(round(i, roundNTitle))
-                if fileAppend2:
-                    F1 = title + fileAppend1 + str(round(i, roundNFile)) + fileAppend2
-                else:
-                    F1 = title + fileAppend1 + str(round(i, roundNFile))
-
-                ax1.grid(True, which='both', axis="both", alpha=0.5)
-                ax1.set_xscale(xScale)
-                ax1.set_yscale(yScale)
-                ax1.set_xlabel(self.__xLabelAeroDiameter, fontsize=self.__xLabelGeneralFontSize)
-                ax1.set_ylabel(yLabel, fontsize=self.__yLabelGeneralFontSize)
-                ax1.set_xlim(self.__xAxisLimitsComp[0], self.__xAxisLimitsComp[1])
-
-                ax1.set_title(T1, fontsize=self.__plotTitleGeneralFontSize)
-                ax1.xaxis.set_major_formatter(FormatStrFormatter("%i"))
-                ax1.xaxis.set_minor_formatter(FormatStrFormatter("%i"))
-                ax1.tick_params(axis='x', which='major', labelsize=self.__xMajorTickLabelGeneralFontSize)
-                ax1.tick_params(axis='x', which='minor', labelsize=self.__xMinorTickLabelGeneralFontSize)
-                ax1.tick_params(axis='y', which='major', labelsize=self.__yMajorTickLabelGeneralFontSize)
-                ax1.tick_params(axis='y', which='minor', labelsize=self.__yMinorTickLabelGeneralFontSize)
-                ax1.legend(bbox_to_anchor=(1.00, 0.5), markerscale=self.__legendMarkerScale, loc='center left', fontsize='large')
-                self.SaveAndClosePlot(folderName=folderName, F1=F1)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def PlotSetting_3CatLine(self, columnName, titleName, folderName,
-                             yScale, yLabel):
-        try:
-            if self.__rhoEff100nmCTE == True:
-                self.PlotSimpleLines(A1=self.ser_rhoEff100nmAve, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
-                                     A2=self.ser_DmAve, A2Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
-                                     column=columnName, title=titleName, folderName=folderName,
-                                     yScale=yScale, yLabel=yLabel,
-                                     titleAppend1=" for " + "$\\rho_{eff,100}$= ", roundNTitle=1, titleAppend2=" kg/m$^3$",
-                                     fileAppend1=" for " + "rho_eff=", roundNFile=0)
-
-            # if self.__DmCTE == True:
-            #     self.PlotSimpleLines(A1=self.ser_Dm, A1Name=self.dfMainInfo.AGG_EFF_DM_CENTER,
-            #                          A2=self.ser_SigmaMob, A2Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-            #                          column=columnName, title=titleName, folderName=folderName,
-            #                          yScale=yScale, yLabel=yLabel,
-            #                          titleAppend1=" for " + "$D_m=$", roundNTitle=2,
-            #                          fileAppend1=" for " + "Dm=", roundNFile=2)
-            #
-            # if self.__sigmaEachMobCTE == True:
-            #     self.PlotSimpleLines(A1=self.ser_SigmaMob, A1Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-            #                          A2=self.ser_rhoEff100nm, A2Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
-            #                          column=columnName, title=titleName, folderName=folderName,
-            #                          yScale=yScale, yLabel=yLabel,
-            #                          titleAppend1=" for " + "$\sigma_p|d_m=$", roundNTitle=2,
-            #                          fileAppend1=" for " + "sigma_p=", roundNFile=2)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    ###################################
-    ###################################
-    ###################################
-    ###################################
-
-    '''
-    def PlotMultipleBarsRatio(self, A1, A1Name, A2, A2Name,
-                              column1, column1T,
-                              column2, column2T,
-                              title, titleAppend,
-                              folderName, yCommonLabel,
-                              shareY, yAxisFormat,
-                              sigma, median,
-                              showValue=True, valueFormat='{:.2E}', yScale='log'):
-        try:
-
-            fig, ax1 = plt.subplots(nrows=len(A1.unique()), ncols=len(A2.unique()), sharex=True, sharey=shareY, figsize=(12, 12))
-
-            def autoLabel(self, rects, row, col, format='{:.2E}', xPos='center'):
-
-                if 'E' in format:
-                    fontS = self.__valueFontSizeTotal
-                if 'f' in format:
-                    fontS = self.__valueFontSizeTotal * 1.4
-                ha = {'center': 'center', 'right': 'left', 'left': 'right'}
-                offset = {'center': 0, 'right': 1, 'left': -1}
-
-                for rect in rects:
-                    height = rect.get_height()
-                    ax1[row, col].annotate(format.format(height),
-                                           xy=(rect.get_x() + rect.get_width() / 2, height),
-                                           xytext=(offset[xPos] * 1, 1),  # use 3 points offset
-                                           textcoords="offset points",  # in both directions
-                                           ha=ha[xPos], va='bottom',
-                                           fontsize=fontS)
-
-            rowCount = 0
-            for i in A1.unique():
-                colCount = 0
-                for j in A2.unique():
-                    fileNames = self.dfMainInfo[(A1Name == i) & (A2Name == j)].AA_FileName
-
-                    indexBarPlot = np.arange(3)
-
-                    if sigma:
-                        Ratio = {}
-                        for median1 in self.__dmMedianLogN:
-                            Ratio[median1] = []
-                    if median:
-                        Ratio = {}
-                        for sigma1 in self.__dmSigmaLogN:
-                            Ratio[sigma1] = []
-
-                    for index, fileN in fileNames.iteritems():
-                        if fileN in self.dictData:
-
-                            df = self.dictTotalOpticalProp[fileN]
-                            if sigma:
-                                for median1 in self.__dmMedianLogN:
-
-                                    selectedRow = df.loc[(df['sigma'] == sigma) & (df['median'] == median1)]
-                                    if (len(selectedRow[column1]) != 1) or (len(selectedRow[column2]) != 1):
-                                        raise
-                                    else:
-                                        for c1 in selectedRow[column1]:
-                                            for c2 in selectedRow[column2]:
-                                                r1 = c2 / c1
-                                    Ratio[median1].append(r1)
-
-                            if median:
-                                for sigma1 in self.__dmSigmaLogN:
-
-                                    selectedRow = df.loc[(df['sigma'] == sigma1) & (df['median'] == median)]
-                                    if (len(selectedRow[column1]) != 1) or (len(selectedRow[column2]) != 1):
-                                        raise
-                                    else:
-                                        for c1 in selectedRow[column1]:
-                                            for c2 in selectedRow[column2]:
-                                                r1 = c2 / c1
-                                    Ratio[sigma1].append(r1)
-
-                    A, B = [], []
-                    for key in Ratio:
-                        if sigma:
-                            A.append("$d_{m,g}=$" + str(round(key)) + " nm ")
-                        if median:
-                            A.append("$\sigma_g=$" + str(round(key, 2)))
-                        B.append(Ratio[key])
-
-                    AXES_A = ax1[rowCount, colCount].bar(indexBarPlot - self.__barRatioWidth, B[0], color=self.__barColor[0], width=self.__barRatioWidth, edgecolor='white', label=A[0],
-                                                         hatch=self.__patterns[0])
-                    AXES_B = ax1[rowCount, colCount].bar(indexBarPlot, B[1], color=self.__barColor[1], width=self.__barRatioWidth, edgecolor='white', label=A[1], hatch=self.__patterns[4])
-                    AXES_C = ax1[rowCount, colCount].bar(indexBarPlot + self.__barRatioWidth, B[2], color=self.__barColor[2], width=self.__barRatioWidth, edgecolor='white', label=A[2],
-                                                         hatch=self.__patterns[5])
-                    if showValue:
-                        autoLabel(self, rects=AXES_A, row=rowCount, col=colCount, format=valueFormat)
-                        autoLabel(self, rects=AXES_B, row=rowCount, col=colCount, format=valueFormat)
-                        autoLabel(self, rects=AXES_C, row=rowCount, col=colCount, format=valueFormat)
-
-                    ax1[rowCount, colCount].set_xticks(indexBarPlot)
-                    ax1[rowCount, colCount].set_xticklabels(("$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)), fontsize=self.__xLabelGroupFontSizeTotal)
-                    ax1[rowCount, colCount].grid(True, which='both', axis="y", alpha=0.5)
-                    ax1[rowCount, colCount].set_yscale(yScale)
-                    ax1[rowCount, colCount].yaxis.set_tick_params(labelsize=self.__yMajorTickLabelSubplotFontSize)
-                    ax1[rowCount, colCount].yaxis.set_major_formatter(FormatStrFormatter(yAxisFormat))
-
-                    if colCount == (len(A2.unique()) - 1):
-                        ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelEachSubplotFontSize, rotation=self.__yLabelEachSubplotRotation)
-                        ax1[rowCount, colCount].yaxis.set_label_position("right")
-                        ax1[rowCount, colCount].yaxis.labelpad = self.__yLabelEachSubplotPad
-                    if rowCount == 0:
-                        ax1[rowCount, colCount].set_xlabel("$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelEachSubplotFontSize)
-                        ax1[rowCount, colCount].xaxis.set_label_position("top")
-                        ax1[rowCount, colCount].xaxis.labelpad = self.__xLabelEachSubplotPad
-
-                    colCount += 1
-                rowCount += 1
-
-            if median:
-                F1 = f"{title} for median={median}"
-                T1 = title + titleAppend + " for " + "$d_{m,g}=$" + str(round(median)) + " nm "
-            if sigma:
-                F1 = f"{title} for sigma={sigma}"
-                T1 = title + titleAppend + " for " + "$\sigma_g=$" + str(round(sigma, 2))
-
-            fig.subplots_adjust(top=self.__subplotGridSetup[0], wspace=self.__subplotGridSetup[1], hspace=self.__subplotGridSetup[2])
-            fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal)
-
-            fig.text(0.5, self.__xLabelCommonSubplotAdjustment, self.__xLabelMassMob, ha='center', fontsize=self.__xLabelCommonSubplotFontSize)
-
-            if 'e' in yAxisFormat:
-                fig.text(self.__yLabelCommonSubplotAdjustment[0], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
-            elif 'f' in yAxisFormat:
-                fig.text(self.__yLabelCommonSubplotAdjustment[1], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
-
-            leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustment[0], self.__legendSubplotAdjustment[1]), markerscale=self.__legendSubplotMarkerScale, fontsize=self.__legendSubplotFontSize,
-                             loc='lower left', borderaxespad=0.)
-            ################# set the lineWidth of each legend object
-            for legObj in leg.legendHandles:
-                legObj.set_linewidth(self.__legendSubplotLineWidth)
-            #################
-            self.SaveAndClosePlot(folderName=folderName, F1=F1)
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-
-    def PlotSettingTotalRatio(self, colName1, colDetail1, colName2, colDetail2,
-                              titleName, titleA, shareY, folderName,
-                              yScale, yLabel, showValue, valueFormat, yAxisFormat):
-        try:
-            for sigma in self.__dmSigmaLogN:
-                self.PlotMultipleBarsRatio(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
-                                           A2=self.ser_SigmaMob, A2Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column1=colName1, column1T=colDetail1,
-                                           column2=colName2, column2T=colDetail2,
-                                           title=titleName, titleAppend=titleA,
-                                           folderName=folderName,
-                                           yScale=yScale, yCommonLabel=yLabel, yAxisFormat=yAxisFormat,
-                                           shareY=shareY,
-                                           sigma=sigma, median=None,
-                                           showValue=showValue, valueFormat=valueFormat)
-            for median in self.__dmMedianLogN:
-                self.PlotMultipleBarsRatio(A1=self.ser_rhoEff100nm, A1Name=self.dfMainInfo.AGG_EFF_RHO_100NM_CENTER,
-                                           A2=self.ser_SigmaMob, A2Name=self.dfMainInfo.AGG_POLYDISPERSITY_SIGMA_EACH_MOBILITY_CENTER,
-                                           column1=colName1, column1T=colDetail1,
-                                           column2=colName2, column2T=colDetail2,
-                                           title=titleName, titleAppend=titleA,
-                                           folderName=folderName,
-                                           yScale=yScale, yCommonLabel=yLabel, yAxisFormat=yAxisFormat,
-                                           shareY=shareY,
-                                           sigma=None, median=median,
-                                           showValue=showValue, valueFormat=valueFormat)
-
-
-        except Exception as e:
-            logging.exception(e)
-            raise
-    '''
-
     ###################################
     ###################################
     ###################################
@@ -2435,6 +2207,7 @@ class GraphTools:
         except Exception as e:
             logging.exception(e)
             raise
+
     ######################################################################
     ######################################################################
     ######################################################################
