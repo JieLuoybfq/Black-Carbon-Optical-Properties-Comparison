@@ -1,4 +1,6 @@
 import os
+import time
+
 from ConfigReaderModule import logging
 import GeneralFunctions as GF
 import numpy as np
@@ -16,6 +18,7 @@ import subprocess
 from matplotlib import colors
 import pickle
 import io
+import cv2
 
 ####### Plotting Parameters
 rcParams['mathtext.fontset'] = 'stix'
@@ -54,7 +57,7 @@ class GraphTools:
             self.__EXPFull = True
 
             self.__dmDistributionGraphsBarExpFull = True
-            self.__dmDistributionGraphsLineExpFull = True
+            self.__dmDistributionGraphsLineExpFull = False
             #################################################
             #################################################
             ################################################# Exact Experiment Graphs
@@ -123,7 +126,7 @@ class GraphTools:
             self.__A2AlphaMainLine = 0.7
             self.__A3Color = 'black'
             self.__A3LineWidth = [2.5, 2, 1.5]
-            self.__A3AlphaMainLine = 0.5
+            self.__A3AlphaMainLine = 0.7
             self.__subplotLineStyle = ['-', '--', (0, (3, 1, 1, 1, 1, 1))]
             self.__subplotMarkerStyle = ["o", "X", "^"]
             self.__subplotMarkerSize = 8
@@ -149,7 +152,7 @@ class GraphTools:
             #################################################
             self.__figureDPI = 400
             self.__legendMarkerScale = 2
-            self.__markerSize = 3
+            self.__markerSize = 3.5
             self.__alphaMainLine = 0.55
             self.__lineColor = ['red', 'blue', 'green']
             self.__barColor = ['red', 'blue', 'green']
@@ -2003,23 +2006,16 @@ class GraphTools:
             for legObj in leg.legendHandles:
                 legObj.set_linewidth(self.__legendSubplotLineWidth)
             ########################################### Main
-            buf = io.BytesIO()
-            pickle.dump(fig, buf)
-            buf.seek(0)
+            buf = self.CopyFigIO(fig)
             #############################
-            self.SaveAndClosePlot(folderName=folderName, F1=F1)
+            self.SavePlotFig(fig, folderName=folderName, F1=F1)
+            self.PltClose()
             ##########################
-            fig2 = pickle.load(buf)
-            tokeep = [4]
-            for i, ax2 in enumerate(fig2.axes):
-                if not i in (tokeep):
-                    fig2.delaxes(ax2)
-                else:
-                    axestokeep = ax2
-            axestokeep.change_geometry(1, 1, 1)
+            figMain = self.LoadFigIO(buf)
             ##########################
-            # axestokeep.set_xticks(indexBarPlot)
-            # axestokeep.set_xticklabels(("$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)))
+            figMiddle = self.CopyFig(figMain)
+            axestokeep = self.SubplotExtractor(figMiddle, 4)
+            ##########################
             axestokeep.tick_params(axis='x', which='both', labelbottom=True, labelsize=self.__xLabelGroupFontSizeTotal * 1.2)
             axestokeep.tick_params(axis='y', which='both', labelleft=True, labelsize=self.__yMajorTickLabelSubplotFontSize * 1.2)
             leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustmentMain[0], self.__legendSubplotAdjustmentMain[1]),
@@ -2027,10 +2023,18 @@ class GraphTools:
                              fontsize=self.__legendSubplotFontSize,
                              loc='lower left', borderaxespad=0.)
             ################# set the lineWidth of each legend object
+            factor = 2
+            for l in axestokeep.lines:
+                if '_nolegend_' in l._label:
+                    l._linewidth = l._linewidth * factor
+                    l._markeredgewidth = l._markeredgewidth * factor
+                    l._markersize = l._markersize * factor
+
+            ####################################
             for legObj in leg.legendHandles:
                 legObj.set_linewidth(self.__legendSubplotLineWidth)
-            # fig2.set_size_inches(10, 10)
-            self.SaveAndClosePlotFig(fig=fig2, folderName=folderName, F1=F1 + " - Main")
+            self.SavePlotFig(fig=figMiddle, folderName=folderName, F1=F1 + " - Main")
+            self.PltClose()
 
 
         except Exception as e:
@@ -2084,6 +2088,7 @@ class GraphTools:
         try:
 
             fig, ax1 = plt.subplots(nrows=len(A1.unique()), ncols=len(A2.unique()), sharey=shareY, sharex=True, figsize=(12, 12), constrained_layout=True)
+            figS, ax1S = plt.subplots(nrows=len(A1.unique()), ncols=len(A2.unique()), sharey=shareY, sharex=True, figsize=(12, 12), constrained_layout=True)
             #############################################
             Dmlist = ["$D_m=$" + str(2.2), "$D_m=$" + str(2.5), "$D_m=$" + str(2.8)]
             #############################################
@@ -2119,8 +2124,19 @@ class GraphTools:
                         #                                 color=self.get_color(self.__A2Color, 'gray', portion=(DmCount + 1) * 0.2), linewidth=self.__A2LineWidth[c_lineStyle],
                         #                                 linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A2AlphaMainLine, )
                         # errorevery=5,capsize=1, elinewidth=1, markeredgewidth=1)
+                        ####################################
+                        ####################################
+                        ax1S[rowCount, colCount].plot(df1['da_AVE'], df1[column1], label=column1T + ', ' + Dmlist[DmCount],
+                                                      color=self.get_color(self.__A1Color, 'yellow', portion=(DmCount + 1) * 0.1), linewidth=self.__A1LineWidth[c_lineStyle],
+                                                      linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A1AlphaMainLine)
+
+                        ax1S[rowCount, colCount].plot(df2['da_AVE'], df2[column2], label=column2T + ', ' + Dmlist[DmCount],
+                                                      color=self.get_color(self.__A2Color, 'gray', portion=(DmCount + 1) * 0.2), linewidth=self.__A2LineWidth[c_lineStyle],
+                                                      linestyle=self.__subplotLineStyle[c_lineStyle], alpha=self.__A2AlphaMainLine, )
+                        ####################################
+                        ####################################
                         c_lineStyle += 1
-                        c_markerStyle += 1
+                        # c_markerStyle += 1
                         c_lineWidth += 1
                         DmCount += 1
 
@@ -2130,16 +2146,22 @@ class GraphTools:
                         fittedEXP.append(exp(p8(da)))
 
                     ax1[rowCount, colCount].plot(df2['da_AVE'], fittedEXP, color='black')
+                    ax1S[rowCount, colCount].plot(df2['da_AVE'], fittedEXP, color='black')
 
                     da_STD = self.dfExperiment['da_STD_EXP'] * 2
                     y_STD = self.dfExperiment[STD] * 2
                     ax1[rowCount, colCount].errorbar(self.dfExperiment['da_AVE_EXP'], self.dfExperiment[mean], xerr=da_STD, yerr=y_STD, label="Experiment, AAC-PAX-CPC",
                                                      color=self.get_color('gray', 'black'),
-                                                     # linestyle='-',linewidth=3,
                                                      alpha=self.__A3AlphaMainLine, marker="D", markersize=self.__markerSize, ecolor='black',
                                                      capsize=3, elinewidth=1, markeredgewidth=1)
 
-                    ax1[rowCount, colCount].grid(True, which='both', axis="both", alpha=0.5)
+                    ax1S[rowCount, colCount].errorbar(self.dfExperiment['da_AVE_EXP'], self.dfExperiment[mean], xerr=da_STD, yerr=y_STD, label="Experiment, AAC-PAX-CPC",
+                                                      color=self.get_color('gray', 'black'),
+                                                      alpha=self.__A3AlphaMainLine, marker="D", markersize=self.__markerSize, ecolor='black',
+                                                      capsize=3, elinewidth=1, markeredgewidth=1)
+                    ######################################
+                    ######################################
+                    ax1[rowCount, colCount].grid(True, which='both', axis="both", alpha=0.4)
                     ax1[rowCount, colCount].set_xscale('log')
                     ax1[rowCount, colCount].set_yscale(yScale)
                     ax1[rowCount, colCount].xaxis.set_major_formatter(FormatStrFormatter("%i"))
@@ -2148,6 +2170,21 @@ class GraphTools:
                     ax1[rowCount, colCount].tick_params(axis='y', which='both', labelsize=self.__yMajorTickLabelSubplotFontSize)
                     ax1[rowCount, colCount].yaxis.set_major_formatter(FormatStrFormatter(yAxisFormat))
                     ax1[rowCount, colCount].set_xlim(self.__xAxisLimitsComp[0], self.__xAxisLimitsComp[1])
+                    ######################################
+                    ######################################
+                    ax1S[rowCount, colCount].grid(True, which='both', axis="both", alpha=0.4)
+                    ax1S[rowCount, colCount].set_xscale('log')
+                    ax1S[rowCount, colCount].set_yscale(yScale)
+                    ax1S[rowCount, colCount].xaxis.set_major_formatter(FormatStrFormatter("%i"))
+                    ax1S[rowCount, colCount].xaxis.set_major_locator(plt.MaxNLocator(6))
+                    ax1S[rowCount, colCount].tick_params(axis='x', which='both', labelsize=self.__xMajorTickLabelSubplotFontSize, labelrotation=self.__xTickLabelSubplotRotation)
+                    ax1S[rowCount, colCount].tick_params(axis='y', which='both', labelsize=self.__yMajorTickLabelSubplotFontSize)
+                    ax1S[rowCount, colCount].yaxis.set_major_formatter(FormatStrFormatter(yAxisFormat))
+                    ax1S[rowCount, colCount].set_xlim(self.__xAxisLimitsComp[0], self.__xAxisLimitsComp[1])
+
+                    ax1S[rowCount, colCount].set_xlabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$" + ", " + "$\sigma_p|d_m=$" + str(j), fontsize=self.__xLabelEachSubplotFontSize)
+                    ax1S[rowCount, colCount].xaxis.set_label_position("top")
+                    ax1S[rowCount, colCount].xaxis.labelpad = self.__xLabelEachSubplotPad
 
                     if colCount == (len(A2.unique()) - 1):
                         ax1[rowCount, colCount].set_ylabel("$\\rho_{eff,100}$= " + str(i) + " kg/m$^3$", fontsize=self.__yLabelEachSubplotFontSize, rotation=self.__yLabelEachSubplotRotation)
@@ -2159,61 +2196,66 @@ class GraphTools:
                         ax1[rowCount, colCount].xaxis.set_label_position("top")
                         ax1[rowCount, colCount].xaxis.labelpad = self.__xLabelEachSubplotPad
 
+                    if (colCount == (len(A2.unique()) - 1)) and rowCount == (len(A1.unique()) - 1):
+                        leg = ax1[rowCount, colCount].legend(bbox_to_anchor=(self.__legendSubplotAdjustment[0], self.__legendSubplotAdjustment[1]), markerscale=self.__legendSubplotMarkerScale,
+                                                             fontsize=self.__legendSubplotFontSize,
+                                                             loc='lower left', borderaxespad=0.)
+                        ################# set the lineWidth of each legend object
+                        for legObj in leg.legendHandles:
+                            if hasattr(legObj, '_linewidth'):
+                                w = legObj._linewidth
+                                legObj.set_linewidth(w * self.__legendSubplotLineScale)
+                            else:
+                                legObj.set_linewidth(self.__legendSubplotLineWidth)
+
                     colCount += 1
                 rowCount += 1
-
-            # rowCount = 0
-            # for i in A1.unique():
-            #     colCount = 0
-            #     for j in A2.unique():
-            #         ax1[rowCount, colCount].set_ylim(self.__xAxisLimitsComp[0], self.__xAxisLimitsComp[1])
-            #         colCount += 1
-            #     rowCount += 1
-
+            ###################
             F1 = f"{title}"
             T1 = title + titleAppend
-
+            ###################
             fig.subplots_adjust(top=self.__subplotGridSetup[0], wspace=self.__subplotGridSetup[1], hspace=self.__subplotGridSetup[2])
             fig.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal)
-
             fig.text(0.5, self.__xLabelCommonSubplotAdjustment, self.__xLabelAeroDiameter, ha='center', fontsize=self.__xLabelCommonSubplotFontSize)
-
             if 'e' in yAxisFormat:
                 fig.text(self.__yLabelCommonSubplotAdjustment[0], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
             elif 'f' in yAxisFormat:
                 fig.text(self.__yLabelCommonSubplotAdjustment[1], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
-
-            leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustment[0], self.__legendSubplotAdjustment[1]), markerscale=self.__legendSubplotMarkerScale, fontsize=self.__legendSubplotFontSize,
-                             loc='lower left', borderaxespad=0.)
-            ################# set the lineWidth of each legend object
-            for legObj in leg.legendHandles:
-                if hasattr(legObj, '_linewidth'):
-                    w = legObj._linewidth
-                    legObj.set_linewidth(w * self.__legendSubplotLineScale)
-                else:
-                    legObj.set_linewidth(self.__legendSubplotLineWidth)
+            #######################################
+            figS.subplots_adjust(top=self.__subplotGridSetup[0], wspace=self.__subplotGridSetup[1], hspace=self.__subplotGridSetup[2])
+            figS.suptitle(T1, fontsize=self.__plotTitleFontSizeTotal)
+            figS.text(0.5, self.__xLabelCommonSubplotAdjustment, self.__xLabelAeroDiameter, ha='center', fontsize=self.__xLabelCommonSubplotFontSize)
+            if 'e' in yAxisFormat:
+                figS.text(self.__yLabelCommonSubplotAdjustment[0], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
+            elif 'f' in yAxisFormat:
+                figS.text(self.__yLabelCommonSubplotAdjustment[1], 0.5, yCommonLabel, va='center', rotation='vertical', fontsize=self.__yLabelCommonSubplotFontSize)
             ########################################### Main
-            buf = io.BytesIO()
-            pickle.dump(fig, buf)
-            buf.seek(0)
+            buf = self.CopyFigIO(figS)
             #############################
-            self.SaveAndClosePlot(folderName=folderName, F1=F1)
+            self.SavePlotFig(fig, folderName=folderName, F1=F1)
+            self.PltClose()
             ##########################
-            fig2 = pickle.load(buf)
-            tokeep = [4]
-            for i, ax2 in enumerate(fig2.axes):
-                if not i in (tokeep):
-                    fig2.delaxes(ax2)
-                else:
-                    axestokeep = ax2
-            axestokeep.change_geometry(1, 1, 1)
+            figMain = self.LoadFigIO(buf)
+            ####################################################
+            self.DmHider('2.2', figMain, folderName, F1)
+            self.DmHider('2.5', figMain, folderName, F1)
+            self.DmHider('2.8', figMain, folderName, F1)
+            ####################################################
+            figMiddle = self.CopyFig(figMain)
+            axestokeep = self.SubplotExtractor(figMiddle, 4)
             ##########################
             axestokeep.tick_params(axis='x', which='both', labelbottom=True, labelsize=self.__xMajorTickLabelSubplotFontSize, labelrotation=self.__xTickLabelSubplotRotation)
             axestokeep.tick_params(axis='y', which='both', labelleft=True, labelsize=self.__yMajorTickLabelSubplotFontSize)
-            leg = plt.legend(bbox_to_anchor=(self.__legendSubplotAdjustmentMain[0], self.__legendSubplotAdjustmentMain[1]),
-                             markerscale=self.__legendSubplotMarkerScale,
-                             fontsize=self.__legendSubplotFontSize,
-                             loc='lower left', borderaxespad=0.)
+            leg = axestokeep.legend(bbox_to_anchor=(self.__legendSubplotAdjustmentMain[0], self.__legendSubplotAdjustmentMain[1]),
+                                    markerscale=self.__legendSubplotMarkerScale,
+                                    fontsize=self.__legendSubplotFontSize,
+                                    loc='lower left', borderaxespad=0.)
+            ################################
+            for l in figMiddle.axes[0].lines:
+                if ('_line' in l._label) or ('_nolegend_' in l._label):
+                    pass
+                else:
+                    l._linewidth = l._linewidth * 2
             ################# set the lineWidth of each legend object
             for legObj in leg.legendHandles:
                 if hasattr(legObj, '_linewidth'):
@@ -2221,8 +2263,169 @@ class GraphTools:
                     legObj.set_linewidth(w * self.__legendSubplotLineScale)
                 else:
                     legObj.set_linewidth(self.__legendSubplotLineWidth)
-            # fig2.set_size_inches(6, 6)
-            self.SaveAndClosePlotFig(fig=fig2, folderName=folderName, F1=F1 + " - Main")
+            ####################################################
+            self.SavePlotFig(fig=figMiddle, folderName=folderName, F1=F1 + " - Main")
+            self.PltClose()
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def DmHider(self, Dm, figMain, folderName, F1):
+        try:
+            for i in range(9):
+                figAnim = self.CopyFig(figMain)
+                axestokeepAnim = self.SubplotExtractor(figAnim, i)
+                axestokeepAnim.tick_params(axis='x', which='both', labelbottom=True, labelsize=self.__xMajorTickLabelSubplotFontSize, labelrotation=self.__xTickLabelSubplotRotation)
+                axestokeepAnim.tick_params(axis='y', which='both', labelleft=True, labelsize=self.__yMajorTickLabelSubplotFontSize)
+                leg = axestokeepAnim.legend(bbox_to_anchor=(self.__legendSubplotAdjustmentMain[0], self.__legendSubplotAdjustmentMain[1]),
+                                            markerscale=self.__legendSubplotMarkerScale,
+                                            fontsize=self.__legendSubplotFontSize,
+                                            loc='lower left', borderaxespad=0.)
+                ################################
+                for l in figAnim.axes[0].lines:
+                    if ('_line' in l._label) or ('_nolegend_' in l._label):
+                        pass
+                    else:
+                        l._linewidth = l._linewidth * 2
+
+                    if str(Dm) in l._label:
+                        l._alpha = 0.95
+                    elif 'D_m' in l._label:
+                        l._alpha = 0.10
+                ################# set the lineWidth of each legend object
+                for legObj in leg.legendHandles:
+                    if hasattr(legObj, '_linewidth'):
+                        w = legObj._linewidth
+                        legObj.set_linewidth(w * self.__legendSubplotLineScale)
+                    else:
+                        legObj.set_linewidth(self.__legendSubplotLineWidth)
+                self.SavePlotFigJPG(fig=figAnim, folderName=folderName + f"\Mov-{F1}-{Dm}", F1=f"{i}-{F1}")
+                self.PltClose()
+            ######################
+
+            orderEff = [0, 3, 6, 1, 4, 7, 2, 5, 8]
+            orderSigma = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+            frameRate = 15
+            fx = 0.25
+            fy = 0.25
+            interpolation = cv2.INTER_AREA
+
+            def fadeIn(img1, img2):
+                steps = 40
+                for IN in range(int(steps)):
+                    fadein = IN / steps
+                    dst = cv2.addWeighted(img1, 1 - fadein, img2, fadein, 0)
+                    video.write(dst)
+                for i in range(int(steps / 3.75)):
+                    video.write(img2)
+
+            image_folder = self.__folderNameGraph + f"\{folderName}" + f"\Mov-{F1}-{Dm}"
+            images = [img for img in os.listdir(image_folder) if img.endswith(".jpg")]
+            imagesIndex = {}
+            for i in images:
+                imagesIndex[i[0]] = i
+
+            realOrderEFF = []
+            for o in orderEff:
+                realOrderEFF.append(imagesIndex[str(o)])
+
+            realOrderSigma = []
+            for o in orderSigma:
+                realOrderSigma.append(imagesIndex[str(o)])
+
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            # cv2.resize(frame,None,fx=0.5,fy=0.5,interpolation=cv.INTER_AREA )
+            #######################################
+            frame = cv2.imread(os.path.join(image_folder, realOrderEFF[0]))
+            height, width, layers = cv2.resize(frame, None, fx=fx, fy=fy, interpolation=interpolation).shape
+            video = cv2.VideoWriter(self.__folderNameGraph + f"\{folderName}\{F1}-{Dm}-EFF.mp4", fourcc, float(frameRate), (width, height))
+
+            imgArr = []
+            for i in range(len(realOrderEFF)):
+                im = cv2.imread(os.path.join(image_folder, realOrderEFF[i]))
+                ims = cv2.resize(im, None, fx=fx, fy=fy, interpolation=interpolation)
+                imgArr.append(ims)
+
+            for i in range(len(realOrderEFF) - 1):
+                fadeIn(imgArr[i], imgArr[i + 1])
+
+            for i in range(int(frameRate * 2)):
+                video.write(imgArr[-1])
+
+            cv2.destroyAllWindows()
+            video.release()
+            ############################################################
+            frame = cv2.imread(os.path.join(image_folder, realOrderSigma[0]))
+            height, width, layers = cv2.resize(frame, None, fx=fx, fy=fy, interpolation=interpolation).shape
+            video = cv2.VideoWriter(self.__folderNameGraph + f"\{folderName}\{F1}-{Dm}-Sigma.mp4", fourcc, float(frameRate), (width, height))
+
+            imgArr = []
+            for i in range(len(realOrderSigma)):
+                im = cv2.imread(os.path.join(image_folder, realOrderSigma[i]))
+                ims = cv2.resize(im, None, fx=fx, fy=fy, interpolation=interpolation)
+                imgArr.append(ims)
+
+            for i in range(len(realOrderSigma) - 1):
+                fadeIn(imgArr[i], imgArr[i + 1])
+
+            for i in range(int(frameRate * 2)):
+                video.write(imgArr[-1])
+
+            cv2.destroyAllWindows()
+            video.release()
+            ###############################################################
+            a = 3
+
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def SubplotExtractor(self, fig, index):
+        try:
+            tokeep = [index]
+            for i, ax2 in enumerate(fig.axes):
+                if not i in (tokeep):
+                    fig.delaxes(ax2)
+                else:
+                    axestokeep = ax2
+            axestokeep.change_geometry(1, 1, 1)
+            return axestokeep
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CopyFig(self, fig):
+
+        try:
+            buf = io.BytesIO()
+            pickle.dump(fig, buf)
+            buf.seek(0)
+            fig2 = pickle.load(buf)
+            return fig2
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def CopyFigIO(self, fig):
+        try:
+
+            buf = io.BytesIO()
+            pickle.dump(fig, buf)
+            return buf
+
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def LoadFigIO(self, buf):
+        try:
+            buf.seek(0)
+            fig2 = pickle.load(buf)
+            return fig2
 
         except Exception as e:
             logging.exception(e)
@@ -2259,7 +2462,7 @@ class GraphTools:
     ###################################
     ###################################
 
-    def SaveAndClosePlot(self, folderName, F1):
+    def SavePlotPlt(self, folderName, F1):
         try:
             if self.__OnlySVGSaving:
 
@@ -2277,14 +2480,11 @@ class GraphTools:
                     AddressWMF = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="wmf")
                     subprocess.call([self.__inkScapePath, str(Address.resolve()), '--export-wmf', str(AddressWMF.resolve())])
 
-            plt.clf()
-            plt.close()
-
         except Exception as e:
             logging.exception(e)
             raise
 
-    def SaveAndClosePlotFig(self, fig, folderName, F1):
+    def SavePlotFig(self, fig, folderName, F1):
         try:
             if self.__OnlySVGSaving:
 
@@ -2302,8 +2502,22 @@ class GraphTools:
                     AddressWMF = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="wmf")
                     subprocess.call([self.__inkScapePath, str(Address.resolve()), '--export-wmf', str(AddressWMF.resolve())])
 
-            fig.clf()
+        except Exception as e:
+            logging.exception(e)
+            raise
 
+    def SavePlotFigJPG(self, fig, folderName, F1):
+        try:
+            Address = GF.GetAddressTo(folderName=self.__folderNameGraph + f"\{folderName}", fileName=F1, extension="jpg")
+            fig.savefig(Address, format='jpg', dpi=self.__figureDPI, bbox_inches='tight')
+        except Exception as e:
+            logging.exception(e)
+            raise
+
+    def PltClose(self):
+        try:
+            plt.clf()
+            plt.close()
         except Exception as e:
             logging.exception(e)
             raise
